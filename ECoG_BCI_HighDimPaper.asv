@@ -1342,45 +1342,14 @@ xticklabels(ImaginedMvmt)
 set(gcf,'Color','w')
 title('Hand Knob activation')
 
-% plotting the avergaed activity on the brain
-data = ERP_Data{8};
-idx=find(task_state==3);
-data=squeeze(mean(data,3));
-data = mean(data(:,idx),2);
-chmap=TrialData.Params.ChMap;
-figure;imagesc(data(chmap))
-caxis([-2 2])
-
-%%%%% BRAIN PLOTTING
-% if positive, yellow, if negative blue
-col = parula;
-col = col([1 end],:);
-% scale the size of the electrode to be reflective of the magnitude
-imaging_B1;close all
-temp= (data);
-temp = temp./max(abs(temp));
-pos = data>0;
-neg = data<0;
-figure;
-c_h = ctmr_gauss_plot(cortex,[0 0 0],...
-    0,'lh');set(gcf,'Color','w')
-origMap = [1:16;17:32;33:48;49:64;65:80;81:96;97:112;113:128];
-origMap = flipud(origMap);
-e_h1 = el_add(elecmatrix1(:,:), 'color', [1 1 1],'msize',2);
-for j=1:length(temp)
-    [x y]=find(origMap==j);
-    ch=chmap(x,y);
-    ms = abs(temp(ch)) * (10-3)+2;
-    if pos(ch) == 1
-        c = col(2,:);
-    elseif neg(ch)==1
-        c = col(1,:);
-    end
-    e_h = el_add(elecmatrix(j,:), 'color',c,'msize',ms);    
-end
-view(-101,24)
 
 
+% Effector-specific hierarchical decomposition of the human sensorimotor cortex 
+% for long-term stable high dimensional brain machine interfaces
+
+
+%Hierarchical decomposition of the hodology of imagined movements in human
+%sensorimotor cortex for 
 
 
 %% get all robot3D data

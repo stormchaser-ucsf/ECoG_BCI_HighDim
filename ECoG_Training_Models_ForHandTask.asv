@@ -1815,10 +1815,7 @@ for i=1:length(hand_files)
     temp = cell2mat(features(kinax));
     
     if regexp(hand_files{i},'20220302')
-        len = size(temp,2);
-        if len>20
-            temp=temp(:,1:20);
-        end
+        len = temp
     end
     
     % get smoothed delta hg and beta features
@@ -1914,12 +1911,12 @@ T(aa(1):aa(end),8)=1;
 
 
 % code to train a neural network
-clear net_hand_mlp_0303
-net_hand_mlp_0303 = patternnet([64 64 64]) ;
-net_hand_mlp_0303.performParam.regularization=0.2;
-net_hand_mlp_0303 = train(net_hand_mlp_0303,N,T','UseParallel','yes');
-genFunction(net_hand_mlp_0303,'MLP_Hand_03032022')
-save net_hand_mlp_0303 net_hand_mlp_0303
+clear net_hand_mlp
+net_hand_mlp = patternnet([64 64 64]) ;
+net_hand_mlp.performParam.regularization=0.2;
+net_hand_mlp = train(net_hand_mlp,N,T','UseParallel','yes');
+genFunction(net_hand_mlp,'MLP_Hand')
+save net_hand_mlp net_hand_mlp
 
 % using custom layers
 layers = [ ...
