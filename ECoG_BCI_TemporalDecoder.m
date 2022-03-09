@@ -13,7 +13,7 @@ foldernames = {'20210613','20210616','20210623','20210625','20210630','20210702'
     '20210825','20210827','20210901','20210903','20210910','20210917','20210924','20210929',...
     '20211001''20211006','20211008','20211013','20211015','20211022','20211027','20211029','20211103',...
     '20211105','20211117','20211119','20220126','20220128','20220202','20220204','20220209','20220211',...
-    '20220218'};
+    '20220218','20220223','20220225','20220302'};
 cd(root_path)
 
 imag_files={};
@@ -28,7 +28,13 @@ for i=1:length(foldernames)
         D = D(idx);   
     elseif i==25
         idx=[1:2 4:length(D)];
+        D=D(idx);  
+    elseif i==29
+        idx= [1:2 8:9];
         D=D(idx);
+    elseif i==33
+        idx= [1:2 3:5 7:16];
+        D=D(idx);        
     end
     imag_files_temp=[];
     online_files_temp=[];
@@ -130,6 +136,11 @@ for i=1:length(imag_files)
 end
 
 
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+save lstm_7DoF_imag_data D1i D2i D3i D4i D5i D6i D7i -v7.3
+
+clearvars -except online_files foldernames
+
 % GETTING DATA FROM ONLINE BCI CONTROL IN THE ARROW TASK
 % essentially getting 600ms epochs
 D1={};
@@ -176,8 +187,12 @@ for i=1:length(online_files)
             elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
                 bins =1:400:s;
                 raw_data = [raw_data;raw_data4];
-                for k=1:length(bins)-1
-                    tmp = raw_data(bins(k)+[0:799],:);
+                for k=1:length(bins)-1                    
+                    try                        
+                        tmp = raw_data(bins(k)+[0:799],:);
+                    catch
+                        tmp=[];
+                    end
                     data_seg = cat(2,data_seg,tmp);
                 end
             end
@@ -190,25 +205,25 @@ for i=1:length(online_files)
             
             if id==1
                 D1 = cat(2,D1,data_seg);
-                D1f = cat(2,D1f,feat_stats1);
+                %D1f = cat(2,D1f,feat_stats1);
             elseif id==2
                 D2 = cat(2,D2,data_seg);
-                D2f = cat(2,D2f,feat_stats1);
+                %D2f = cat(2,D2f,feat_stats1);
             elseif id==3
                 D3 = cat(2,D3,data_seg);
-                D3f = cat(2,D3f,feat_stats1);
+                %D3f = cat(2,D3f,feat_stats1);
             elseif id==4
                 D4 = cat(2,D4,data_seg);
-                D4f = cat(2,D4f,feat_stats1);
+                %D4f = cat(2,D4f,feat_stats1);
             elseif id==5
                 D5 = cat(2,D5,data_seg);
-                D5f = cat(2,D5f,feat_stats1);
+                %D5f = cat(2,D5f,feat_stats1);
             elseif id==6
                 D6 = cat(2,D6,data_seg);
-                D6f = cat(2,D6f,feat_stats1);
+                %D6f = cat(2,D6f,feat_stats1);
             elseif id==7
                 D7 = cat(2,D7,data_seg);
-                D7f = cat(2,D7f,feat_stats1);
+                %D7f = cat(2,D7f,feat_stats1);
             end
         end
     end
@@ -217,7 +232,7 @@ end
 
  
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-save lstm_data_with_imag_data D1 D2 D3 D4 D5 D6 D7 D1i D2i D3i D4i D5i D6i D7i -v7.3
+save lstm_7DoF_online_data D1 D2 D3 D4 D5 D6 D7 -v7.3
 
 
 %% BUILDIN THE DECODER USIGN IMAGINED PLUS ONLINE DATA
@@ -1404,7 +1419,7 @@ end
 %% TESTING THE DATA ON ONLINE DATA
 clc;clear
 load net_bilstm
-filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20211022\Robot3DArrow';
+filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
 
 % get the name of the files
 files = findfiles('mat',filepath,1)';
@@ -1454,6 +1469,7 @@ lpFilt1 = designfilt('lowpassiir','FilterOrder',4, ...
 
 % load the data, and run it through the classifier
 decodes_overall=[];
+data=[];
 for i=1:length(files)
     disp(i)
     
@@ -1470,6 +1486,7 @@ for i=1:length(files)
     % state of trial
     state_idx = TrialData.TaskState;
     decodes=[];
+    trial_data={};
     for j=1:length(raw_data)
         tmp = raw_data{j};
         s=size(tmp,1);
@@ -1480,6 +1497,8 @@ for i=1:length(files)
             data_buffer(1:end,:)=tmp(s-800+1:end,:);
         end
         
+        % storing the data
+        trial_data{j} = data_buffer;
         
         
         %hg features
@@ -1500,7 +1519,7 @@ for i=1:length(files)
         tmp_lp = resample(tmp_lp,200,800);
         
         % concatenate
-        neural_features = [tmp_hg tmp_lp];
+        neural_features = [tmp_hg tmp_lp tmp_lp];
         
         % classifier output
         out=predict(net_bilstm,neural_features');
@@ -1512,9 +1531,15 @@ for i=1:length(files)
             decodes=[decodes class_predict];
         end
     end
+    data(i).task_state = TrialData.TaskState ;
+    data(i).raw_data = trial_data;
+    data(i).TargetID = TrialData.TargetID;
+    data(i).Task = 'Robot_Online_Data';
     decodes_overall(i).decodes = decodes;
     decodes_overall(i).tid = TrialData.TargetID;
 end
+val_robot_data=data;
+save val_robot_data val_robot_data -v7.3
 
 % looking at the accuracy of the bilstm decoder overall
 acc=zeros(7,7);
