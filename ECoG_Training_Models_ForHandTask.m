@@ -1778,9 +1778,9 @@ cd(root_path)
 hand_files=[];
 for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'Hand')
-    if ~exist(folderpath)
-        folderpath = fullfile(root_path, foldernames{i},'HandOnline')
-    end
+%     if ~exist(folderpath)
+%         folderpath = fullfile(root_path, foldernames{i},'HandOnline')
+%     end
     D=dir(folderpath);
     for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'BCI_Fixed');
@@ -1873,8 +1873,22 @@ condn_data{3}=[D3(idx,:)]';
 condn_data{4}=[D4(idx,:)]';
 condn_data{5}=[D5(idx,:)]';
 condn_data{6}=[D6(idx,:)]';
-condn_data{7}=[D9(idx,:)]';
-condn_data{8}=[D10(idx,:)]';
+condn_data{7}=[D7(idx,:)]';
+condn_data{8}=[D8(idx,:)]';
+condn_data{9}=[D9(idx,:)]';
+condn_data{10}=[D10(idx,:)]';
+
+
+% 2norm
+for i=1:length(condn_data)
+   tmp = condn_data{i}; 
+   for j=1:size(tmp,1)
+       tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+   end
+   condn_data{i}=tmp;
+end
+
+
 
 A = condn_data{1};
 B = condn_data{2};
@@ -1884,16 +1898,17 @@ E = condn_data{5};
 F = condn_data{6};
 G = condn_data{7};
 H = condn_data{8};
-% I = condn_data{9};
-% J = condn_data{10};
+I = condn_data{9};
+J = condn_data{10};
 
 
 clear N
-N = [A' B' C' D' E' F' G' H' ];
+N = [A' B' C' D' E' F' G' H' I' J'];
 T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
-    5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1);8*ones(size(H,1),1)];
+    5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1);8*ones(size(H,1),1);...
+    9*ones(size(I,1),1);10*ones(size(J,1),1)];
 
-T = zeros(size(T1,1),8);
+T = zeros(size(T1,1),10);
 [aa bb]=find(T1==1);[aa(1) aa(end)]
 T(aa(1):aa(end),1)=1;
 [aa bb]=find(T1==2);[aa(1) aa(end)]
@@ -1910,7 +1925,10 @@ T(aa(1):aa(end),6)=1;
 T(aa(1):aa(end),7)=1;
 [aa bb]=find(T1==8);[aa(1) aa(end)]
 T(aa(1):aa(end),8)=1;
-
+[aa bb]=find(T1==9);[aa(1) aa(end)]
+T(aa(1):aa(end),9)=1;
+[aa bb]=find(T1==10);[aa(1) aa(end)]
+T(aa(1):aa(end),10)=1;
 
 
 % code to train a neural network
