@@ -1453,8 +1453,8 @@ for i=3:length(d)
                     idx=find(TrialData.TaskState==3);
                     feat = cell2mat(feat(idx));
                     % pooling
-                    %neural_feat = bci_pooling(feat,TrialData.Params.ChMap);
-                    neural_feat = feat(513:640,:);
+                    neural_feat = bci_pooling(feat,TrialData.Params.ChMap);
+                    %neural_feat = feat(513:640,:);
                     % getting kin variables
                     kin=TrialData.CursorState;
                     kin=kin(:,idx);
