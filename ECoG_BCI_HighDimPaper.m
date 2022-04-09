@@ -1483,8 +1483,8 @@ for i=3:length(d)
 end
 
 cd(filepath)
-Robot3DTrials_onlyBetaFeatures = Trials;
-save Robot3DTrials_onlyBetaFeatures Robot3DTrials_onlyBetaFeatures -v7.3
+Robot3DTrials = Trials;
+save Robot3DTrials Robot3DTrials -v7.3
 
 % is there a difference in beta power around the time when errors are made?
 bad_neural=[];
