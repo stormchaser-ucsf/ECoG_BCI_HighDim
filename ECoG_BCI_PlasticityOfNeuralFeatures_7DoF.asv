@@ -310,7 +310,7 @@ title('Proj. Online Data through Imagined Latent Space')
 set(gcf,'Color','w')
 
 
-%% using an MLP-AE + decoding layer for class specific latent differences
+%% using an MLP-AE + decoding layer to change 
 %to look at differences between imagined and online control
 % this works only when updating the decoding layer 
 
@@ -352,7 +352,7 @@ condn_data = load_data_for_MLP(files);
 % build the AE based on MLP and only for hG
 [net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
 
-% re-build the AE latent space after changing wts thru a softmax layer
+% add a decoding layer to the data 
 [net1] =  add_decoding_AE(net,condn_data);
 
 % get softmax activations from the latent space
