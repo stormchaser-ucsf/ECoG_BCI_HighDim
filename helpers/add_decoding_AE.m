@@ -1,5 +1,5 @@
 function [net1] =  add_decoding_AE(net,condn_data)
-
+% encoder layer is retained, only the softmax layer is updated
 
 A = condn_data{1};
 B = condn_data{2};
@@ -38,6 +38,8 @@ X = activations(net,X','autoencoder');
 
 % create a new classification layer
 layers = [featureInputLayer(size(X,1))
+    %fullyConnectedLayer(32)
+    %reluLayer
     fullyConnectedLayer(7)
     softmaxLayer('Name','Classif')
     classificationLayer];

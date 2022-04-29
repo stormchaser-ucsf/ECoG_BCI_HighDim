@@ -33,11 +33,13 @@ T(aa(1):aa(end),7)=1;
 % get the data at the bottlneck layer
 X=N;
 X=X(1:96,:);
-X = activations(net,X','autoencoder');
+X = activations(net,X','layer_2');
 
 
 % create a new classification layer
 layers = [featureInputLayer(size(X,1))
+    net.Layers(6)
+    eluLayer
     fullyConnectedLayer(7)
     softmaxLayer('Name','Classif')
     classificationLayer];
@@ -71,8 +73,28 @@ options = trainingOptions('adam', ...
 clear net1
 net1 = trainNetwork(Xtrain',Ytrain',layers,options);
 
+% visualizing what the new latent space looks like
+Z = activations(net1,X','layer');
+[c,s,l]=pca(Z');
+idx=T1;
+Z=s';
+cmap = parula(length(unique(idx)));
+figure;hold on
+for i=1:size(cmap,1)
+    %if i==1||i==6||i==7||i==4||i==3
+    idxx = find(idx==i);
+    plot3(Z(1,idxx),Z(2,idxx),Z(3,idxx),'.','color',cmap(i,:),'MarkerSize',20);
+    %end
+end
+title('imagined AE+classif.')
+%title('Proj. Online Data through Imagined Latent Space')
+set(gcf,'Color','w')
+
+
+
 
 % now reupdating the weights of the decoder of the AE to minimize MSE
+
 
 
 

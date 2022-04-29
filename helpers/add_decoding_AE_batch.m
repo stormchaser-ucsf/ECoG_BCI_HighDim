@@ -1,24 +1,5 @@
-function [net,Xtrain,Ytrain] = build_mlp_AE(condn_data)
-%function [net,Xtrain,YTrain] = build_mlp_AE(condn_data)
-
-
-
-idx = [1:96];
-for i=1:length(condn_data)
-   tmp = condn_data{i};
-   tmp=tmp(:,1:96);
-   condn_data{i}=tmp;    
-end
-
-
-%2norm
-for i=1:length(condn_data)
-   tmp = condn_data{i}; 
-   for j=1:size(tmp,1)
-       tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
-   end
-   condn_data{i}=tmp;
-end
+function [net2] =  add_decoding_AE_batch(net,net1,condn_data)
+% encoder layer is retained, only the softmax layer is updated
 
 A = condn_data{1};
 B = condn_data{2};
@@ -49,35 +30,16 @@ T(aa(1):aa(end),6)=1;
 T(aa(1):aa(end),7)=1;
 
 
-% using custom layers
-% layers = [ ...
-%     featureInputLayer(32)    
-%     fullyConnectedLayer(8)
-%     eluLayer    
-%     fullyConnectedLayer(3)    
-%     eluLayer('Name','autoencoder')    
-%     fullyConnectedLayer(8)
-%     eluLayer
-%     fullyConnectedLayer(32)    
-%     regressionLayer
-%     ];
+% get the data at the bottlneck layer
+X=N;
+X=X(1:96,:);
+X = activations(net,X','autoencoder');
 
 
-% 
-% using custom layers
-layers = [ ...
-    featureInputLayer(96)    
-    fullyConnectedLayer(32)
-    eluLayer    
-    fullyConnectedLayer(8)
-    eluLayer('Name','autoencoder')        
-    fullyConnectedLayer(32)
-    eluLayer        
-    fullyConnectedLayer(96)
-    regressionLayer
-    ];
+% get the softmax layers
+layers = net1.Layers;
 
-X = N;
+% splitting training and testing
 Y=categorical(T1);
 idx = randperm(length(Y),round(0.8*length(Y)));
 Xtrain = X(:,idx);
@@ -95,16 +57,19 @@ options = trainingOptions('adam', ...
     'MaxEpochs',25, ...
     'Verbose',true, ...
     'Plots','training-progress',...
-    'MiniBatchSize',32,...
-    'ValidationFrequency',8,...
+    'MiniBatchSize',64,...
+    'ValidationFrequency',16,...
     'ExecutionEnvironment','gpu',...
     'ValidationPatience',5,...
-    'ValidationData',{Xtest',Xtest'});
+    'ValidationData',{Xtest',Ytest'});
 
 
 % build the classifier
-clear net
-net = trainNetwork(Xtrain',Xtrain',layers,options);
+clear net2
+net2 = trainNetwork(Xtrain',Ytrain',layers,options);
+
+
+
 
 
 end

@@ -208,22 +208,46 @@ session_data(1).AM_PM = {'am','am','am','am','am','am','am','am','am',...
 %day2
 session_data(2).Day = '20210616';
 session_data(2).folders={'111251','111821','112750','113117','113759','114449',...
-'134638','135318','135829','140842','140145','141459','143736'};
+'134638','135318','135829','140842','141045','141459','143736'};
 session_data(2).folder_type={'I','I','O','O','O','B','I','I','I','O','O','B','B'};
 session_data(2).AM_PM = {'am','am','am','am','am','am','pm','pm','pm','pm','pm','pm','pm'};
 
 
+% day 3
+session_data(3).Day = '20210623';
+session_data(3).folders={'110830','111416','111854','112823','113026',...
+'133244','133928','134357','135435','135630','135830','140530','142530','142723'};
+session_data(3).folder_type={'I','I','I','O','O','I','I','I','O','O','O','B','B','B'};
+session_data(3).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm','pm','pm','pm',...
+'pm','pm'};
+
+
+
+% day 4
+session_data(4).Day = '20210625';
+session_data(4).folders={'111134','112108','112805','113645','114239','132902',...
+'134133','142139'};
+session_data(4).folder_type={'I','I','I','O','B','O','B','B'};
+session_data(4).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
+
+
+%% analzying session specific data
+
+
+
 %% using an MLP-AE to look at differences between imagined and online control
+% projecting to the latent space here works best for 4 of the 7 actions and
+% not all simultaneously due to noise 
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
 % Imagined movement data
 %folders={'110604','111123','111649'};
-%folders={'132843','133545','134131','134735'};
-folders={'133244','133928','134357'};%20210623
-folders={'111134','112108','112805'}
-day_date = '20210625';
+folders={'134638','135318','135829'};
+%folders={'133244','133928','134357'};%20210623
+%folders={'111134','112108','112805'}
+day_date = '20210616';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'Imagined');
@@ -234,11 +258,11 @@ end
 %%%% have to do procustus when mapping data from one session to another 
 
 % online data
-%folders = {'113909','114318','114537'};
-%folders = {'140842','141045','141459','143736'};
-%folders={'135435','135630','135830','140530'};20210623
-folders={'113645','114239'};
-day_date = '20210625';
+%folders = {'113524','113909','114318','114537'};
+%folders = {'140842','141045'};
+folders={'135435','135630','135830'};%20210623
+%folders={'113645','114239'};
+day_date = '20210623';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
@@ -256,6 +280,7 @@ condn_data = load_data_for_MLP(files);
 % get activations in deepest layer but averaged over a trial
 TrialZ=[];
 idx=[];
+imag=0;
 for i=1:length(files)
     disp(i)
     file_loaded=1;
@@ -268,8 +293,10 @@ for i=1:length(files)
         features  = TrialData.SmoothedNeuralFeatures;
         kinax = TrialData.TaskState;
         kinax = [find(kinax==3)];
-       % counter=TrialData.Params.ClickCounter;
-       % kinax=kinax(end-counter+1:end);
+        if imag==0
+            counter=TrialData.Params.ClickCounter;
+            kinax=kinax(end-counter+1:end);
+        end
         temp = cell2mat(features(kinax));
         chmap = TrialData.Params.ChMap;
         X = bci_pooling(temp,chmap);
@@ -282,15 +309,17 @@ for i=1:length(files)
         % feed it through the AE
         X = X(65:96,:);
         Z = activations(net,X','autoencoder');
-        
-        % only if accurate
-        %if TrialData.SelectedTargetID == TrialData.TargetID
-        
-        %Z = mean(Z,2);
-        TrialZ = [TrialZ Z];
-        %idx=[idx TrialData.TargetID];
-        idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
-        %end
+        if imag==0
+            if TrialData.SelectedTargetID == TrialData.TargetID
+                TrialZ = [TrialZ Z];
+                idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
+                %Z = mean(Z,2);
+                %idx=[idx TrialData.TargetID];
+            end
+        else
+            TrialZ = [TrialZ Z];
+            idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];        
+        end
     end
 end
 
@@ -301,13 +330,51 @@ Z=TrialZ;
 cmap = parula(length(unique(idx)));
 figure;hold on
 for i=1:size(cmap,1)
-    if i==1||i==6||i==7||i==4
+    %if i==1||i==6||i==7||i==4||i==2
         idxx = find(idx==i);
         plot3(Z(1,idxx),Z(2,idxx),Z(3,idxx),'.','color',cmap(i,:),'MarkerSize',20);
+    %end
+end
+xlabel('Latent 1')
+ylabel('Latent 2')
+zlabel('Latent 3')
+
+if imag==1
+    title('Imagined Latent Space')
+else
+    title('Proj. Online Data through Imagined Latent Space')
+end
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+set(gca,'FontSize',12)
+
+% get pairwise mahalanbois distance
+len = length(unique(idx));
+D = zeros(len);
+for i=1:len
+    idxx = find(idx==i);
+    A=Z(:,idxx);
+    for j=i+1:len
+        idxx = find(idx==j);
+        B=Z(:,idxx);
+        D(i,j) = mahal2(A',B',2);
+        D(j,i) = D(i,j);
     end
 end
-title('Proj. Online Data through Imagined Latent Space')
+dist_online = squareform(D);
+
+figure;boxplot([dist_imagined' dist_online'])
+box off
 set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Distance')
+title('Inter-class distances')
+set(gca,'LineWidth',1)
+set(gca,'FontSize',12)
+
+[h p tb st]=ttest(dist_imagined,dist_online)
+
 
 
 %% using an MLP-AE + decoding layer for class specific latent differences
@@ -318,12 +385,13 @@ clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 addpath(genpath('C:\Users\Nikhlesh\Documents\GitHub\ECoG_BCI_HighDim'))
 
+
 % Imagined movement data
-%folders={'110604','111123','111649'};
-%folders={'132843','133545','134131','134735'};
-folders={'133244','133928','134357'};%20210623
-folders={'111134','112108','112805'}
-day_date = '20210625';
+folders={'111251','111821'};
+%folders={'134638','135318','135829'};
+%folders={'133244','133928','134357'};%20210623
+%folders={'111134','112108','112805'}
+day_date = '20210616';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'Imagined');
@@ -334,12 +402,20 @@ end
 %%%% have to do procustus when mapping data from one session to another 
 
 % online data
-%folders = {'113909','114318','114537'};
-%folders = {'140842','141045','141459','143736'};
-%folders={'135435','135630','135830','140530'};%20210623
-folders={'134206','134915','140110','140536','141223'}
-%folders={'113645','114239'};%20210625
-day_date = '20210806';
+folders = {'112750','113117','113759'};
+%folders = {'140842','141045'};
+%folders={'135435','135630','135830'};%20210623
+%folders={'113645','114239'};
+day_date = '20210616';
+files=[];
+for i=1:length(folders)
+    folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
+    files = [files;findfiles('',folderpath)'];
+end
+
+% batch update files
+folders = {'114449'};
+day_date = '20210616';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
@@ -355,9 +431,15 @@ condn_data = load_data_for_MLP(files);
 % re-build the AE latent space after changing wts thru a softmax layer
 [net1] =  add_decoding_AE(net,condn_data);
 
+
+% perform a batch update: update the softmax weights using new online data
+[net2] =  add_decoding_AE_batch(net,net1,condn_data);
+
 % get softmax activations from the latent space
 TrialZ=[];
 idx=[];
+imag=0;
+batch=1;
 for i=1:length(files)
     disp(i)
     file_loaded=1;
@@ -370,8 +452,10 @@ for i=1:length(files)
         features  = TrialData.SmoothedNeuralFeatures;
         kinax = TrialData.TaskState;
         kinax = [find(kinax==3)];
-        counter=TrialData.Params.ClickCounter;
-        kinax=kinax(end-counter+1:end);
+        if imag==0
+            counter=TrialData.Params.ClickCounter;
+            kinax=kinax(end-counter+1:end);
+        end        
         temp = cell2mat(features(kinax));
         chmap = TrialData.Params.ChMap;
         X = bci_pooling(temp,chmap);
@@ -384,23 +468,31 @@ for i=1:length(files)
         %feed it through the AE
         X = X(1:96,:);
         Z = activations(net,X','autoencoder');
-        % pass it through softmax layer
-        Z = activations(net1,Z','Classif');
-        
+        % pass it next through softmax layer
+        if batch==0            
+            Z = activations(net1,Z','Classif');
+        else
+            Z = activations(net2,Z','Classif');
+        end
         
         % straight pass thru softmax layer
         %Z=activations(net1,X','Classif');
-
-        % only if accurate
-       if TrialData.SelectedTargetID == TrialData.TargetID
         
-        %Z = mean(Z,2);
-        TrialZ = [TrialZ Z];
-        %idx=[idx TrialData.TargetID];
-        idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
+        if imag==0
+            if TrialData.SelectedTargetID == TrialData.TargetID
+                TrialZ = [TrialZ Z];
+                idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
+                %Z = mean(Z,2);
+                %idx=[idx TrialData.TargetID];
+            end
+        else
+            TrialZ = [TrialZ Z];
+            idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
         end
     end
 end
+
+
 
 % plot the trial averaged activity in the latent space
 Z=TrialZ;
@@ -414,9 +506,54 @@ for i=1:size(cmap,1)
         plot3(Z(1,idxx),Z(2,idxx),Z(3,idxx),'.','color',cmap(i,:),'MarkerSize',20);
     %end
 end
-title('imagined AE+classif.')
-%title('Proj. Online Data through Imagined Latent Space')
+xlabel('PC 1')
+ylabel('PC 2')
+zlabel('PC 3')
+
+if imag==1
+    title('Imagined Decoder Space')
+else
+    if batch==0
+        title('Proj. Online Data through Imagined Decoder Space')
+    else
+        title('Proj. Online Data through Imagined Decoder Space- BATCH')
+    end
+end
 set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+set(gca,'FontSize',12)
+
+% get pairwise mahalanbois distance
+len = length(unique(idx));
+D = zeros(len);
+for i=1:len
+    idxx = find(idx==i);
+    A=Z(:,idxx);
+    for j=i+1:len
+        idxx = find(idx==j);
+        B=Z(:,idxx);
+        D(i,j) = mahal2(A',B',2);
+        D(j,i) = D(i,j);
+    end
+end
+dist_batch = squareform(D);
+
+figure;boxplot([dist_imagined' dist_online' dist_batch'])
+box off
+set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Distance')
+title('Inter-class distances')
+set(gca,'LineWidth',1)
+set(gca,'FontSize',12)
+
+[h p tb st]=ttest(dist_imagined,dist_online)
+
+
+
+
+
 
 
 

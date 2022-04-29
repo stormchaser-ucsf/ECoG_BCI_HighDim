@@ -1,6 +1,6 @@
 function [net1] =  add_decoding_AE_2(net,condn_data)
 %function [net1] =  add_decoding_AE_2(net,condn_data)
-
+% updates the weights of the encoder layer as well as the softmax layer
 
 A = condn_data{1};
 B = condn_data{2};
