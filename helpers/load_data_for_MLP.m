@@ -42,6 +42,8 @@ for ii=1:length(files)
             new_temp= [new_temp pooled_data];
         end
         temp=new_temp;
+        %if TrialData.TargetID  ==  TrialData.SelectedTargetID
+        % temp=temp(:,end-5:end);
         if TrialData.TargetID == 1
             D1 = [D1 temp];
         elseif TrialData.TargetID == 2
@@ -57,12 +59,13 @@ for ii=1:length(files)
         elseif TrialData.TargetID == 7
             D7 = [D7 temp];
         end
+        %end
     end
 end
 
 
 clear condn_data
-idx = [1:96];
+idx = [65:96];
 condn_data{1}=[D1(idx,:) ]'; % right thumb
 condn_data{2}= [D2(idx,:)]'; % left leg
 condn_data{3}=[D3(idx,:)]'; % left thumb

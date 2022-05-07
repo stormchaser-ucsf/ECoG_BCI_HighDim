@@ -3,10 +3,10 @@ function [net,Xtrain,Ytrain] = build_mlp_AE(condn_data)
 
 
 
-idx = [1:96];
+idx = [1:32];
 for i=1:length(condn_data)
    tmp = condn_data{i};
-   tmp=tmp(:,1:96);
+   tmp=tmp(:,1:32);
    condn_data{i}=tmp;    
 end
 
@@ -50,32 +50,32 @@ T(aa(1):aa(end),7)=1;
 
 
 % using custom layers
-% layers = [ ...
-%     featureInputLayer(32)    
-%     fullyConnectedLayer(8)
-%     eluLayer    
-%     fullyConnectedLayer(3)    
-%     eluLayer('Name','autoencoder')    
-%     fullyConnectedLayer(8)
-%     eluLayer
-%     fullyConnectedLayer(32)    
-%     regressionLayer
-%     ];
+layers = [ ...
+    featureInputLayer(32)    
+    fullyConnectedLayer(8)
+    eluLayer    
+    fullyConnectedLayer(3)    
+    eluLayer('Name','autoencoder')    
+    fullyConnectedLayer(8)
+    eluLayer
+    fullyConnectedLayer(32)    
+    regressionLayer
+    ];
 
 
 % 
-% using custom layers
-layers = [ ...
-    featureInputLayer(96)    
-    fullyConnectedLayer(32)
-    eluLayer    
-    fullyConnectedLayer(8)
-    eluLayer('Name','autoencoder')        
-    fullyConnectedLayer(32)
-    eluLayer        
-    fullyConnectedLayer(96)
-    regressionLayer
-    ];
+% % using custom layers
+% layers = [ ...
+%     featureInputLayer(96)    
+%     fullyConnectedLayer(32)
+%     eluLayer    
+%     fullyConnectedLayer(8)
+%     eluLayer('Name','autoencoder')        
+%     fullyConnectedLayer(32)
+%     eluLayer        
+%     fullyConnectedLayer(96)
+%     regressionLayer
+%     ];
 
 X = N;
 Y=categorical(T1);
