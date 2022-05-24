@@ -2216,7 +2216,7 @@ mean(ans)
 
 
 
-
+%% USING GRU ON THE NEURAL FEATURES ITSELF 
 
 
 

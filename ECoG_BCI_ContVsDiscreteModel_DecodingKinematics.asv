@@ -427,10 +427,9 @@ for i=1:length(drop1)
         sequenceInputLayer(inputSize)
         %bilstmLayer(numHiddenUnits,'OutputMode','sequence')
         %dropoutLayer(drop)
-        %batchNormalizationLayer
         gruLayer(numHiddenUnits,'OutputMode','last')
         dropoutLayer(drop)
-        %batchNormalizationLayer
+        batchNormalizationLayer
         %fullyConnectedLayer(40)
         %reluLayer
         %dropoutLayer(.2)
@@ -468,7 +467,7 @@ for ii=1:length(test_files)
     
     kin = TrialData.CursorState;
     kin = kin(:,idx);    
-    neural_features = TrialData.SmoothedNeuralFeatures;
+    neural_features = TrialData.NeuralFeatures;
     neural_features = cell2mat(neural_features(idx));    
     temp=neural_features;
     fidx = [129:256 513:640 769:896];
