@@ -538,15 +538,15 @@ caxis([0 13])
 
 
 clc;clear
-root_path = 'E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-foldernames = {'20210915'};
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+foldernames = {'20220513'};
 cd(root_path)
 
 files=[];
-for i=length(foldernames)
+for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
-    for j=6:length(D)-1
+    for j=3:length(D)
         folderpath,D(j).name
         filepath=fullfile(folderpath,D(j).name,'BCI_Fixed');
         files = [files;findfiles('',filepath)'];
@@ -561,7 +561,8 @@ D3=[];
 D4=[];
 D5=[];
 D6=[];
-time_to_target=zeros(2,6);
+D7=[];
+time_to_target=zeros(2,7);
 for i=1:length(files)
     disp(i)
     load(files{i});
@@ -602,11 +603,11 @@ for i=1:length(files)
     if trial_dur<=3
         time_to_target(1,TrialData.TargetID) = time_to_target(1,TrialData.TargetID)+1;
     end
-
+    
     % now get the ERPs
-    if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=3
+   % if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=3
         if TrialData.TargetID == 1
-            D1 = cat(3,D1,data);            
+            D1 = cat(3,D1,data);
         elseif TrialData.TargetID == 2
             D2 = cat(3,D2,data);
         elseif TrialData.TargetID == 3
@@ -617,8 +618,10 @@ for i=1:length(files)
             D5 = cat(3,D5,data);
         elseif TrialData.TargetID == 6
             D6 = cat(3,D6,data);
-        end        
-    end    
+        elseif TrialData.TargetID == 7
+            D7 = cat(3,D7,data);
+        end
+  %  end
 end
 
 
@@ -643,7 +646,7 @@ for i = 1:size(D2,1)
         %subplot(8, 16, s)
     end
     hold on
-    erps =  squeeze(D2(i,:,:));
+    erps =  squeeze(D7(i,:,:));
     
     chdata = erps;
     % zscore the data to the first 8 time-bins
@@ -687,7 +690,7 @@ for i = 1:size(D2,1)
     % statistical test
     % if the mean is outside confidence intervals in state 3
     m = mean(chdata,2);
-    idx=13:27;
+    idx=10:20;
     mstat = m((idx));
     pval=[];
     for j=1:length(idx)
@@ -704,7 +707,7 @@ for i = 1:size(D2,1)
     % beautify
     ylabel (num2str(i))
     axis tight
-    ylim([-2 2])    
+    ylim([-2 4])    
     %set(gca,'LineWidth',1)
     %vline([time(2:4)])   
     h=vline(tim);

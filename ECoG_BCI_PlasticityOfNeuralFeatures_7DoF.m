@@ -507,11 +507,12 @@ condn_data = load_data_for_MLP(files);
 % perform a batch update: update the softmax weights using new online data
 [net2] =  add_decoding_AE_batch(net,net1,condn_data);
 
-% get softmax activations from the latent space
+% get activations from the latent space
 TrialZ=[];
 idx=[];
 imag=0;
-batch=1;
+batch=0;
+data_correct=[];
 for i=1:length(files)
     disp(i)
     file_loaded=1;
@@ -538,14 +539,18 @@ for i=1:length(files)
         end
         
         %feed it through the AE
-        X = X(1:96,:);
+        X = X(1:32,:);
         Z = activations(net,X','autoencoder');
+        
+        % store
+        
+        
         % pass it next through softmax layer
-        if batch==0
-            Z = activations(net1,Z','Classif');
-        else
-            Z = activations(net2,Z','Classif');
-        end
+%         if batch==0
+%             Z = activations(net1,Z','Classif');
+%         else
+%             Z = activations(net2,Z','Classif');
+%         end
         
         % straight pass thru softmax layer
         %Z=activations(net1,X','Classif');
@@ -568,8 +573,8 @@ end
 
 % plot the trial averaged activity in the latent space
 Z=TrialZ;
-[c,s,l]=pca(Z');
-Z=s';
+%[c,s,l]=pca(Z');
+%Z=s';
 cmap = parula(length(unique(idx)));
 figure;hold on
 for i=1:size(cmap,1)

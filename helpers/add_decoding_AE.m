@@ -30,19 +30,28 @@ T(aa(1):aa(end),6)=1;
 T(aa(1):aa(end),7)=1;
 
 
+
+% throwaway the decoding layers and add on a bottleneck classifier at the
+% end of the encoder layer
+layers = [net.Layers(1:5)
+      fullyConnectedLayer(7)
+    softmaxLayer('Name','Classif')
+    classificationLayer];
+    
+
 % get the data at the bottlneck layer
-X=N;
-X=X(1:96,:);
-X = activations(net,X','autoencoder');
+% X=N;
+% X=X(1:32,:);
+% X = activations(net,X','autoencoder');
 
 
 % create a new classification layer
-layers = [featureInputLayer(size(X,1))
-    %fullyConnectedLayer(32)
-    %reluLayer
-    fullyConnectedLayer(7)
-    softmaxLayer('Name','Classif')
-    classificationLayer];
+% layers = [featureInputLayer(size(X,1))
+%     %fullyConnectedLayer(32)
+%     %reluLayer
+%     fullyConnectedLayer(7)
+%     softmaxLayer('Name','Classif')
+%     classificationLayer];
 
 % splitting training and testing
 Y=categorical(T1);
