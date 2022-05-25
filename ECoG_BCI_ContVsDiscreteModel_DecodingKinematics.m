@@ -9,6 +9,7 @@ clc;clear
 close all
 
 
+
 folderpath = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220520\Robot';
 folders={'141735','142458','143022','144223','144607','145327','145327'};
 
@@ -307,6 +308,12 @@ box off
 % assuming a GRU with a 5 bin history
 
 
+% if you want to output a label for each time-point then have to code it as
+% one hot vectors and use signoid layer and a regression layer for each
+% time-point.
+
+% can also use GRU as a regression onto kinematics 
+
 clc;clear
 close all
 
@@ -373,15 +380,18 @@ for ii=1:length(files_train)
     end
     temp=new_temp;
     
+    % get all the data at once
+    neural = cat(3,neural,temp);
+    kinematics_tid = cat(2,kinematics_tid,repmat(TrialData.TargetID,size(temp,2),1));
     
-    % get the samples for the lstm
-    for j=1:2:size(temp,2)
-        if (j+4)<size(temp,2)
-            neural=cat(3,neural,temp(:,j:j+4)');   
-            kinematics=cat(3,kinematics,kin(:,j:j+4)');
-            kinematics_tid=[kinematics_tid;TrialData.TargetID];
-        end
-    end
+%     % get the samples for the lstm
+%     for j=1:2:size(temp,2)
+%         if (j+4)<size(temp,2)
+%             neural=cat(3,neural,temp(:,j:j+4)');   
+%             kinematics=cat(3,kinematics,kin(:,j:j+4)');
+%             kinematics_tid=[kinematics_tid;TrialData.TargetID];
+%         end
+%     end
 end
 
 % train a discrete GRU
@@ -428,15 +438,14 @@ for i=1:length(drop1)
         %bilstmLayer(numHiddenUnits,'OutputMode','sequence')
         %dropoutLayer(drop)
         %batchNormalizationLayer
-        gruLayer(numHiddenUnits,'OutputMode','last')
+        gruLayer(numHiddenUnits,'OutputMode','sequence')
         dropoutLayer(drop)
         %batchNormalizationLayer
         %fullyConnectedLayer(40)
         %reluLayer
         %dropoutLayer(.2)
-        fullyConnectedLayer(numClasses)
-        softmaxLayer
-        classificationLayer];
+        fullyConnectedLayer(numClasses)        
+        regressionLayer];
     
     
     
