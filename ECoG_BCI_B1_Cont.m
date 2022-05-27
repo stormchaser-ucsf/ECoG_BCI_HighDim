@@ -3698,9 +3698,9 @@ title('Classif. using temporal history')
 %%%% DOING THE SAME NOW BUT IN THE ROBOT 3D ARROW ENVIRONMENT
 clc;clear
 
-root_path='E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-foldernames = {'20210910'};
+foldernames = {'20220513'};
 cd(root_path)
 
 files=[];
@@ -3762,12 +3762,12 @@ colormap bone
 caxis([0 1])
 xticks([1:7])
 yticks([1:7])
-xticklabels({'Rt Hand','Both Feet','Lt. Hand','Head', 'Mime up','Tong in','Both hands'})
-yticklabels({'Rt Hand','Both Feet','Lt. Hand','Head', 'Mime up','Tong in','Both hands'})
+xticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Lips','Tong','Both middle'})
+yticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Lips','Tong','Both middle'})
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
 %title('Classif. using temporal history original action space')
-
+colorbar
 
 % bit rate calculations
 tim_to_target = tim_to_target.*(1/TrialData.Params.UpdateRate);

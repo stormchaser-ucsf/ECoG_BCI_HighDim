@@ -280,18 +280,32 @@ for i=1:length(test_files)
     set(gca,'FontSize',14)
     %end
     
-    % calculate deviations
-    a = X(1:3,:) - Xhat(1:3,:);
-    a = mean(sqrt(sum(a.^2)));
+    % calculate deviations from robot's trajectory
+%     a = X(1:3,:) - Xhat(1:3,:);
+%     a = mean(sqrt(sum(a.^2)));
+%     KF_dev = [KF_dev (a)];
+%     
+%     
+%     a = X(1:3,:) - Xhat1(1:3,:);
+%     a = mean(sqrt(sum(a.^2)));
+%     MLP_dev = [MLP_dev (a)];
+
+    % calculate deviations based on ground truth position 
+    pos=TrialData.TargetPosition;
+    ax = find(pos==0);
+    a=sqrt(sum(sum(Xhat(ax,:).^2)))/size(Xhat,2);
+    %a=mean(sqrt(sum(Xhat(ax,:).^2)));
     KF_dev = [KF_dev (a)];
-    
-    
-    a = X(1:3,:) - Xhat1(1:3,:);
-    a = mean(sqrt(sum(a.^2)));
+
+    a=sqrt(sum(sum(Xhat1(ax,:).^2)))/size(Xhat1,2);
+    %a=mean(sqrt(sum(Xhat1(ax,:).^2)));
     MLP_dev = [MLP_dev (a)];
+
+
 end
 
-figure;boxplot([MLP_dev' KF_dev']/length(MLP_dev))
+%figure;boxplot([MLP_dev' KF_dev']/length(MLP_dev))
+figure;boxplot([MLP_dev' KF_dev']/1)
 xticks(1:2)
 xticklabels({'Input Driven','Re-Fit KF'})
 ylabel('Average Position Deviation')
@@ -304,15 +318,12 @@ box off
 
 
 %%  SAME AS ABOVE BUT USING A GRU 
-% have to be careful in how to extract the kinematics and neural features
-% assuming a GRU with a 5 bin history
+% using a sequence to sequence classifcation sceheme where o/p is class and
+% i/p are neural features. 
 
-
-% if you want to output a label for each time-point then have to code it as
-% one hot vectors and use signoid layer and a regression layer for each
-% time-point.
-
-% can also use GRU as a regression onto kinematics 
+%Xtrain - cell array of sequences, features, time
+%Ytrain - cell array of sequences and outputs
+% can concatenate to make it one sequence of model each trial as a sequence
 
 clc;clear
 close all
@@ -336,7 +347,7 @@ test_files = files(logical(I));
 
 % get the training data
 % time-pts X channels X samples is data format
-neural=[];
+neural={};
 kinematics=[];
 kinematics_tid=[];
 for ii=1:length(files_train)
@@ -381,8 +392,29 @@ for ii=1:length(files_train)
     temp=new_temp;
     
     % get all the data at once
-    neural = cat(3,neural,temp);
-    kinematics_tid = cat(2,kinematics_tid,repmat(TrialData.TargetID,size(temp,2),1));
+    %neural = cat(3,neural,temp);
+    %kinematics_tid = cat(2,kinematics_tid,repmat(TrialData.TargetID,size(temp,2),1));
+
+    % get data as a cell array
+    neural{ii} = temp;
+    kinematics_tid(ii)=TrialData.TargetID;
+    %kinematics_tid{ii} = categorical(((repmat(TrialData.TargetID,1,size(temp,2)))));
+%     if TrialData.TargetID ==1
+%         tmp = repmat(categorical(cellstr('One')),1,1);
+%     elseif TrialData.TargetID ==2
+%         tmp = repmat(categorical(cellstr('Two')),1,1);
+%     elseif TrialData.TargetID ==3
+%         tmp = repmat(categorical(cellstr('Three')),1,1);
+%     elseif TrialData.TargetID ==4
+%         tmp = repmat(categorical(cellstr('Four')),1,1);
+%     elseif TrialData.TargetID ==5
+%         tmp = repmat(categorical(cellstr('Five')),1,1);
+%     elseif TrialData.TargetID ==6
+%         tmp = repmat(categorical(cellstr('Six')),1,1);
+%     end
+%    kinematics_tid{ii}=tmp;
+
+
     
 %     % get the samples for the lstm
 %     for j=1:2:size(temp,2)
@@ -395,78 +427,52 @@ for ii=1:length(files_train)
 end
 
 % train a discrete GRU
-condn_data_new = neural ;
-Y = kinematics_tid;
+condn_data_new = neural';
+Y = kinematics_tid';
 
-idx = randperm(size(condn_data_new,3),round(0.85*size(condn_data_new,3)));
-I = zeros(size(condn_data_new,3),1);
-I(idx)=1;
+% validation split
+idx = randperm(size(condn_data_new,1),round(0.8*size(condn_data_new,1)));
+I = ones(size(condn_data_new,1),1);
+I(idx)=0;
 
-XTrain={};
-XTest={};
-YTrain=[];
-YTest=[];
-for i=1:size(condn_data_new,3)
-    tmp = squeeze(condn_data_new(:,:,i));
-    if I(i)==1
-        XTrain = cat(1,XTrain,tmp');
-        YTrain = [YTrain Y(i)];
-    else
-        XTest = cat(1,XTest,tmp');
-        YTest = [YTest Y(i)];
-    end
-end
-
-% shuffle
-idx  = randperm(length(YTrain));
-XTrain = XTrain(idx);
-YTrain = YTrain(idx);
-
-YTrain = categorical(YTrain');
-YTest = categorical(YTest');
+XTrain = condn_data_new(idx);
+XTest = condn_data_new(logical(I));
+YTrain = categorical(Y(idx));
+YTest = categorical(Y(logical(I)));
 
 % specify lstm structure
 inputSize = 96;
-numHiddenUnits1 = [64];
-drop1 = [0.5];
+numHiddenUnits = [64];
+drop = [0.5];
 numClasses = 6;
-for i=1:length(drop1)
-    numHiddenUnits=numHiddenUnits1(i);
-    drop=drop1(i);
-    layers = [ ...
-        sequenceInputLayer(inputSize)
-        %bilstmLayer(numHiddenUnits,'OutputMode','sequence')
-        %dropoutLayer(drop)
-        %batchNormalizationLayer
-        gruLayer(numHiddenUnits,'OutputMode','sequence')
-        dropoutLayer(drop)
-        %batchNormalizationLayer
-        %fullyConnectedLayer(40)
-        %reluLayer
-        %dropoutLayer(.2)
-        fullyConnectedLayer(numClasses)        
-        regressionLayer];
-    
-    
-    
-    % options
-    options = trainingOptions('adam', ...
-        'MaxEpochs',30, ...
-        'MiniBatchSize',64, ...
-        'GradientThreshold',5, ...
-        'Verbose',true, ...
-        'ValidationFrequency',5,...
-        'Shuffle','every-epoch', ...
-        'ValidationData',{XTest,YTest},...
-        'ValidationPatience',6,...
-        'Plots','training-progress');
-    
-    % train the model
-    net = trainNetwork(XTrain,YTrain,layers,options);
-end
+layers = [sequenceInputLayer(inputSize)
+    gruLayer(numHiddenUnits,'OutputMode','last')    
+    dropoutLayer(drop)
+    fullyConnectedLayer(numClasses)
+    softmaxLayer
+    classificationLayer];
+
+% training options
+options = trainingOptions('adam', ...
+    'MaxEpochs',30, ...
+    'MiniBatchSize',4, ...
+    'GradientThreshold',2, ...
+    'Verbose',true, ...
+    'ValidationFrequency',4,...
+    'Shuffle','every-epoch', ...    
+    'ValidationPatience',5,...        
+    'ValidationData',{XTest,YTest},...
+    'Plots','training-progress');
+
+%
+
+% train the model
+net = trainNetwork(XTrain,YTrain,layers,options);
+
 
 % test the model out on held out trials 
 gru_dev=[];
+acc=zeros(6);
 for ii=1:length(test_files)
     load(test_files{ii})
     
@@ -502,81 +508,93 @@ for ii=1:length(test_files)
         new_temp= [new_temp pooled_data];
     end
     temp=new_temp;
-    
-   
-    % run it through GRU
-    decodes=[];
-    for j=5:size(temp,2)
-       x = temp(:,j-4:j); 
-       out = predict(net,x);
-       [aa bb]=max(out);
-       decodes=[decodes;bb];        
-    end
-    decodes = [zeros(4,1) ;decodes];    
-    
-    % collecting kinematics
-    X = kin;
-    X(end+1,:)=1;
-    Xhat1=1e-6*zeros(size(X));
-    Xhat1 = Xhat1(1:end-1,:);
-    Xhat1(:,1)=X(1:end-1,1);
-    dt=1/TrialData.Params.UpdateRate;
-    
-    % draw the trajectory        
-    for j=2:size(X,2)
-        xt  = Xhat1(:,j);
-        xtm1 = Xhat1(:,j-1);
-        bb=decodes(j);
-        if bb==1
-            v=[1;0;0];
-        elseif bb==2
-            v=[0;1;0];
-        elseif bb==3
-            v=[-1;0;0];
-        elseif bb==4
-            v=[0;-1;0];
-        elseif bb==5
-            v=[0;0;1];
-        elseif bb==6
-            v=[0;0;-1];
-        elseif bb==0
-            v=[0;0;0];
-        end
-        u=[60*v*dt ;zeros(3,1)];
-        xt = xtm1 + u;
-        Xhat1(:,j)=xt;
-    end
-    
-    %if TrialData.TargetID==6
-    figure;
-    plot3(X(1,:),X(2,:),X(3,:),'LineWidth',1)
-    hold on    
-    %plot3(Xhat(1,:),Xhat(2,:),Xhat(3,:),'LineWidth',1)
-    plot3(Xhat1(1,:),Xhat1(2,:),Xhat1(3,:),'--k','LineWidth',1)
-    title(['Target ID ' num2str(TrialData.TargetID)])
-    plot3(X(1,1),X(2,1),X(3,1),'.g','MarkerSize',50)
-    %legend({'Ground Truth','ReFit KF','Input-based Discrete',''})    
-    legend({'Ground Truth','GRU Discrete',''})    
-    set(gcf,'Color','w')
-    set(gca,'LineWidth',1)
-    xlabel('X- axis')
-    ylabel('Y- axis')
-    zlabel('Z- axis')
-    set(gca,'FontSize',14)
-    %end
-    
-    % calculate deviations
-%     a = X(1:3,:) - Xhat(1:3,:);
-%     a = mean(sqrt(sum(a.^2)));
-%     KF_dev = [KF_dev (a)];
-%     
-    
-    a = X(1:3,:) - Xhat1(1:3,:);
-    a = mean(sqrt(sum(a.^2)));
-    gru_dev = [gru_dev (a)];
+    act=predict(net,temp);
+    [aa bb]=max(act);
+    acc(bb,TrialData.TargetID)=acc(bb,TrialData.TargetID)+1;
 end
 
+for i=1:length(acc)
+    acc(i,:)=acc(i,:)./nansum(acc(i,:));
+end
 
-figure;boxplot(gru_dev)
+%    
+%     % run it through GRU
+%     decodes=[];
+%     for j=5:size(temp,2)
+%        x = temp(:,j-4:j); 
+%        out = predict(net,x);
+%        [aa bb]=max(out);
+%        decodes=[decodes;bb];        
+%     end
+%     decodes = [zeros(4,1) ;decodes];    
+%     
+%     % collecting kinematics
+%     X = kin;
+%     X(end+1,:)=1;
+%     Xhat1=1e-6*zeros(size(X));
+%     Xhat1 = Xhat1(1:end-1,:);
+%     Xhat1(:,1)=X(1:end-1,1);
+%     dt=1/TrialData.Params.UpdateRate;
+%     
+%     % draw the trajectory        
+%     for j=2:size(X,2)
+%         xt  = Xhat1(:,j);
+%         xtm1 = Xhat1(:,j-1);
+%         bb=decodes(j);
+%         if bb==1
+%             v=[1;0;0];
+%         elseif bb==2
+%             v=[0;1;0];
+%         elseif bb==3
+%             v=[-1;0;0];
+%         elseif bb==4
+%             v=[0;-1;0];
+%         elseif bb==5
+%             v=[0;0;1];
+%         elseif bb==6
+%             v=[0;0;-1];
+%         elseif bb==0
+%             v=[0;0;0];
+%         end
+%         u=[60*v*dt ;zeros(3,1)];
+%         xt = xtm1 + u;
+%         Xhat1(:,j)=xt;
+%     end
+%     
+%     %if TrialData.TargetID==6
+%     figure;
+%     plot3(X(1,:),X(2,:),X(3,:),'LineWidth',1)
+%     hold on    
+%     %plot3(Xhat(1,:),Xhat(2,:),Xhat(3,:),'LineWidth',1)
+%     plot3(Xhat1(1,:),Xhat1(2,:),Xhat1(3,:),'--k','LineWidth',1)
+%     title(['Target ID ' num2str(TrialData.TargetID)])
+%     plot3(X(1,1),X(2,1),X(3,1),'.g','MarkerSize',50)
+%     %legend({'Ground Truth','ReFit KF','Input-based Discrete',''})    
+%     legend({'Ground Truth','GRU Discrete',''})    
+%     set(gcf,'Color','w')
+%     set(gca,'LineWidth',1)
+%     xlabel('X- axis')
+%     ylabel('Y- axis')
+%     zlabel('Z- axis')
+%     set(gca,'FontSize',14)
+%     %end
+%     
+%     % calculate deviations
+% %     a = X(1:3,:) - Xhat(1:3,:);
+% %     a = mean(sqrt(sum(a.^2)));
+% %     KF_dev = [KF_dev (a)];
+% %     
+%     
+%     a = X(1:3,:) - Xhat1(1:3,:);
+%     a = mean(sqrt(sum(a.^2)));
+%     gru_dev = [gru_dev (a)];
+% end
+% 
+% 
+% figure;boxplot(gru_dev)
+
+%% USING A GRU MODEL FOR BOTH DISCRETE AND CONTINUOUS DECODING 
+
+
 
 %% ANALYSIS 2: USING IMAGINED END POINT CONTROL OF THE ROBOT HAND

@@ -332,7 +332,7 @@ for iter=1:5
     
 end
 
-acc=squeeze(nanmean(acc_overall,1));
+acc=squeeze(nanmedian(acc_overall,1));
 diag(acc)
 mean(ans)
 figure;imagesc(acc)
@@ -352,7 +352,7 @@ hline(0.1,'r')
 xticks(1:10)
 xticklabels({'Thumb','Index','Middle','Ring','Pinky','Pinch','Tripod','Power','Add','Abd'})
 box off
-ylim([0 0.6])
+ylim([0 1])
 set(gcf,'Color','w')
 
 
