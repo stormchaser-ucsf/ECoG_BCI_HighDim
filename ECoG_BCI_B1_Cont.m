@@ -3691,7 +3691,7 @@ set(gcf,'Color','w')
 set(gca,'FontSize',12)
 title('Classif. using temporal history')
 
-%% PERFORMANCE MEASURE USING MAX VOTE STRATEGY FOR DECODES
+%% PERFORMANCE MEASURE USING MAX VOTE STRATEGY FOR DECODES (MAIN)
 % on a block by block basis and also across blocks
 
 
@@ -3700,17 +3700,17 @@ clc;clear
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-foldernames = {'20220513'};
+foldernames = {'20220603'};
 cd(root_path)
 
 files=[];
 for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
-    for j=3:length(D)
+    for j=21:length(D)
         filepath=fullfile(folderpath,D((j)).name,'BCI_Fixed');
         if exist(filepath)
-            filepath
+            disp(filepath)
             files = [files;findfiles('',filepath)'];
         end
     end
@@ -3762,8 +3762,8 @@ colormap bone
 caxis([0 1])
 xticks([1:7])
 yticks([1:7])
-xticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Lips','Tong','Both middle'})
-yticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Lips','Tong','Both middle'})
+xticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Rt wrist','Tong','Both middle'})
+yticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Rt wrist','Tong','Both middle'})
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
 %title('Classif. using temporal history original action space')
@@ -3782,11 +3782,11 @@ title(['Accuracy of ' num2str(100*mean(diag(T))) '%' ' and bitrate of ' num2str(
 
 clc;clear
 
-root_path='E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-%foldernames = {'20210903'};
-foldernames = {'20210813','20210818','20210825','20210827','20210901','20210903',...
-    '20210910','20210915','20210917','20210922','20210924'};
+foldernames = {'20220601'};
+% foldernames = {'20210813','20210818','20210825','20210827','20210901','20210903',...
+%     '20210910','20210915','20210917','20210922','20210924'};
 
 
 cd(root_path)
@@ -3798,31 +3798,31 @@ for i=1:length(foldernames)
     
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
-    if i==1
-        idx = [1 2 3 4];
-        D = D(idx);
-    elseif i==2
-        idx = [1 2 3 4 6 7];
-        D = D(idx);
-    elseif i==3
-        idx = [1 2 5 6];
-        D = D(idx);
-    elseif i==6
-        idx = [1 2 3 4 5 6];
-        D = D(idx);
-    elseif i==8
-        idx = [1 2 3 4 5 6 7];
-        D = D(idx);
-    elseif i==9
-        idx = [1 2 5 6 7 9 10];
-        D = D(idx);
-    elseif i==11
-        idx = [1 2 3  5 6 9 10 11];
-        D = D(idx);
-    elseif i == 10
-        idx = [1 2 3 4 5  7 8];
-        D = D(idx);
-    end
+%     if i==1
+%         idx = [1 2 3 4];
+%         D = D(idx);
+%     elseif i==2
+%         idx = [1 2 3 4 6 7];
+%         D = D(idx);
+%     elseif i==3
+%         idx = [1 2 5 6];
+%         D = D(idx);
+%     elseif i==6
+%         idx = [1 2 3 4 5 6];
+%         D = D(idx);
+%     elseif i==8
+%         idx = [1 2 3 4 5 6 7];
+%         D = D(idx);
+%     elseif i==9
+%         idx = [1 2 5 6 7 9 10];
+%         D = D(idx);
+%     elseif i==11
+%         idx = [1 2 3  5 6 9 10 11];
+%         D = D(idx);
+%     elseif i == 10
+%         idx = [1 2 3 4 5  7 8];
+%         D = D(idx);
+%     end
     br=[];acc=[];time2target=[];
     for j=3:length(D)
         files=[];
@@ -3833,7 +3833,7 @@ for i=1:length(foldernames)
             folders=[folders;filepath];
         end
         if length(files)>0
-            [b,a,t] = compute_bitrate(files);
+            [b,a,t] = compute_bitrate(files,7);
             br = [br b];
             acc = [acc mean(a)];
             time2target = [time2target; mean(t)];
@@ -3942,7 +3942,7 @@ set(gca,'LineWidth',1)
 
 
 
-save bit_rate_discrete_PnP -v7.3
+%save bit_rate_discrete_PnP -v7.3
 
 
 %

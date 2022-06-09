@@ -1886,7 +1886,7 @@ trial_len=[];
 state1_len=[];
 for i=1:length(files)
     load(files{i})
-    if TrialData.TargetID==2
+    if TrialData.TargetID==5
         raw_data = cell2mat(TrialData.BroadbandData');
         trial_len=[trial_len;size(raw_data,1)];
         raw=[raw;raw_data];
@@ -2029,8 +2029,7 @@ for i=1:length(hg_ep)
 end
 
 figure;
-subplot(2,1,1)
-ch=106;
+ch=3;
 plot(squeeze(hg_data(:,ch,:)),'Color',[.5 .5 .5 .5])
 hold on
 plot(squeeze(mean(hg_data(:,ch,:),3)),'Color','b','LineWidth',2)
@@ -2039,14 +2038,6 @@ vline(TrialData.Params.InstructedDelayTime*1e3 + TrialData.Params.CueTime*1e3,'g
 vline(TrialData.Params.MaxReachTime*1e3 + TrialData.Params.InstructedDelayTime*1e3 ...
     +  TrialData.Params.CueTime*1e3, 'k')
 hline(0)
-hline(0)
-set(gcf,'Color','w')
-xlabel('Time in ms')
-ylabel('uV')
-title('Hg Ch 106 Left Leg')
-set(gca,'LineWidth',1)
-set(gca,'FontSize',14)
-axis tight
 
 %delta erps - take the frst 7800 time points
 delta_data=[];
@@ -2058,8 +2049,7 @@ for i=1:length(raw_ep)
     delta_data = cat(3,delta_data,tmp(1:7800,:));
 end
 
-%figure;
-subplot(2,1,2)
+figure;
 ch=106;
 plot(squeeze(delta_data(:,ch,:)),'Color',[.5 .5 .5 .5])
 hold on
@@ -2072,10 +2062,8 @@ hline(0)
 set(gcf,'Color','w')
 xlabel('Time in ms')
 ylabel('uV')
-title('Raw Ch 106 Left Leg')
-set(gca,'LineWidth',1)
-set(gca,'FontSize',14)
-axis tight
+title('Raw Ch 106 Both Middle')
+set(gca,
 
 % 
 % ch=106;

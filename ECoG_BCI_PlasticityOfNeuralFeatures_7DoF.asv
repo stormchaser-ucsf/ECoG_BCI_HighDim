@@ -318,11 +318,9 @@ addpath(genpath(pwd))
 %folders={'110604','111123','111649'};%20210615
 %folders={'134638','135318','135829'};%20210616
 %folders={'133244','133928','134357'};%20210623
-%folders={'111134','112108','112805'};%20210625
-%folders={'102546','103317','103821'};%20210804
-%folders={'103003','103828','104406'};%20210806
-folders={'135108','135915','140426'};%20210702
-day_date = '20210702';
+folders={'111134','112108','112805'};%20210625
+folders={'102546','103317','103821'};%20210804
+day_date = '20210804';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'Imagined');
@@ -340,11 +338,8 @@ end
 %folders={'112750','113117','113759'};%20210616
 %folders={'132615','133137','133748','140047','140924'};%20210714
 %folders={'113645','114239','132902','134133','142139'};%20210625
-%folders={'133255','134125','134652'};%20210804
-%folders={'105415','105859','110512'};%20210806
-folders={'141920','142120','142320', '142800','145811'};%20210702
-
-day_date = '20210702';
+folder={'133255','134125','134652'};%20210804
+day_date = '20210804';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
@@ -868,7 +863,6 @@ xlabel('Days')
 ylabel('Median Accuracy with Mode Filter')
 title('Performance of same-day trained decoder')
 hold on
-hline(1/7,'r')
 %plot(acc_lower_bound,'--k')
 %plot(acc_upper_bound,'--k')
 
