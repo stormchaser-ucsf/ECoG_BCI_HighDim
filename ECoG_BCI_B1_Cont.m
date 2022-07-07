@@ -3700,14 +3700,14 @@ clc;clear
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-foldernames = {'20220603'};
+foldernames = {'20220608'};
 cd(root_path)
 
 files=[];
 for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
-    for j=21:length(D)
+    for j=1:length(D)
         filepath=fullfile(folderpath,D((j)).name,'BCI_Fixed');
         if exist(filepath)
             disp(filepath)
@@ -3784,9 +3784,9 @@ clc;clear
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-foldernames = {'20220601'};
-% foldernames = {'20210813','20210818','20210825','20210827','20210901','20210903',...
-%     '20210910','20210915','20210917','20210922','20210924'};
+%foldernames = {'20220601'};
+ foldernames = {'20210813','20210818','20210825','20210827','20210901','20210903',...
+     '20210910','20210915','20210917','20210922','20210924'};
 
 
 cd(root_path)
@@ -6654,13 +6654,59 @@ plot(freq,10*log10(psdx))
 xlim([0 50])
 
 
+%% getting data to show artifacts for BR rep
+
+clc;clear
+close all
+
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\Testing_Blackrock_NN'))
 
 
+filename = '20220603-111209-009.ns2'
+filepath = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220603\Blackrock\20220603-111209';
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220603\Blackrock\20220603-111209')
+file = fullfile(filepath,filename);
+
+data = blackrock2mat;
+
+anin=data.anin;
+lfp=data.lfp;
+
+tt=(0:(size(lfp,1)-1))/1e3;
+figure;plot(tt,lfp(:,3))
+axis tight
+set(gcf,'Color','w')
+xlabel('Time in s')
+title('Ch 3')
+set(gca,'FontSize',14)
+
+figure;plot(lfp(:,3))
+[aa bb]=ginput
+aa=round(aa)
+
+lfp_noise = lfp(aa(1):aa(2),:);
+tt=(0:(size(lfp_noise,1)-1))/1e3;
+figure;plot(tt,lfp_noise(:,3))
+
+lfp_clean = lfp(aa(2):aa(2)+0.8e5,:);
+
+% perform a FFT on the noise part to see what is happening 
+%[psdx1,ffreq1]=fft_compute(lfp_clean(:,3),1e3,0);
+%[psdx2,ffreq2]=fft_compute(lfp_noise(:,3),1e3,0);
 
 
-
-
-
-
-
-
+X=zscore(lfp_clean(:,15));
+X1=zscore(lfp_noise(:,15));
+[Pxx,F] = pwelch(X,[],[],[],1e3);
+[Pxx1,F1] = pwelch(X1,[],[],[],1e3);
+figure;
+hold on
+plot(F,log10(Pxx),'LineWidth',1)
+plot(F1,log10(Pxx1),'LineWidth',1)
+set(gcf,'Color','w')
+xlabel('Freq')
+ylabel('Power')
+set(gca,'FontSize',14)
+%vline([60 120 180 240])
+%xlim([0 3])
+legend('Clean signal','Noisy signal')

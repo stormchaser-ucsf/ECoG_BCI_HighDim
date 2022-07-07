@@ -355,8 +355,8 @@ end
 condn_data = load_data_for_MLP(files);
 
 % build the AE based on MLP and only for hG
-%[net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
-[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
+[net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
+%[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
 
 
 % now build a classifier on the outerlayers
@@ -812,7 +812,7 @@ set(gca,'FontSize',12)
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-addpath(genpath('C:\Users\Nikhlesh\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
 load session_data
 acc_bins_ratio=[];
