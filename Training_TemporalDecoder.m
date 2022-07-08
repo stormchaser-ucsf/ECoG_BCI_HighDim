@@ -1,0 +1,279 @@
+%% GETTING THE DATA
+
+% getting the temporal data for a RNN/LSTM based decoder
+
+
+clc;clear
+
+root_path='/media/reza/WindowsDrive/BRAVO1/CursorPlatform/Data';
+
+% for only 6 DoF original:
+%foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
+
+foldernames = {'20210615','20210616','20210623','20210625','20210630','20210702',...
+    '20210707','20210716','20210728','20210804','20210806','20210813','20210818',...
+    '20210825','20210827','20210901','20210903','20210910','20210917','20210924','20210929',...
+    '20211001''20211006','20211008','20211013','20211015'};
+cd(root_path)
+
+imag_files={};
+online_files={};
+k=1;jj=1;
+for i=1:length(foldernames)
+    disp([i/length(foldernames)]);
+    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+    D=dir(folderpath);
+    if i==19 % this is 20210917
+        idx = [1 2 5:8 9:10];
+        D = D(idx);        
+    end
+    imag_files_temp=[];
+    online_files_temp=[];
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');
+        if exist(filepath)
+            imag_files_temp = [imag_files_temp;findfiles('mat',filepath)'];
+        end
+        filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        if exist(filepath1)
+            online_files_temp = [online_files_temp;findfiles('mat',filepath1)'];
+        end
+    end
+    if ~isempty(imag_files_temp)
+        imag_files{k} = imag_files_temp;k=k+1;
+    end
+    if ~isempty(online_files_temp)
+        online_files{jj} = online_files_temp;jj=jj+1;
+    end
+    %     imag_files{i} = imag_files_temp;
+    %     online_files{i} = online_files_temp;
+end
+
+% GETTING DATA FROM IMAGINED CONTROL IN THE ARROW TASK
+
+% GETTING DATA FROM ONLINE BCI CONTROL IN THE ARROW TASK
+% essentially getting 600ms epochs
+D1={};
+D2={};
+D3={};
+D4={};
+D5={};
+D6={};
+D7={};
+for i=1:length(online_files)
+    files = online_files{i};
+    disp(i/length(online_files))
+    for j=1:length(files)
+        try
+            load(files{j})
+            file_loaded = true;
+        catch
+            file_loaded=false;
+            disp(['Could not load ' files{j}]);
+        end
+        if file_loaded
+            idx = find(TrialData.TaskState==3) ;
+            raw_data = cell2mat(TrialData.BroadbandData(idx)');
+            idx1 = find(TrialData.TaskState==4) ;
+            raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
+            id = TrialData.TargetID;
+            s = size(raw_data,1);
+            data_seg={};
+            if s<800 % for really quick decisions just pad data from state 4
+                len = 800-s;
+                tmp = raw_data4(1:len,:);
+                raw_data = [raw_data;tmp];
+                data_seg = raw_data;
+            elseif s>800 && s<1000 % if not so quick, prune to data to 600ms
+                raw_data = raw_data(1:800,:);
+                data_seg = raw_data;
+            elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
+                bins =1:400:s;
+                raw_data = [raw_data;raw_data4];
+                for k=1:length(bins)-1
+                    tmp = raw_data(bins(k)+[0:799],:);
+                    data_seg = cat(2,data_seg,tmp);
+                end
+            end
+            
+            if id==1
+                D1 = cat(2,D1,data_seg);
+            elseif id==2
+                D2 = cat(2,D2,data_seg);
+            elseif id==3
+                D3 = cat(2,D3,data_seg);
+            elseif id==4
+                D4 = cat(2,D4,data_seg);
+            elseif id==5
+                D5 = cat(2,D5,data_seg);
+            elseif id==6
+                D6 = cat(2,D6,data_seg);
+            elseif id==7
+                D7 = cat(2,D7,data_seg);
+            end
+        end
+    end
+    
+end
+
+
+condn_data{1} = D1;
+condn_data{2} = D2;
+condn_data{3} = D3;
+condn_data{4} = D4;
+condn_data{5} = D5;
+condn_data{6} = D6;
+condn_data{7} = D7;
+
+condn_data_new=[];
+Y=[];
+for i=1:length(condn_data)
+    disp(i)
+    tmp=condn_data{i};
+    for j=1:length(tmp)
+        condn_data_new=cat(3,condn_data_new,tmp{j});
+        Y = [Y;i];
+    end
+end
+
+save condn_data Y temporal_condn_data_7DoF_900ms -v7.3
+
+
+
+%% TRAINING THE MODEL
+clc;clear
+
+root_path='/home/reza/Documents/MATLAB/HighDimECoG_Paper';
+cd(root_path)
+load temporal_condn_data_7DoF
+
+load('/media/reza/WindowsDrive/BRAVO1/CursorPlatform/Data/20210924/Robot3DArrow/110034/BCI_Fixed/Data0002.mat')
+chmap = TrialData.Params.ChMap;
+
+% filter and downsample the data, with spatial smoothing
+% keep hG envelope as well as LFO activity
+
+bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',70,'HalfPowerFrequency2',150, ...
+    'SampleRate',1e3);
+bpFilt2 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',0.5,'HalfPowerFrequency2',12, ...
+    'SampleRate',1e3);
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',30,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+fvtool(lpFilt)
+    
+condn_data =  squeeze(condn_data);
+condn_data_new=[];
+for ii=1:size(condn_data,3)
+    disp(ii)
+    
+    tmp = squeeze(condn_data(:,:,ii));
+    % filter the data
+    tmp_hg = abs(hilbert(filter(bpFilt,tmp)));
+    tmp_lp = filter(lpFilt,tmp);
+    
+    % get lfo of hg
+    m=mean(tmp_hg);
+    tmp_hg = filter(bpFilt2,tmp_hg)+m;
+    
+    % downsample the data
+    tmp_lp = resample(tmp_lp,150,600);
+    tmp_hg = resample(tmp_hg,150,600);
+    
+    % spatial pool
+    tmp_lp = spatial_pool(tmp_lp,TrialData);
+    tmp_hg = spatial_pool(tmp_hg,TrialData);
+    
+    % make new data structure 
+    tmp = [tmp_hg tmp_lp]; 
+   
+    % store
+    condn_data_new(:,:,ii) = tmp;
+end
+
+save downsampled_lstm_data_below12Hz_hg condn_data_new -v7.3
+
+
+% set aside training and testing data in a cell format
+%clear condn_data
+idx = randperm(size(condn_data_new,3),round(0.9*size(condn_data_new,3)));
+I = zeros(size(condn_data_new,3),1);
+I(idx)=1;
+
+XTrain={};
+XTest={};
+YTrain=[];
+YTest=[];
+for i=1:size(condn_data_new,3)    
+    tmp = squeeze(condn_data_new(:,:,i));
+    %tmp = tmp - mean(tmp);
+    if I(i)==1
+        XTrain = cat(1,XTrain,tmp');
+        YTrain = [YTrain Y(i)];
+    else
+        XTest = cat(1,XTest,tmp');
+        YTest = [YTest Y(i)];
+    end    
+end
+
+% shuffle
+idx  = randperm(length(YTrain));
+XTrain = XTrain(idx);
+YTrain = YTrain(idx);
+
+YTrain = categorical(YTrain');
+YTest = categorical(YTest');
+
+
+% specify lstm structure
+inputSize = 64;
+numHiddenUnits = 50;
+numClasses = 7;
+
+layers = [ ...
+    sequenceInputLayer(inputSize)
+    bilstmLayer(numHiddenUnits)    
+    bilstmLayer(numHiddenUnits,'OutputMode','last')
+    batchNormalizationLayer
+    fullyConnectedLayer(36)
+    sigmoidLayer
+    dropoutLayer(.5)
+    fullyConnectedLayer(numClasses)
+    softmaxLayer
+    classificationLayer];
+
+
+
+% options
+options = trainingOptions('adam', ...
+    'MaxEpochs',20, ...
+    'MiniBatchSize',64, ...
+    'GradientThreshold',10, ...
+    'Verbose',true, ...
+    'ValidationFrequency',70,...
+    'ValidationData',{XTest,YTest},...
+    'Plots','training-progress');
+
+% train the model
+net = trainNetwork(XTrain,YTrain,layers,options);
+
+
+% test the model performance on a held out day
+
+
+
+
+%'ValidationData',{XTest,YTest},...
+options = trainingOptions('adam', ...
+    'InitialLearnRate',0.01, ...
+    'MaxEpochs',20, ...
+    'Shuffle','every-epoch', ...
+    'Verbose',true, ...
+    'Plots','training-progress',...
+    'MiniBatchSize',96,...
+    'ValidationFrequency',30,...
+    'L2Regularization',1e-4,...
+    'ValidationData',{XTest,YTest},...
+    'ExecutionEnvironment','auto');

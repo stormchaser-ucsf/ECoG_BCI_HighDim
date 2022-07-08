@@ -1,0 +1,242 @@
+
+clc;clear
+% enter the root path from the Data folder
+
+
+dates = {'20210615','20210616','20210623','20210625','20210630','20210702','20210707',...
+    '20210709','20210714','20210716','20210728','20210804','20210806','20210813',...
+    '20210818','20210825','20210827','20210901','20210903','20210910','20210915',...
+    '20210922','20210924','20210929','20211001','20211006','20210917'};
+%20210917 has issues with the way the order of targets were flipped, need
+%to manually input the correct folders for this particular date 
+
+
+root_path = '/media/reza/WindowsDrive/BRAVO1/CursorPlatform/Data';
+
+cd(root_path)
+
+%FOR IMAGINED MOVEMENT DATA, 
+D1i=[];
+D2i=[];
+D3i=[];
+D4i=[];
+D5i=[];
+D6i=[];
+D7i=[];
+for ii=1:length(dates)
+    disp(ii/length(dates))
+    
+    folderpath = fullfile(root_path, dates{ii},'Robot3DArrow');
+    tmp = findfiles('mat',folderpath,1)';
+    files=[];
+    for i=1:length(tmp)
+        if regexp(tmp{i},'Imagined')
+            files=[files;tmp(i)];
+        end
+    end
+    
+    % now load the data
+    for j=1:length(files)
+        
+        load(files{j})
+        features  = TrialData.SmoothedNeuralFeatures;
+        kinax = [ find(TrialData.TaskState==3)];
+        temp = cell2mat(features(kinax));        
+        
+        % get the pooled data
+        new_temp=[];
+        [xx yy] = size(TrialData.Params.ChMap);
+        for k=1:size(temp,2)
+            tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+            tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+            tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+            pooled_data=[];
+            for i=1:2:xx
+                for j=1:2:yy
+                    delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                    beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                    hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                    pooled_data = [pooled_data; delta; beta ;hg];
+                end
+            end
+            new_temp= [new_temp pooled_data];
+        end
+        temp=new_temp;       
+        
+        if TrialData.TargetID == 1
+            D1i = [D1i temp];
+        elseif TrialData.TargetID == 2
+            D2i = [D2i temp];
+        elseif TrialData.TargetID == 3
+            D3i = [D3i temp];
+        elseif TrialData.TargetID == 4
+            D4i = [D4i temp];
+        elseif TrialData.TargetID == 5
+            D5i = [D5i temp];
+        elseif TrialData.TargetID == 6
+            D6i = [D6i temp];
+        elseif TrialData.TargetID == 7
+            D7i = [D7i temp];
+        end
+    end
+end
+
+
+D1=[];
+D2=[];
+D3=[];
+D4=[];
+D5=[];
+D6=[];
+D7=[];
+% get the online data  
+for ii=1:length(dates)
+    disp(ii/length(dates))
+    
+    if ii==length(dates)
+        folderpath = fullfile(root_path, dates{ii},'Robot3DArrow');
+        files=[];
+        D=dir(folderpath);
+        idx=[5:10];
+        D = D(idx);
+        for i=1:length(D)
+           tmp = findfiles('mat',fullfile(folderpath,D(i).name) )';
+           files=[files;tmp];            
+        end
+    
+    else
+        folderpath = fullfile(root_path, dates{ii},'Robot3DArrow');
+        tmp = findfiles('mat',folderpath,1)';
+        files=[];
+        for i=1:length(tmp)
+            if regexp(tmp{i},'BCI_Fixed')
+                files=[files;tmp(i)];
+            end
+        end
+    end
+    
+    for j=1:length(files)
+        
+        load(files{j})
+        features  = TrialData.SmoothedNeuralFeatures;
+        kinax = [ find(TrialData.TaskState==3)];
+        temp = cell2mat(features(kinax));
+        
+        
+        % get the pooled data
+        new_temp=[];
+        [xx yy] = size(TrialData.Params.ChMap);
+        for k=1:size(temp,2)
+            tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+            tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+            tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+            pooled_data=[];
+            for i=1:2:xx
+                for j=1:2:yy
+                    delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                    beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                    hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                    pooled_data = [pooled_data; delta; beta ;hg];
+                end
+            end
+            new_temp= [new_temp pooled_data];
+        end
+        temp=new_temp;
+        
+        
+        if TrialData.TargetID == 1
+            D1 = [D1 temp];
+        elseif TrialData.TargetID == 2
+            D2 = [D2 temp];
+        elseif TrialData.TargetID == 3
+            D3 = [D3 temp];
+        elseif TrialData.TargetID == 4
+            D4 = [D4 temp];
+        elseif TrialData.TargetID == 5
+            D5 = [D5 temp];
+        elseif TrialData.TargetID == 6
+            D6 = [D6 temp];
+        elseif TrialData.TargetID == 7
+            D7 = [D7 temp];
+        end
+    end
+end
+
+cd
+save 7DoF_Data_Training D1 D2 D3 D4 D5 D6 D7 D1i D2i D3i D4i D5i D6i D7i -v7.3
+
+
+clear condn_data
+% combing delta beta and high gamma
+idx=[1:size(D1,1)];
+condn_data{1}=[D1i(idx,:) D1(idx,:) ]'; 
+condn_data{2}= [D2i(idx,:) D2(idx,:)]'; 
+condn_data{3}=[D3i(idx,:) D3(idx,:)]'; 
+condn_data{4}=[D4i(idx,:) D4(idx,:)]'; 
+condn_data{5}=[D5i(idx,:) D5(idx,:)]'; 
+condn_data{6}=[D6i(idx,:) D6(idx,:)]'; 
+condn_data{7}=[D7i(idx,:) D7(idx,:)]'; 
+
+A = condn_data{1};
+B = condn_data{2};
+C = condn_data{3};
+D = condn_data{4};
+E = condn_data{5};
+F = condn_data{6};
+G = condn_data{7};
+
+clear N
+N = [A' B' C' D' E' F' G'];
+T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
+    5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1)];
+
+T = zeros(size(T1,1),7);
+[aa bb]=find(T1==1);
+T(aa(1):aa(end),1)=1;
+[aa bb]=find(T1==2);
+T(aa(1):aa(end),2)=1;
+[aa bb]=find(T1==3);
+T(aa(1):aa(end),3)=1;
+[aa bb]=find(T1==4);
+T(aa(1):aa(end),4)=1;
+[aa bb]=find(T1==5);
+T(aa(1):aa(end),5)=1;
+[aa bb]=find(T1==6);
+T(aa(1):aa(end),6)=1;
+[aa bb]=find(T1==7);
+T(aa(1):aa(end),7)=1;
+
+
+%%%%% CODE SNIPPET FOR UPDATING A PRETRAINED DECODER %%%%%
+% USE 2 BLOCKS OF ONLINE DAA, EACH BLOCK WITH 21 TRIALS %%%
+cd('/home/ucsf/Projects/bci/clicker')
+load pretrain_net
+% load pretrain_net_mlp % NEW PNP DECODER FOR BATCH UPDATE
+
+pretrain_net = patternnet([64 64 64]) ;
+pretrain_net.divideParam.trainRatio=0.8;
+pretrain_net.divideParam.valRatio=0.1;
+pretrain_net.divideParam.testRatio=0.1;
+pretrain_net = train(pretrain_net,N,T','useParallel','yes');
+classifier_name = 'MLP_PreTrained_7DoF_Days1to11_924pm2'; % enter the name
+genFunction(pretrain_net,classifier_name); % make sure to update GetParams
+
+
+%%%%%%% CODE SNIPPET FOR TRAINING A MODEL FROM SCRATCH %%%%%
+% training a simple MLP
+% IMPORTANT, CLICK THE CONFUSION MATRIX BUTTON IN GUI TO VERIFY THAT THE
+% TEST VALIDATION DOESN'T HAVE NaNs AND THAT PERFORMANCE IS REASONABLE
+ clear net
+ net = patternnet([64 64 64]) ;
+ net.performParam.regularization=0.2;
+
+% cd('/home/ucsf/Projects/bci/clicker')
+% load net net
+% 
+ net = train(net,N,T');
+% 
+
+
+
+
+

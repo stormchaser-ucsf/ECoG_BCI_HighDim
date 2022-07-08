@@ -1916,6 +1916,7 @@ for i=1:length(imagined_files)
     
     if file_loaded
         action = TrialData.TargetID;
+        %disp(action)
 
         % find the bins when state 3 happened and then extract each
         % individual cycle (2.6s length) as a trial
@@ -1947,23 +1948,37 @@ for i=1:length(imagined_files)
         
 
         % get corresponding neural times indices
-        neural_time  = TrialData.NeuralTime;
-        neural_time = neural_time-neural_time(1);
-        neural_st=[];
-        neural_stp=[];
-        for j=1:length(start_time)
-            [aa bb]=min(abs(neural_time-start_time(j)));
-            neural_st = [neural_st; bb];
-            [aa bb]=min(abs(neural_time-stp_time(j)));
-            neural_stp = [neural_stp; bb-1];
-        end
+%         neural_time  = TrialData.NeuralTime;
+%         neural_time = neural_time-neural_time(1);
+%         neural_st=[];
+%         neural_stp=[];
+%         st_time_neural=[];
+%         stp_time_neural=[];
+%         for j=1:length(start_time)
+%             [aa bb]=min(abs(neural_time-start_time(j)));
+%             neural_st = [neural_st; bb];
+%             st_time_neural = [st_time_neural;neural_time(bb)];
+%             [aa bb]=min(abs(neural_time-stp_time(j)));
+%             neural_stp = [neural_stp; bb-1];
+%             stp_time_neural = [stp_time_neural;neural_time(bb)];
+%         end
 
         % get the broadband data for each trial
-        raw_data=TrialData.BroadbandData;
+        raw_data=cell2mat(TrialData.BroadbandData');
+
+        % extract the broadband data (Fs-1KhZ) based on rough estimate of
+        % the start and stop times from the kinematic data
+        start_time_neural = round(start_time*1e3);
+        stop_time_neural = round(stp_time*1e3);
         data_seg={};
-        for j=1:length(neural_st)
-            tmp = cell2mat(raw_data(neural_st(j):neural_stp(j))');            
-            data_seg = cat(2,data_seg,tmp);
+        for j=1:length(start_time_neural)
+            tmp = (raw_data(start_time_neural(j):stop_time_neural(j),:));   
+            tmp=tmp(1:round(size(tmp,1)/2),:);
+            % pca step
+            %m=mean(tmp);
+            %[c,s,l]=pca(tmp,'centered','off');
+            %tmp = (s(:,1)*c(:,1)')+m;
+            data_seg = cat(2,data_seg,tmp);            
         end
         
         if action==1
@@ -2000,22 +2015,325 @@ end
 
 
 %%%%% looking at PCA 
-% take any action
-temp=cell2mat(D11i');
+%take any action
+figure;
+subplot(2,7,1)
+temp=cell2mat(D1i');
 [c,s,l]=pca(temp);
 chmap=TrialData.Params.ChMap;
 tmp=c(:,1);
-figure;imagesc(tmp(chmap))
-title('First PC spatial layout')
+imagesc(tmp(chmap))
+title('Thumb')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,2)
+temp=cell2mat(D2i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Index')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,3)
+temp=cell2mat(D3i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Middle')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,4)
+temp=cell2mat(D4i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Ring')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,5)
+temp=cell2mat(D5i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Pinky')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,6)
+temp=cell2mat(D6i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Power')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,7)
+temp=cell2mat(D7i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Pinch')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,8)
+temp=cell2mat(D8i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Tripod')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,9)
+temp=cell2mat(D9i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Wrist')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,10)
+temp=cell2mat(D10i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Middle')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,3)
+temp=cell2mat(D3i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Middle')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,3)
+temp=cell2mat(D3i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Middle')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,3)
+temp=cell2mat(D3i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Middle')
+axis off
+set(gcf,'Color','w')
+
+subplot(2,7,3)
+temp=cell2mat(D3i');
+[c,s,l]=pca(temp);
+chmap=TrialData.Params.ChMap;
+tmp=c(:,1);
+imagesc(tmp(chmap))
+title('Middle')
+axis off
+set(gcf,'Color','w')
+
+
 
 %%%% downsampling extracting hG and LMP and then running it through a bi-GRU
 
+Y=[];
+condn_data_new=[];jj=1;
+load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20211001\Robot3DArrow\103931\BCI_Fixed\Data0001.mat')
+chmap = TrialData.Params.ChMap;
+
+% log spaced hg filters
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30]; % LFP
+Params.FilterBank(end+1).fpass = [4,8]; % theta
+%Params.FilterBank(end+1).fpass = [13,19]; % beta1
+%Params.FilterBank(end+1).fpass = [19,30]; % beta2
+%Params.FilterBank(end+1).fpass = [70,150]; % raw_hg
+
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+
+% process and store the data in a giant structure, with single trials 
+Data={};
+Y=[];
+
+%%%% D1%%%%%%%
+Y = [Y; 1*ones(length(D1i),1)];
+for ii=1:length(D1i)
+    disp(ii)
+    
+    tmp = D1i{ii};
+    tmp_processed = preprocess_bilstm(tmp,Params);    
+    
+    % store
+    Data = cat(2,Data,tmp_processed');
+end
+%%%% D1 END %%%%
+
+
+%%%% D2%%%%%%%
+Y = [Y; 2*ones(length(D2i),1)];
+for ii=1:length(D2i)
+    disp(ii)
+    
+    tmp = D2i{ii};
+    tmp_processed = preprocess_bilstm(tmp,Params);    
+    
+    % store
+    Data = cat(2,Data,tmp_processed');
+end
+%%%% D2 END %%%%
+
+%%%% D3%%%%%%%
+Y = [Y; 3*ones(length(D3i),1)];
+for ii=1:length(D3i)
+    disp(ii)
+    
+    tmp = D3i{ii};
+    tmp_processed = preprocess_bilstm(tmp,Params);    
+    
+    % store
+    Data = cat(2,Data,tmp_processed');
+end
+%%%% D3 END %%%%
+
+%%%% D4%%%%%%%
+Y = [Y; 4*ones(length(D4i),1)];
+for ii=1:length(D4i)
+    disp(ii)
+    
+    tmp = D4i{ii};
+    tmp_processed = preprocess_bilstm(tmp,Params);    
+    
+    % store
+    Data = cat(2,Data,tmp_processed');
+end
+%%%% D4 END %%%%
+
+
+%%%% D5%%%%%%%
+Y = [Y; 5*ones(length(D5i),1)];
+for ii=1:length(D5i)
+    disp(ii)
+    
+    tmp = D5i{ii};
+    tmp_processed = preprocess_bilstm(tmp,Params);    
+    
+    % store
+    Data = cat(2,Data,tmp_processed');
+end
+%%%% D5 END %%%%
+
+
+
+% set aside training and testing data in a cell format
+idx = randperm(length(Data),round(0.8*length(Data)));
+I = zeros(length(Data),1);
+I(idx)=1;
+test_idx = find(I==0);
+
+XTrain={};
+XTest={};
+YTrain=[];
+YTest=[];
+
+XTrain  = Data(logical(I))';
+YTrain = categorical(Y(logical(I)));
+XTest = Data(test_idx)';
+YTest = categorical(Y(test_idx));
+
+% specify lstm structure
+inputSize = 256;
+numHiddenUnits1 = [  96 128 150 200 325];
+drop1 = [ 0.3 0.3 0.3  0.4 0.4];
+numClasses = 5;
+for i=1%1:length(drop1)
+    numHiddenUnits=numHiddenUnits1(i);
+    drop=drop1(i);
+    layers = [        
+        sequenceInputLayer(inputSize)        
+        %convolution1dLayer(5,128,'Stride',3)
+        %reluLayer
+        bilstmLayer(numHiddenUnits,'OutputMode','sequence')
+        %dropoutLayer(drop)
+        gruLayer(numHiddenUnits,'OutputMode','last')
+        dropoutLayer(drop)
+        fullyConnectedLayer(numClasses)
+        softmaxLayer
+        classificationLayer];
+    
+    
+    
+    % options
+    options = trainingOptions('adam', ...
+        'MaxEpochs',200, ...
+        'MiniBatchSize',32, ...
+        'GradientThreshold',5, ...
+        'Verbose',true, ...
+        'ValidationFrequency',32,...
+        'Shuffle','every-epoch', ...
+        'ValidationData',{XTest,YTest},...
+        'ValidationPatience',50,...
+        'Plots','training-progress');
+    
+    % train the model
+    net = trainNetwork(XTrain,YTrain,layers,options);
+end
 
 
 
 
-
-
+% 
+% 
+% % movie of theta activity after filtering in theta band
+% chmap = TrialData.Params.ChMap;
+% figure;
+% tmp_theta=Data{158}';
+% for i=1:size(tmp_theta,1)
+%     t  = tmp_theta(i,:);
+%     imagesc(t(chmap));
+%     colormap bone
+%     title(num2str(i))
+%     pause(0.05)    
+% end
+% 
 
 
 
