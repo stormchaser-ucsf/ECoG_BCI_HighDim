@@ -40,8 +40,8 @@ layers = [net.Layers(1:5)
     
 
 % get the data at the bottlneck layer
-% X=N;
-% X=X(1:32,:);
+ X=N;
+ X=X(1:32,:);
 % X = activations(net,X','autoencoder');
 
 

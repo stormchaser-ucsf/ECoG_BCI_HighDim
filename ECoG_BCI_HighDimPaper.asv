@@ -1255,8 +1255,8 @@ for i=1:length(files)
     load(files{i});
     features  = TrialData.NeuralFeatures;
     features = cell2mat(features);
-    %features = features(129:256,:); % delta
-    features = features(769:end,:); % hG
+    features = features(129:256,:); % delta
+    %features = features(769:end,:); % hG
     %features = features(513:640,:); %beta
 
     if size(features,2)>60
@@ -1323,8 +1323,7 @@ data1 = s(:,2:end)*c(:,2:end)';
 chmap=TrialData.Params.ChMap;
 %hand_elec=[97 100 115 116 103 106 25 31 26 3 9 27];
 hand_elec=[97 100 115 116 103 106 25 31 26 3 9 27];
-%hand_elec =[22	5	20 111	122	117 105	120	107]; %pmv
-hand_elec=[99	101	121	127	105	120];%pmd
+hand_elec = [
 % get the average activity for each imagined action with C.I.
 roi_mean=[];
 roi_dist_mean=[];
@@ -1335,8 +1334,8 @@ for i=1:length(ImaginedMvmt)
     disp(i)
     data = ERP_Data{i};
     data = data(hand_elec,idx,:);
-    %data = squeeze(mean(data,1)); % channels
-    %data = squeeze(mean(data,1)); % time
+    data = squeeze(mean(data,1)); % channels
+    data = squeeze(mean(data,1)); % time
     data = data(:);
     roi_mean(i) = mean(data);
     roi_dist_mean(:,i) = sort(bootstrp(1000,@mean,data));
@@ -1355,20 +1354,19 @@ set(gcf,'Color','w')
 title('Hand Knob activation')
 
 % plotting the avergaed activity on the brain
-data = ERP_Data{28};
+data = ERP_Data{8};
 idx=find(task_state==3);
 data=squeeze(mean(data,3));
 data = mean(data(:,idx),2);
 chmap=TrialData.Params.ChMap;
 figure;imagesc(data(chmap))
-%caxis([-2 2])
-caxis([-0.4 0.2])
+caxis([-2 2])
 
 % plotting hand knob channels on brian 
 figure;
 c_h = ctmr_gauss_plot(cortex,[0 0 0],...
     0,'lh');set(gcf,'Color','w')
-hand_elec_brain=[3	4	5	6	7	8];
+hand_elec_brain=[14:16 30:32 46:48];
 e_h1 = el_add(elecmatrix(:,:), 'color', [1 1 1],'msize',2);
 e_h1 = el_add(elecmatrix((hand_elec_brain),:), 'color', [1 0 0],'msize',6);
 

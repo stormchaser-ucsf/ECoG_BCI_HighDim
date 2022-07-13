@@ -250,7 +250,7 @@ session_data(6).AM_PM = {'pm','pm','pm','pm','pm','pm','pm','pm'};
 % day 7
 session_data(7).Day = '20210707';
 session_data(7).folders={'103731','104916','105644','110518','111026','132803',...
-'133525','134019','135008'};
+    '133525','134019','135008'};
 session_data(7).folder_type={'I','I','I','O','B','I','I','I','O'};
 session_data(7).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm'};
 
@@ -266,12 +266,12 @@ session_data(8).folders={'101741','102514','103106','104621','132615','133137','
     '140047','140924','141733','142605','143752','145541','150310'};
 session_data(8).folder_type={'I','I','I','O','B','B','B','B','B','I','I','O','O','O'};
 session_data(8).AM_PM = {'am','am','am','am','pm','pm','pm','pm','pm','pm','pm',...
-   'pm','pm','pm'};
+    'pm','pm','pm'};
 
 % day 9
 session_data(9).Day = '20210716';
 session_data(9).folders={'102008','102726','103214','104134','104745','133339',...
-'133908','134306','134936'};
+    '133908','134306','134936'};
 session_data(9).folder_type={'I','I','I','O','B','B','B','I','O'};
 session_data(9).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm'};
 
@@ -285,14 +285,14 @@ session_data(10).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
 % day 11
 session_data(11).Day = '20210804';
 session_data(11).folders={'102546','103317','103821','104809','105403','133255','134125',...
-'134652'};
+    '134652'};
 session_data(11).folder_type={'I','I','I','O','B','B','B','B'};
 session_data(11).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
 
 %day 12
 session_data(11).Day = '20210806';
 session_data(11).folders={'103003','103828','104406','105415','105859','110512','134206',...
-'134915','140110','140536','141223'};
+    '134915','140110','140536','141223'};
 session_data(11).folder_type={'I','I','I','O','O','B','B','B','B','B','B'};
 session_data(11).AM_PM = {'am','am','am','am','am','am','pm','pm','pm','pm','pm'};
 
@@ -318,9 +318,11 @@ addpath(genpath(pwd))
 %folders={'110604','111123','111649'};%20210615
 %folders={'134638','135318','135829'};%20210616
 %folders={'133244','133928','134357'};%20210623
-folders={'111134','112108','112805'};%20210625
-folders={'102546','103317','103821'};%20210804
-day_date = '20210804';
+%folders={'111134','112108','112805'};%20210625
+%folders={'102546','103317','103821'};%20210804
+%folders={'103003','103828','104406'};%20210806
+folders={'135108','135915','140426'};%20210702
+day_date = '20210702';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'Imagined');
@@ -338,8 +340,11 @@ end
 %folders={'112750','113117','113759'};%20210616
 %folders={'132615','133137','133748','140047','140924'};%20210714
 %folders={'113645','114239','132902','134133','142139'};%20210625
-folder={'133255','134125','134652'};%20210804
-day_date = '20210804';
+%folders={'133255','134125','134652'};%20210804
+%folders={'105415','105859','110512'};%20210806
+folders={'141920','142120','142320', '142800','145811'};%20210702
+
+day_date = '20210702';
 files=[];
 for i=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
@@ -359,7 +364,7 @@ condn_data = load_data_for_MLP(files);
 % get activations in deepest layer but averaged over a trial
 TrialZ=[];
 idx=[];
-imag=1;
+imag=0;
 for i=1:length(files)
     disp(i)
     file_loaded=1;
@@ -379,17 +384,18 @@ for i=1:length(files)
         temp = cell2mat(features(kinax));
         chmap = TrialData.Params.ChMap;
         X = bci_pooling(temp,chmap);
-        
+
         %2-norm the data
         for j=1:size(X,2)
             X(:,j)=X(:,j)./norm(X(:,j));
         end
-        
+
         % feed it through the AE
-        X = X(65:96,:);
+        X = X(1:96,:);
         Z = activations(net,X','autoencoder');
         if imag==0
             if TrialData.SelectedTargetID == TrialData.TargetID
+                %Z = Z(:,end-4:end);
                 TrialZ = [TrialZ Z];
                 idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
                 %Z = mean(Z,2);
@@ -454,6 +460,7 @@ set(gca,'LineWidth',1)
 set(gca,'FontSize',12)
 
 [h p tb st]=ttest(dist_imagined,dist_online)
+mean([dist_imagined' dist_online'])
 
 
 
@@ -540,29 +547,29 @@ for i=1:length(files)
         temp = cell2mat(features(kinax));
         chmap = TrialData.Params.ChMap;
         X = bci_pooling(temp,chmap);
-        
+
         %2-norm the data
         for j=1:size(X,2)
             X(:,j)=X(:,j)./norm(X(:,j));
         end
-        
+
         %feed it through the AE
         X = X(1:32,:);
         Z = activations(net,X','autoencoder');
-        
+
         % store
-        
-        
+
+
         % pass it next through softmax layer
-%         if batch==0
-%             Z = activations(net1,Z','Classif');
-%         else
-%             Z = activations(net2,Z','Classif');
-%         end
-        
+        %         if batch==0
+        %             Z = activations(net1,Z','Classif');
+        %         else
+        %             Z = activations(net2,Z','Classif');
+        %         end
+
         % straight pass thru softmax layer
         %Z=activations(net1,X','Classif');
-        
+
         if imag==0
             if TrialData.SelectedTargetID == TrialData.TargetID
                 TrialZ = [TrialZ Z];
@@ -718,12 +725,12 @@ for i=1:length(files)
         temp = cell2mat(features(kinax));
         chmap = TrialData.Params.ChMap;
         X = bci_pooling(temp,chmap);
-        
+
         %2-norm the data
         for j=1:size(X,2)
             X(:,j)=X(:,j)./norm(X(:,j));
         end
-        
+
         % feed it through the AE
         X = X(65:96,:);
         %X = X(1:96,:);
@@ -801,13 +808,109 @@ set(gca,'FontSize',12)
 [h p tb st]=ttest(dist_imagined,dist_online)
 
 
+%% PUTTING IT ALL TOGETHER IN TERMS OF BUILDING THE AE
+
+clc;clear
+close all
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+load session_data
+dist_online_total=[];
+dist_imag_total=[];
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    if i~=6
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_imag(folders_am==0)=0;
+        folders_online(folders_am==0)=0;
+    end
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+
+    %%%%%%imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %load the data
+    condn_data = load_data_for_MLP(files);
+
+    % build the AE based on MLP and only for hG
+    %[net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
+    [net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
+
+    % get activations in deepest layer but averaged over a trial        
+    imag=1;
+    [TrialZ_imag,dist_imagined] = get_latent(files,net,imag);
+    dist_imag_total = [dist_imag_total;dist_imagined];
+
+    %%%%%%online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for i=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+   
+
+    %load the data
+    condn_data = load_data_for_MLP(files);
+    
+    % get activations in deepest layer 
+    imag=0;
+    [TrialZ_online,dist_online] = get_latent(files,net,imag);
+    dist_online_total = [dist_online_total;dist_online];
+
+%      plot
+% 
+%     figure;boxplot([dist_imagined' dist_online'])
+%     box off
+%     set(gcf,'Color','w')
+%     xticks(1:2)
+%     xticklabels({'Imagined Data','Online Data'})
+%     ylabel('Distance')
+%     title('Inter-class distances')
+%     set(gca,'LineWidth',1)
+%     set(gca,'FontSize',12)
+
+    [h p tb st]=ttest(dist_imagined,dist_online);
+    disp([p mean([dist_imagined' dist_online'])]);
+end
+
+figure;
+plot(mean(dist_online_total'))
+set(gcf,'Color','w')
+title('Across Day Learning')
+ylabel('Mahalanobis Dist.')
+xlabel('Day')
+xlim([0.5 11.5])
+tmp = mean(dist_online_total');
+figure;
+tmp1 = tmp(1:4);
+tmp2 = tmp(5:end);
+tmp1(end+1:length(tmp2))=NaN;
+boxplot([tmp1' tmp2'])
+xticklabels({'Early Days','Late Days'})
+ylabel('Mahalanobis Dist')
+title('Across Day Lea
+
+
 %% getting the proportion of correct bins within a session
 % goal here is to see if there is learning i.e. the ratio of correct
 % bins increases daily
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-addpath(genpath('C:\Users\Nikhlesh\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
 load session_data
 acc_bins_ratio=[];
@@ -841,10 +944,10 @@ for i=1:length(session_data)
         folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
         files = [files;findfiles('',folderpath)'];
     end
-    
+
     %ratio of correct bins to total bins in online data
     res = ratio_correct_bins(files);
-    acc_bins_ratio(i) = median(res.data);   
+    acc_bins_ratio(i) = median(res.data);
     bb=sort(bootstrp(1000,@median,res.data));
     acc_lower_bound(i)=bb(25);
     acc_upper_bound(i)=bb(975);
@@ -863,11 +966,23 @@ xlabel('Days')
 ylabel('Median Accuracy with Mode Filter')
 title('Performance of same-day trained decoder')
 hold on
+hline(1/7,'r')
 %plot(acc_lower_bound,'--k')
 %plot(acc_upper_bound,'--k')
 
+% even when using the mean accuracy, the later days have sig. more accuracy
+% than the earlier days in the online task
+figure;boxplot([acc_bins_ratio(1:4)' acc_bins_ratio(end-3:end)'])
 
+% can one visualize this in latent space? I.e., the variability in latent
+% space has to be reducing in later days as compared to early days.
 
+% build AE for early days on imagined, feed in online, all bins, color code
+% by incorrect bins, get variance and mahab distance. Then do same for
+% later days and get variance of clouds and mahab distance between imagined
+% actions.
+
+% first four days: build AE on imagined, then feed in data from online
 
 
 

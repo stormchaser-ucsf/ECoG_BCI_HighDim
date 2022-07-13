@@ -2,8 +2,8 @@
 
 
 dirn=pwd;
-addpath('C:\Users\Nikhlesh\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
-cd('C:\Users\Nikhlesh\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
+addpath('C:\Users\nikic\OneDrive\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
+cd('C:\Users\nikic\OneDrive\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
 load('BRAVO1_lh_pial')
 load('BRAVO1_elecs_all')
 

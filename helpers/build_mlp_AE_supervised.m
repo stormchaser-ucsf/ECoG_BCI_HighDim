@@ -3,10 +3,10 @@ function [net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data)
 
 
 
-idx = [1:32];
+idx = [1:96];
 for i=1:length(condn_data)
    tmp = condn_data{i};
-   tmp=tmp(:,1:32);
+   tmp=tmp(:,1:96);
    condn_data{i}=tmp;    
 end
 
@@ -55,14 +55,14 @@ T(aa(1):aa(end),7)=1;
 
 % using custom layers
 layers = [ ...
-    featureInputLayer(32)    
+    featureInputLayer(96)    
     fullyConnectedLayer(8)
     eluLayer    
     fullyConnectedLayer(3)    
     eluLayer('Name','autoencoder')    
     fullyConnectedLayer(8)
     eluLayer
-    fullyConnectedLayer(32)    
+    fullyConnectedLayer(96)    
     fullyConnectedLayer(7)    
     softmaxLayer
     classificationLayer

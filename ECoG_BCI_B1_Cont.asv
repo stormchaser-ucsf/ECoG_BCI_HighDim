@@ -4549,9 +4549,10 @@ condn_data{7}=[D7(idx,:) D7i]'; % both hands
 for i=1:length(condn_data)
     tmp=condn_data{i};
     for j=1:size(tmp,1)
-        tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+        tmp(j,:) = tmp(j,:)./norm
+
     end
-    condn_data{i}=tmp;
+
 end
 
 A = condn_data{1};
@@ -4594,16 +4595,16 @@ net_7DoF_PnP_lg = train(net_7DoF_PnP_lg,N,T','useGPU','yes');
 %pretrain_net.layers{2}.transferFcn = 'poslin';
 %pretrain_net.layers{3}.transferFcn = 'poslin';
 %net1.divideParam.trainRatio
-net_7DoF_PnP_lg = net_7DoF_PnP_lg;
-genFunction(net_7DoF_PnP_lg,'MLP_7DoF_PnP_2022July_lg')
-save net_7DoF_PnP_lg net_7DoF_PnP_lg
+net_7DoF_PnP_2022Feb = net_7DoF_PnP3;
+genFunction(net_7DoF_PnP_2022Feb,'MLP_7DoF_PnP_2022Feb')
+save net_7DoF_PnP_2022Feb net_7DoF_PnP_2022Feb
 % now train a NN using layers
 % organize the data
 
 % using custom layers
 layers = [ ...
-    featureInputLayer(128)
-    fullyConnectedLayer(128)
+    featureInputLayer(96)
+    fullyConnectedLayer(96)
     layerNormalizationLayer
     reluLayer
     dropoutLayer(0.3)
@@ -4642,7 +4643,7 @@ options = trainingOptions('adam', ...
     'Verbose',true, ...
     'Plots','training-progress',...
     'MiniBatchSize',256,...
-    'ValidationFrequency',128,...
+    'ValidationFrequency',30,...
     'ValidationPatience',5,...
     'ExecutionEnvironment','gpu',...
     'ValidationData',{Xtest',Ytest});

@@ -65,7 +65,7 @@ end
 
 
 clear condn_data
-idx = [65:96];
+idx = [1:96];
 condn_data{1}=[D1(idx,:) ]'; % right thumb
 condn_data{2}= [D2(idx,:)]'; % left leg
 condn_data{3}=[D3(idx,:)]'; % left thumb

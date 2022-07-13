@@ -1086,18 +1086,12 @@ var_raw=[];
 var_pool=[];
 for i=1:size(D1,3)
     tmp_raw =  squeeze(D1(:,:,i));
-    var_raw = [var_raw var(tmp_raw(:))];
+    var_raw = [var_raw var
 
-    tmp_pool =  squeeze(D1pool(:,:,i));
-    var_pool = [var_pool var(tmp_pool(:))];
+
 end
 
-figure;
-boxplot([var_raw' var_pool'])
-xticklabels({'Raw','Pooled'})
-set(gca,'FontSize',12)
-set(gcf,'Color','w')
-ylabel('Variance')
+
 
 % plot ERPs single trial for target 1 for example
 chMap=TrialData.Params.ChMap;
