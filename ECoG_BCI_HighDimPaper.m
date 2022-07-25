@@ -626,9 +626,20 @@ for i=1:length(files)
         load(d(jj).name)
         features  = TrialData.SmoothedNeuralFeatures;
         kinax = TrialData.TaskState;
+        kinax2 = find(kinax==2);
         kinax = find(kinax==3);
-        temp = cell2mat(features(kinax));
-        temp=temp(:,4:end);
+        temp = cell2mat(features(kinax));        
+        temp2 = cell2mat(features(kinax2));
+        %temp=temp(:,3:end); % ignore the first 600ms
+
+        % baseline the data to state 2
+        %m = mean(temp2,2);
+        %s = std(temp2')';
+        %temp = (temp-m)./s;
+
+        % take from 400 to 2000ms
+        temp = temp(:,3:10);
+        %temp=temp(:,3:end); % ignore the first 600ms
 
         % hg and delta and beta
         temp = temp([129:256 513:640 769:end],:);
@@ -704,7 +715,7 @@ xticklabels(ImaginedMvmt)
 yticklabels(ImaginedMvmt)
 set(gcf,'Color','w')
 %colormap bone
-%caxis([1 50])
+%caxis([0 200])
 
 Z = linkage(D,'ward');
 figure;dendrogram(Z,0)
@@ -1197,12 +1208,358 @@ plot(c)
 % plotting 
 
 
+
+%% ERPs of imagined actions higher sampling rate
+% using hG and LMP, beta etc.
+
+clc;clear
+addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
+foldernames = {'20211201','20211203','20211206','20211208','20211215','20211217',...
+    '20220126','20220223','20220225'};
+
+cd(root_path)
+
+files=[];
+for i=1:length(foldernames)
+    folderpath = fullfile(root_path, foldernames{i},'ImaginedMvmtDAQ')
+    D=dir(folderpath);
+    if i==3
+        D = D([1:3 5:7 9:end]);
+    elseif i==4
+        D = D([1:3 5:end]);
+    elseif i==6
+        D = D([1:5 7:end]);
+    end
+
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');
+        tmp=dir(filepath);
+        files = [files;findfiles('',filepath)'];
+    end
+end
+
+ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right Pinky',...
+    'Rotate Right Wrist','Right Pinch Grasp','Right Tripod Grasp','Right Power Grasp',...
+    'Left Thumb','Left Index','Left Middle','Left Ring','Left Pinky',...
+    'Rotate Left Wrist','Left Pinch Grasp','Left Tripod Grasp','Left Power Grasp',...
+    'Squeeze Both Hands',...
+    'Imagined Head Movement',...
+    'Right Shoulder Shrug',...
+    'Left Shoulder Shrug',...
+    'Right Tricep','Left Tricep',...
+    'Right Bicep','Left Bicep',...
+    'Right Leg','Left Leg',...
+    'Lips','Tongue'};
+
+
+
+% load the ERP data for each target
+ERP_Data={};
+for i=1:length(ImaginedMvmt)
+    ERP_Data{i}=[];
+end
+
+% TIMING INFORMATION FOR THE TRIALS
+Params.InterTrialInterval = 3; % rest period between trials 
+Params.InstructedDelayTime = 4; % text appears telling subject which action to imagine
+Params.CueTime = 2; % A red square; subject has to get ready
+Params.ImaginedMvmtTime = 4; % A green square, subject has actively imagine the action
+
+% low pass filter of raw
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',5,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+% 
+% % log spaced hg filters
+% Params.Fs = 1000;
+% Params.FilterBank(1).fpass = [70,77];   % high gamma1
+% Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+% Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+% Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+% Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+% Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+% Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+% Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+% Params.FilterBank(end+1).fpass = [0.5,4]; % delta
+% Params.FilterBank(end+1).fpass = [13,19]; % beta1
+% Params.FilterBank(end+1).fpass = [19,30]; % beta2
+% 
+% % compute filter coefficients
+% for i=1:length(Params.FilterBank),
+%     [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+%     Params.FilterBank(i).b = b;
+%     Params.FilterBank(i).a = a;
+% end
+
+for i=1:length(files)
+    disp(i/length(files)*100)
+    load(files{i});
+    features  = TrialData.BroadbandData;
+    features = cell2mat(features');
+    Params = TrialData.Params;
+
+
+
+
+    %get hG through filter bank approach
+    filtered_data=zeros(size(features,1),size(features,2),8);
+    k=1;
+    for ii=9:16
+        filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
+            Params.FilterBank(ii).b, ...
+            Params.FilterBank(ii).a, ...
+            features)));
+        k=k+1;
+    end
+    %tmp_hg = squeeze(mean(filtered_data.^2,3));
+    tmp_hg = squeeze(mean(filtered_data,3));
+
+    % low pass filter the data 
+    %tmp_hg = filtfilt(lpFilt,features);
+
+    task_state = TrialData.TaskState;
+    idx=[];
+    for ii=1:length(task_state)
+        tmp = TrialData.BroadbandData{ii};
+        idx = [idx;task_state(ii)*ones(size(tmp,1),1)];
+    end    
+    
+    % z-score to 1s before the get ready symbol
+    fidx2 =  find(idx==2);fidx2=fidx2(1);
+    fidx2 = fidx2+[-1000:0];
+    m = mean(tmp_hg(fidx2,:));
+    s = std(tmp_hg(fidx2,:));
+    fidx = [fidx2 fidx2(end)+[1:7000]];
+
+    tmp_hg_epoch  = tmp_hg(fidx,:);
+    tmp_hg_epoch = (tmp_hg_epoch-m)./s;
+
+    % downsample to 200Hz
+    %tmp_lp = resample(tmp_lp,200,800);
+%     tmp_hg_epoch1=[];
+%     for j=1:size(tmp_hg_epoch,2);
+%         tmp_hg_epoch1(:,j) = decimate(tmp_hg_epoch(:,j),5);
+%     end
+
+    features = tmp_hg_epoch;
+
+    for j=1:length(ImaginedMvmt)
+        if strcmp(ImaginedMvmt{j},TrialData.ImaginedAction)
+            tmp = ERP_Data{j};
+            tmp = cat(3,tmp,features);
+            ERP_Data{j}=tmp;
+            break
+        end
+    end
+end
+
+%save high_res_erp_LMP_imagined_data -v7.3
+save high_res_erp_imagined_data -v7.3
+
+% plot ERPs at all channels with tests for significance
+idx = [1:30];
+data = ERP_Data{1};
+chMap=TrialData.Params.ChMap;
+%ch=3;
+sig_ch=zeros(30,128);
+for i=1:length(idx)
+    figure
+    ha=tight_subplot(8,16);
+    d = 1;
+    set(gcf,'Color','w')
+    data = ERP_Data{idx(i)};
+    for ch=1:128
+
+        [x y] = find(chMap==ch);
+        if x == 1
+            axes(ha(y));
+            %subplot(8, 16, y)
+        else
+            s = 16*(x-1) + y;
+            axes(ha(s));
+            %subplot(8, 16, s)
+        end
+        hold on
+
+        chdata = squeeze((data(:,ch,:)));
+        
+        % bad trial removal
+        tmp_bad=zscore(chdata')';
+        artifact_check=((tmp_bad)>=5) + (tmp_bad<=-4);
+        good_idx = find(sum(artifact_check)==0);
+        chdata = chdata(:,good_idx);      
+
+
+        % confidence intervals around the mean
+        m=mean(chdata,2);
+        opt=statset('UseParallel',true);
+        mb = sort(bootstrp(1000,@mean,chdata','Options',opt));
+        tt=linspace(-1,7,size(data,1));
+        %figure;        
+        [fillhandle,msg]=jbfill(tt,(mb(25,:)),(mb(975,:))...
+        ,[0.5 0.5 0.5],[0.5 0.5 0.5],1,.4);
+        hold on        
+        plot(tt,(m),'k','LineWidth',1)
+        %plot(tt,mb(25,:),'--k','LineWidth',.25)
+        %plot(tt,mb(975,:),'--k','LineWidth',.25)
+        % beautify
+        ylabel(num2str(ch))        
+        ylim([-1.5 2])
+        yticks ''
+        xticks ''
+        vline([0 2 6],'r')
+        hline(0)
+        %hline([0.5, -0.5])
+        axis tight
+
+        
+        % channel significance: if mean is outside the 95% boostrapped C.I. for
+        % any duration of time
+        tmp = mb(:,1:1000);
+        tmp = tmp(:);
+        pval=[];sign_time=[];
+        for j=3001:6000
+            if m(j)>0
+                ptest = (sum(m(j) >= tmp(:)))/length(tmp);
+                sign_time=[sign_time 1];
+            else
+                ptest = (sum(m(j) <= tmp(:)))/length(tmp);
+                sign_time=[sign_time -1];
+            end
+            ptest = 1-ptest;
+            pval = [pval ptest];   
+
+        end
+        [pfdr, pval1]=fdr(pval,0.05);pfdr;
+        pval(pval<=pfdr) = 1;
+        pval(pval~=1)=0;
+        m1=m(3001:6000);
+        tt1=tt(3001:6000);
+        idx1=find(pval==1);
+        %plot(tt1(idx1),m1(idx1),'b')
+
+        %sum(pval/3000)
+
+        
+
+        if sum(pval>0)
+            if sum(pval.*sign_time)>0
+                box_col = 'r';
+                sig_ch(i,ch)=1;
+            else
+                box_col = 'b';
+                sig_ch(i,ch)=-1;
+            end
+            box on
+            set(gca,'LineWidth',2)
+            set(gca,'XColor',box_col)
+            set(gca,'YColor',box_col)
+        end        
+    end
+    sgtitle(ImaginedMvmt(idx(i)))
+end
+save ERPs_sig_ch_hG -v7.3
+
+
+% plot all right/left finger ERPs
+idx = [1:9];
+ch=106;
+figure;
+hold on
+col = parula(length(idx));
+for i=1:length(idx)
+    data = ERP_Data{idx(i)};
+    chdata = squeeze((data(:,ch,:)));
+    m=mean(chdata,2);
+    tt=linspace(-1,7,size(data,1));
+    plot(tt,m,'LineWidth',1,'Color',col(i,:));
+end
+vline([0 2 6],'r')
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+legend(ImaginedMvmt(idx))
+
+
+% now look at Mahab distance using this new data from 3000-6000 samples
+% mean for each trial, std across trials
+D=[];
+for i=1:length(ERP_Data)
+    A=ERP_Data{i};
+    disp(i)
+    for j=i:length(ERP_Data)
+        B=ERP_Data{j};
+        if i==j
+            D(i,j)=0;
+        else
+            a=squeeze(mean(A(3000:6000,:,:),1))';
+            % artifact correction
+            m = zscore(mean(a,2));
+            idx = find(abs(m)>3);
+            I=ones(size(a,1),1);
+            I(idx)=0;
+            a=a(logical(I),:);
+
+            b=squeeze(mean(B(3000:6000,:,:),1))';
+            % artifact correction
+            m = zscore(mean(b,2));
+            idx = find(abs(m)>3);
+            I2=ones(size(b,1),1);
+            I2(idx)=0;
+            b=b(logical(I),:);
+
+            a=A(4000:6000,:,logical(I));
+            clear a1 b1
+            for ii=1:size(a,3)
+                a1(:,:,ii) = resample(a(:,:,ii),1,5);
+            end
+            a=a1;
+            a=permute(a,[2 1 3]);
+            a=a(:,:)';
+
+            b=B(4000:6000,:,logical(I2));
+            for ii=1:size(b,3)
+                b1(:,:,ii) = resample(b(:,:,ii),1,5);
+            end
+            b=b1;
+            b=permute(b,[2 1 3]);
+            b=b(:,:)';
+
+            D(i,j) = mahal2(a,b,2);
+            D(j,i) = D(i,j);
+        end
+    end
+end
+figure;imagesc((D))
+
+
+
+Z = linkage(D,'ward');
+figure;dendrogram(Z,0)
+x = string(get(gca,'xticklabels'));
+x1=[];
+for i=1:length(x)
+    tmp = str2num(x{i});
+    x1 = [x1 ImaginedMvmt(tmp)];
+end
+xticklabels(x1)
+set(gcf,'Color','w')
+
+
+ % get a map of significantly tuned channels for each type of movement
+ % ([left hand], [right hand], [lips, tongue, head], [proximal], [distal])
+ % and then compare the spatial maps against each other
+
+ %dPCA to show that interaction of movement X ROI is significant
+
+
 %% ERPs of imagined actions
 % and maybe with higher sampling rate
 % and looking at average activation within each ROI
 
 clc;clear
-
+addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
 foldernames = {'20211201','20211203','20211206','20211208','20211215','20211217',...
@@ -1280,10 +1637,16 @@ load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220225\Imagi
 task_state = TrialData.TaskState;
 chmap = TrialData.Params.ChMap;
 ch=106;
-data = ERP_Data{2};
+data = ERP_Data{1};
 ch_data = squeeze(data(ch,:,:));
 figure;plot(ch_data')
 figure;plot(mean(ch_data,2))
+idx1=find(task_state==1);
+idx2=find(task_state==2);
+idx3=find(task_state==3);
+idx4=find(task_state==4);
+vline([idx1(1) idx2(1) idx3(1) idx4(1)])
+
 
 % plot with boostrapped confidnce intervals in the form of a grid
 % key point here is to get rid of bad trials
@@ -1439,6 +1802,11 @@ h.LineWidth=1.5;
 h.Color='g';
 hline(0,'k')
 xlim([2 10])
+
+
+
+%% PLOTTING ERPs with much higher temporal resolution
+
 
 
 %% get all robot3D data

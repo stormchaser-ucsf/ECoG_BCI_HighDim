@@ -3593,9 +3593,9 @@ end
 
 clc;clear
 close all
-root_path='E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-foldernames = {'20210507'};
+foldernames = {'20220713'};
 cd(root_path)
 
 files=[];
@@ -3642,16 +3642,16 @@ title('Classif. using temporal history')
 %%%% DOING THE SAME NOW BUT IN THE ROBOT 3D ARROW ENVIRONMENT
 clc;clear
 close all
-root_path='E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-foldernames = {'20210512'};
+foldernames = {'20220713'};
 cd(root_path)
 
 files=[];
 for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
-    for j=17:18
+    for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'BCI_Fixed')
         files = [files;findfiles('',filepath)'];
     end
@@ -3700,7 +3700,7 @@ clc;clear
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
-foldernames = {'20220608'};
+foldernames = {'20220713'};
 cd(root_path)
 
 files=[];
@@ -3762,8 +3762,8 @@ colormap bone
 caxis([0 1])
 xticks([1:7])
 yticks([1:7])
-xticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Rt wrist','Tong','Both middle'})
-yticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Rt wrist','Tong','Both middle'})
+xticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Lips','Tong','Both middle'})
+yticklabels({'Rt thumb','Both Feet','Lt. thumb','Head', 'Lips','Tong','Both middle'})
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
 %title('Classif. using temporal history original action space')
