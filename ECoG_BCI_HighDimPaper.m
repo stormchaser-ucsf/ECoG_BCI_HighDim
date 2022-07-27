@@ -1304,20 +1304,22 @@ for i=1:length(files)
 
 
     %get hG through filter bank approach
-    filtered_data=zeros(size(features,1),size(features,2),8);
-    k=1;
-    for ii=9:16
-        filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
-            Params.FilterBank(ii).b, ...
-            Params.FilterBank(ii).a, ...
-            features)));
-        k=k+1;
-    end
-    %tmp_hg = squeeze(mean(filtered_data.^2,3));
-    tmp_hg = squeeze(mean(filtered_data,3));
+%     filtered_data=zeros(size(features,1),size(features,2),8);
+%     k=1;
+%     for ii=9:16
+%         filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
+%             Params.FilterBank(ii).b, ...
+%             Params.FilterBank(ii).a, ...
+%             features)));
+%         k=k+1;
+%     end
+%     %tmp_hg = squeeze(mean(filtered_data.^2,3));
+    %tmp_hg = squeeze(mean(filtered_data,3));
 
     % low pass filter the data 
-    %tmp_hg = filtfilt(lpFilt,features);
+    features1 = [randn(4000,128);features;randn(4000,128)];
+    tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+    tmp_hg = tmp_hg(4001:end-4000,:);
 
     task_state = TrialData.TaskState;
     idx=[];
@@ -1355,8 +1357,8 @@ for i=1:length(files)
     end
 end
 
-%save high_res_erp_LMP_imagined_data -v7.3
-save high_res_erp_imagined_data -v7.3
+save high_res_erp_LMP_imagined_data -v7.3
+%save high_res_erp_imagined_data -v7.3
 
 % plot ERPs at all channels with tests for significance
 idx = [1:30];
@@ -1460,8 +1462,165 @@ for i=1:length(idx)
     end
     sgtitle(ImaginedMvmt(idx(i)))
 end
-save ERPs_sig_ch_hG -v7.3
+save ERPs_sig_ch_LMP -v7.3
+%save ERPs_sig_ch_hg -v7.3
 
+% plotting spatial map comparing right and left hand movements in sig.
+% channels (1:9, 10:18)
+rt_channels = sum(abs(sig_ch(1:9,:)));
+lt_channels = sum(abs(sig_ch(10:18,:)));
+figure;imagesc(rt_channels(chMap));caxis([0 8])
+figure;imagesc(lt_channels(chMap));caxis([0 8])
+
+figure;stem(abs(rt_channels))
+hold on
+stem(abs(lt_channels))
+
+% PmD test
+pmd=[65	85	83	68
+37	56	48	43
+53	55	52	35
+2	10	21	30];pmd=pmd(:);
+lt_pmd = (abs(sig_ch(10:18,pmd)));
+rt_pmd = (abs(sig_ch(1:9,pmd)));
+[sum(lt_pmd(:)) sum(rt_pmd(:))]
+
+
+% cosine distance between cortical network
+D=zeros(30);
+for i=1:size(sig_ch,1)
+    A=sig_ch(i,:);
+    for j=i+1:size(sig_ch,1)
+        B=sig_ch(j,:);
+        D(i,j) = pdist([(A);(B)],'jaccard');
+        D(j,i) = D(i,j);
+    end
+end
+% plotting hierarhical similarity
+Z = linkage(D,'ward');
+figure;dendrogram(Z,0)
+x = string(get(gca,'xticklabels'));
+x1=[];
+for i=1:length(x)
+    tmp = str2num(x{i});
+    x1 = [x1 ImaginedMvmt(tmp)];
+end
+xticklabels(x1)
+set(gcf,'Color','w')
+
+% building a classifier based on average activity across channels
+% 2.3s to 3.3s after go cue, averaged over that one second window
+res_overall=[];
+for iter=1:10
+    disp(iter)
+    condn_data=[];  % features by samples
+    Y=[];
+%     for i=1:length(ERP_Data)
+%         tmp = ERP_Data{i};
+%         m = squeeze(mean(tmp(3200:5000,:,:),1));
+%         %s = squeeze(std(tmp(3300:4000,:,:),1));
+%         condn_data=cat(2,condn_data,[m]);
+%         Y = [Y;i*ones(size(m,2)*1,1)];
+%     end
+     for i=1:length(ERP_Data)
+        tmp = ERP_Data{i};
+        tmp2 = ERP_Data_lmp{i};
+        m = squeeze(mean(tmp(3200:5000,:,:),1));
+        m1 = squeeze(mean(tmp2(3200:5000,:,:),1));
+        %s = squeeze(std(tmp(3300:4000,:,:),1));
+        condn_data=cat(2,condn_data,[m;m1]);
+        Y = [Y;i*ones(size(m,2)*1,1)];
+    end
+
+    N=condn_data;
+
+    % partition into training and testing
+    idx = randperm(size(condn_data,2),round(0.8*size(condn_data,2)));
+    YTrain = Y(idx);
+    NTrain = N(:,idx);
+    I = ones(size(condn_data,2),1);
+    I(idx)=0;
+    YTest = Y(logical(I));
+    NTest = N(:,logical(I));
+
+    T1=YTrain;
+    T = zeros(size(T1,1),30);
+    for i=1:30
+        [aa bb]=find(T1==i);
+        %T(aa(1):aa(end),i)=1;
+        T(aa,i)=1;
+    end
+
+    clear net
+    net = patternnet([64 64]) ;
+    net.performParam.regularization=0.2;
+    net.divideParam.trainRatio = 0.85;
+    net.divideParam.valRatio = 0.15;
+    net.divideParam.testRatio = 0.0;
+    net = train(net,NTrain,T','UseGPU','yes');
+
+    % test on held out data
+    out = net(NTest);
+    D=zeros(30);
+    for i=1:length(YTest)
+        [aa bb]=max(out(:,i));
+        D(YTest(i),bb)=D(YTest(i),bb)+1;
+    end
+    for i=1:size(D,1)
+        D(i,:)= D(i,:)/sum(D(i,:));
+    end
+    %figure;stem(diag(D))
+    %xticks(1:30)
+    %xticklabels(ImaginedMvmt)
+    res_overall(iter,:)=diag(D);
+end
+figure;stem(mean(res_overall,1))
+xticks(1:30)
+xticklabels(ImaginedMvmt)
+hline(1/30)
+
+%%%% dPCA analyses on the imagined movement data.. ROI X Time X Mvmt-Type
+%avg activity: N x C x L x T
+% Channels X Conditions X Laterality X Time
+M1 =[27	9	3
+26	31	25
+116	103	106
+115	100	97];M1=M1(:);
+pmd=[94	91	79
+73	90	67
+61	51	34
+40	46	41];pmd=pmd(:);
+pmv=[96	84	76	95
+92	65	85	83
+62	37	56	48
+45	53	55	52];pmv=pmv(:);
+m1_ant=[19	2	10	21
+24	13	6	4
+124	126	128	119
+102	109	99	101];m1_ant=m1_ant(:);
+central=[33	49	64	58
+50	54	39	47
+28	18	1	8
+5	20	14	11];central=central(:);
+
+%condn_idx = [1 23  3  24 ];
+condn_idx = [1 3 6  10  12 15 ];
+
+Data_left=[];Data_right=[];
+for i=1:length(condn_idx)
+    tmp = ERP_Data{condn_idx(i)};
+    tmp=squeeze(mean(tmp,3));
+    %tmp = tmp(:,M1);
+    if i>3
+        Data_left=cat(3,Data_left,tmp');
+    else
+        Data_right=cat(3,Data_right,tmp');
+    end
+end
+clear Data
+Data(:,:,1,:) = permute(Data_right,[1 3 2]);
+Data(:,:,2,:) = permute(Data_left,[1 3 2]);
+firingRatesAverage=Data;
 
 % plot all right/left finger ERPs
 idx = [1:9];
