@@ -3956,247 +3956,6 @@ set(gca,'LineWidth',1)
 % idx=ones(size(acc_days)) + 0.1*randn(size(acc_days));
 % scatter(idx,acc_days,'k')
 
-
-
-%% BLOCK BY BLOCK BIT RATE CALCULATIONS ACROSS DAYS - PNP 2
-%%%%(MAIN)
-% second plug and play experiment 
-
-
-clc;clear
-
-root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-
-%foldernames = {'20210903'};
-foldernames = {'20211013','20211015','20211020','20211022','20211027','20211029',...
-    '20211103','20211105','20211117','20211119'};
-
-
-cd(root_path)
-folders={};
-br_across_days={};
-time2target_days=[];
-acc_days=[];
-for i=1:length(foldernames)
-    
-    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
-    D=dir(folderpath);
-%     if i==1
-%         idx = [1 2 3 4];
-%         D = D(idx);
-%     elseif i==2
-%         idx = [1 2 3 4 6 7];
-%         D = D(idx);
-%     elseif i==3
-%         idx = [1 2 5 6];
-%         D = D(idx);
-%     elseif i==6
-%         idx = [1 2 3 4 5 6];
-%         D = D(idx);
-%     elseif i==8
-%         idx = [1 2 3 4 5 6 7];
-%         D = D(idx);
-%     elseif i==9
-%         idx = [1 2 5 6 7 9 10];
-%         D = D(idx);
-%     elseif i==11
-%         idx = [1 2 3  5 6 9 10 11];
-%         D = D(idx);
-%     elseif i == 10
-%         idx = [1 2 3 4 5  7 8];
-%         D = D(idx);
-%     end
-    br=[];acc=[];time2target=[];
-    for j=3:length(D)
-        files=[];
-        filepath=fullfile(folderpath,D((j)).name,'BCI_Fixed');
-        if exist(filepath)
-            filepath
-            files = [files;findfiles('mat',filepath)'];
-            folders=[folders;filepath];
-        end
-        if length(files)>0
-            [b,a,t] = compute_bitrate(files,7);
-            br = [br b];
-            acc = [acc mean(a)];
-            time2target = [time2target; mean(t)];
-            %[br, acc ,t] = [br compute_bitrate(files)];
-        end
-    end
-    close all
-    br_across_days{i}=br;
-    time2target_days{i} = time2target(:);
-    acc_days{i} = acc(:);
-    %time2target_days = [time2target_days ;time2target(:)];
-    %acc_days = [acc_days ;acc(:)];
-end
-
-%plot results as a scatter plot
-addpath('C:\Users\Nikhlesh\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
-figure;hold on
-br=[];
-%cmap = brewermap(11,'blues');
-%cmap=flipud(cmap);
-%cmap=cmap(1:length(br_across_days),:);
-%cmap=flipud(cmap);
-cmap = turbo(length(br_across_days));
-%cmap = turbo(7);
-br_overall=[];
-idxx=[];
-for i=1:length(br_across_days)
-    tmp = br_across_days{i};
-    tmp=tmp(tmp<=4);
-    br(i) = mean(tmp);
-    idx= i*ones(size(tmp))+0.1*randn(size(tmp));
-    plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    br_overall=[br_overall tmp];
-    idxx=[idxx idx];
-    
-end
-%plot(br(1:7),'k','LineWidth',2)
-days={'1','5','12','14','19','21','28','32','35','40','42'};
-xticks(1:length(br))
-set(gca,'XTickLabel',days)
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-xlabel('Days - PnP')
-ylabel('BitRate')
-set(gca,'LineWidth',1)
-%set(gca,'Color',[.85 .85 .85])
-xlim([0 7.5])
-% plotting regression line
-aa=find(idxx<=7);
-idxx=idxx(aa);
-br_overall = br_overall(aa);
-figure;plot(idxx,br_overall,'.')
-[bhat p wh se ci t_stat]=robust_fit(idxx',br_overall',1);
-hold on
-plot(idxx,bhat(1)+bhat(2).*br_overall,'k')
-
-figure;hold on
-acc=[];
-acch=[];
-idxx=[];
-for i=1:length(acc_days)
-    tmp  = acc_days{i};
-    idx= i*ones(size(tmp))+0.1*randn(size(tmp));
-    plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    acc(i) = mean(tmp);
-    acch = [acch ;tmp];
-    idxx=[idxx;idx];
-end
-%plot(acc,'k','LineWidth',2)
-ylim([0 1])
-xticks(1:length(acc))
-set(gca,'XTickLabel',days)
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-xlabel('Days - PnP')
-ylabel('Decoder Accuracy')
-set(gca,'LineWidth',1)
-xlim([0.5 7.5])
-h=hline(1/7);
-set(h,'LineWidth',2)
-
-figure;hold on
-t2t=[];
-t2th=[];
-idxx=[];
-for i=1:length(time2target_days)
-    tmp  = time2target_days{i};
-    idx= i*ones(size(tmp))+0.1*randn(size(tmp));
-    plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    t2t(i) = mean(tmp);
-    t2th = [t2th;tmp];
-    idxx=[idxx;idx];
-end
-%plot(t2t,'k','LineWidth',2)
-ylim([0 3])
-xticks(1:length(acc))
-set(gca,'XTickLabel',days)
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-xlabel('Days - PnP')
-ylabel('Time to Target (s)')
-set(gca,'LineWidth',1)
-xlim([0.5 7.5])
-
-figure;hist(acch,10)
-xlim([0 1])
-vline(1/7,'r')
-box off
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-xlabel('Decoder Accuracy')
-ylabel('Count')
-set(gca,'LineWidth',1)
-%vline(median(acch),'k')
-
-figure;hist(t2th,10)
-xlim([0 2.25])
-box off
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-xlabel('Time to Target')
-ylabel('Count')
-set(gca,'LineWidth',1)
-
-
-
-
-%save bit_rate_discrete_PnP2 -v7.3
-
-
-%% %% BLOCK BY BLOCK BIT RATE CALCULATIONS ACROSS DAYS 9DOF
-%%%%(MAIN)
-
-
-clc;clear
-
-root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-
-%foldernames = {'20210903'};
-foldernames = {'20220204'};
-
-
-cd(root_path)
-folders={};
-br_across_days={};
-time2target_days=[];
-acc_days=[];
-for i=1:length(foldernames)
-    
-    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
-    D=dir(folderpath);
-    if i==1
-        idx = [1 2 12:15];
-        D = D(idx);   
-    end
-    br=[];acc=[];time2target=[];
-    for j=3:length(D)
-        files=[];
-        filepath=fullfile(folderpath,D((j)).name,'BCI_Fixed');
-        if exist(filepath)
-            filepath
-            files = [files;findfiles('mat',filepath)'];
-            folders=[folders;filepath];
-        end
-        if length(files)>0
-            [b,a,t] = compute_bitrate(files,9);
-            br = [br b];
-            acc = [acc mean(a)];
-            time2target = [time2target; mean(t)];
-            %[br, acc ,t] = [br compute_bitrate(files)];
-        end
-    end
-    close all
-    br_across_days{i}=br;
-    time2target_days{i} = time2target(:);
-    acc_days{i} = acc(:);
-    %time2target_days = [time2target_days ;time2target(:)];
-    %acc_days = [acc_days ;acc(:)];
-end
-
 %% RUNNING ICA ON THE DATA
 clc;clear
 cd('E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
@@ -6490,7 +6249,7 @@ close all
 root_folder='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 folder_days = {'20210716','20210728','20210804','20210806','20210813','20220202','20220211',...
     '20220225','20220304','20220309','20220311','20220316','20220323','20220325','20220330',...
-    '20220420','20220422','20220427','20220429','20220504','20220506','20220518','20220513',...
+    '20220420','20220422','20220427','20220429','20220513',...
     '20220520','20220527','20220601','20220622','20220629','20220701','20220715',...
     '20220720','20220722','20220727'};
 
@@ -6503,41 +6262,15 @@ for i=1:length(folder_days)
 end
 
 Trials={};
-for ii=1:length(files)
-    disp(ii/length(files)*100)
-    load(files{ii})
+for i=1:length(files)
+    disp(i/length(files)*100)
+    load(files{i})
+    Trials(i).TargetDir = TrialData.TargetID;
     
-    idx=find(TrialData.TaskState==3);
-    temp = cell2mat(TrialData.SmoothedNeuralFeatures(idx));
-    kin=TrialData.CursorState;
-    kin = kin(:,idx);
+    Trials(i).NeuralFeatures
 
-     % perform the pooling here
-    new_temp=[];
-    [xx yy] = size(TrialData.Params.ChMap);
-    for k=1:size(temp,2)
-        tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
-        tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
-        tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-        tmp4 = temp(641:768,k);tmp4 = tmp4(TrialData.Params.ChMap);%lg
-        pooled_data=[];
-        for i=1:2:xx
-            for j=1:2:yy
-                delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
-                beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
-                hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-                lg = (tmp4(i:i+1,j:j+1));lg=mean(lg(:));
-                pooled_data = [pooled_data; delta; beta ;lg;hg];
-            end
-        end
-        new_temp= [new_temp pooled_data];
-    end
-    temp=new_temp;
-    neural_features = temp;
 
-    Trials(ii).TargetDir = TrialData.TargetID;
-    Trials(ii).NeuralFeatures = neural_features;
-    Trials(ii).Kinematics = kin;
+
 end
 
 

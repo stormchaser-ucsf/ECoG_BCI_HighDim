@@ -21,7 +21,7 @@ for i=1:length(foldernames)
     elseif i==6
         D = D([1:5 7:end]);
     end
-    
+
     for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'Imagined');
         tmp=dir(filepath);
@@ -49,7 +49,7 @@ for i=1:length(imagined_files)
         file_loaded=false;
         disp(['Could not load ' files{j}]);
     end
-    
+
     if file_loaded
         action = TrialData.ImaginedAction;
         idx = find(TrialData.TaskState==3) ;
@@ -64,7 +64,7 @@ for i=1:length(imagined_files)
             tmp = raw_data(bins(k)+[0:799],:);
             data_seg = cat(2,data_seg,tmp);
         end
-        
+
         if strcmp('Right Thumb',action)
             D1i = cat(2,D1i,data_seg);
             %D1f = cat(2,D1f,feat_stats1);
@@ -130,7 +130,7 @@ for i=1:length(hand_files)
         file_loaded=false;
         disp(['Could not load ' hand_files{j}]);
     end
-    
+
     if file_loaded
         action = TrialData.TargetID;
         idx = find(TrialData.TaskState==3) ;
@@ -145,7 +145,7 @@ for i=1:length(hand_files)
             tmp = raw_data(bins(k)+[0:799],:);
             data_seg = cat(2,data_seg,tmp);
         end
-        
+
         if action==1
             D1 = cat(2,D1,data_seg);
             %D1f = cat(2,D1f,feat_stats1);
@@ -279,14 +279,14 @@ clear D1 D1i
 
 for ii=1:size(condn_data1,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data1(:,:,ii));
-    
+
     % hg filtering
     %tmp_hg = abs(hilbert(filtfilt(hgFilt,tmp)));
     %tmp_hg = filtfilt(lpFilt1,tmp_hg);
-    
-    
+
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -296,26 +296,26 @@ for ii=1:size(condn_data1,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
-    
-    
+
+
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -347,9 +347,9 @@ clear D2 D2i condn_data1
 
 for ii=1:size(condn_data2,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data2(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -359,25 +359,25 @@ for ii=1:size(condn_data2,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -413,9 +413,9 @@ clear D3 D3i condn_data2
 
 for ii=1:size(condn_data3,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data3(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -425,26 +425,26 @@ for ii=1:size(condn_data3,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
-    
+
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -477,9 +477,9 @@ clear D4 D4i condn_data3
 
 for ii=1:size(condn_data4,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data4(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -489,25 +489,25 @@ for ii=1:size(condn_data4,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -540,9 +540,9 @@ clear D5 D5i condn_data4
 
 for ii=1:size(condn_data5,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data5(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -552,25 +552,25 @@ for ii=1:size(condn_data5,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -604,9 +604,9 @@ clear D6 D6i condn_data5
 
 for ii=1:size(condn_data6,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data6(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -616,25 +616,25 @@ for ii=1:size(condn_data6,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -668,9 +668,9 @@ clear D7 D7i condn_data6
 
 for ii=1:size(condn_data7,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data7(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -680,26 +680,26 @@ for ii=1:size(condn_data7,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
-    
+
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -733,9 +733,9 @@ clear D8 D8i condn_data7
 
 for ii=1:size(condn_data8,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data8(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -745,26 +745,26 @@ for ii=1:size(condn_data8,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
-    
+
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -836,9 +836,9 @@ for i=3%1:length(drop1)
         fullyConnectedLayer(numClasses)
         softmaxLayer
         classificationLayer];
-    
-    
-    
+
+
+
     % options
     options = trainingOptions('adam', ...
         'MaxEpochs',15, ...
@@ -850,7 +850,7 @@ for i=3%1:length(drop1)
         'ValidationData',{XTest,YTest},...
         'ValidationPatience',6,...
         'Plots','training-progress');
-    
+
     % train the model
     net = trainNetwork(XTrain,YTrain,layers,options);
 end
@@ -907,19 +907,19 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 decodes_overall=[];k=1;
 for i=1:length(files)
     disp(i)
-    
+
     % load
     load(files{i})
-    
+
     if TrialData.TargetID<=8
-        
+
         % create buffer
         data_buffer = randn(800,128)*0.25;
-        
+
         %get data
         raw_data = TrialData.BroadbandData;
         raw_data1=cell2mat(raw_data');
-        
+
         % state of trial
         state_idx = TrialData.TaskState;
         decodes=[];
@@ -932,7 +932,7 @@ for i=1:length(files)
             else
                 data_buffer(1:end,:)=tmp(s-800+1:end,:);
             end
-            
+
             %hg features
             filtered_data=zeros(size(data_buffer,1),size(data_buffer,2),8);
             for ii=1:length(Params.FilterBank)
@@ -943,21 +943,21 @@ for i=1:length(files)
             end
             tmp_hg = squeeze(mean(filtered_data.^2,3));
             tmp_hg = resample(tmp_hg,200,800)*5e2;
-            
-            
-            
+
+
+
             % low-pass features
             tmp_lp = filter(lpFilt,data_buffer);
             tmp_lp = resample(tmp_lp,200,800);
-            
+
             % concatenate
             neural_features = [tmp_hg tmp_lp];
-            
+
             % classifier output
             out=predict(net_bilstm_hand,neural_features');
             [aa bb]=max(out);
             class_predict = bb;
-            
+
             % store results
             if state_idx(j)==3
                 decodes=[decodes class_predict];
@@ -1077,7 +1077,7 @@ for i=1:length(train_files)
         file_loaded=false;
         disp(['Could not load ' hand_files{j}]);
     end
-    
+
     if file_loaded
         action = TrialData.TargetID;
         idx = find(TrialData.TaskState==3) ;
@@ -1092,7 +1092,7 @@ for i=1:length(train_files)
             tmp = raw_data(bins(k)+[0:799],:);
             data_seg = cat(2,data_seg,tmp);
         end
-        
+
         if action==1
             D1 = cat(2,D1,data_seg);
             %D1f = cat(2,D1f,feat_stats1);
@@ -1155,14 +1155,14 @@ end
 
 for ii=1:size(condn_data1,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data1(:,:,ii));
-    
+
     % hg filtering
     %tmp_hg = abs(hilbert(filtfilt(hgFilt,tmp)));
     %tmp_hg = filtfilt(lpFilt1,tmp_hg);
-    
-    
+
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1172,26 +1172,26 @@ for ii=1:size(condn_data1,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
-    
-    
+
+
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1221,9 +1221,9 @@ end
 
 for ii=1:size(condn_data2,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data2(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1233,25 +1233,25 @@ for ii=1:size(condn_data2,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1281,9 +1281,9 @@ end
 
 for ii=1:size(condn_data3,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data3(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1293,26 +1293,26 @@ for ii=1:size(condn_data3,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
-    
+
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1342,9 +1342,9 @@ end
 
 for ii=1:size(condn_data4,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data4(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1354,25 +1354,25 @@ for ii=1:size(condn_data4,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1401,9 +1401,9 @@ end
 
 for ii=1:size(condn_data5,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data5(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1413,25 +1413,25 @@ for ii=1:size(condn_data5,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1461,9 +1461,9 @@ end
 
 for ii=1:size(condn_data6,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data6(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1473,25 +1473,25 @@ for ii=1:size(condn_data6,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1520,9 +1520,9 @@ end
 
 for ii=1:size(condn_data7,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data7(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1532,26 +1532,26 @@ for ii=1:size(condn_data7,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
-    
+
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1580,9 +1580,9 @@ end
 
 for ii=1:size(condn_data8,3)
     disp(ii)
-    
+
     tmp = squeeze(condn_data8(:,:,ii));
-    
+
     %get hG through filter bank approach
     filtered_data=zeros(size(tmp,1),size(tmp,2),8);
     for i=1:8%length(Params.FilterBank)
@@ -1592,26 +1592,26 @@ for ii=1:size(condn_data8,3)
             tmp)));
     end
     tmp_hg = squeeze(mean(filtered_data.^2,3));
-    
+
     % LFO low pass filtering
     tmp_lp = filter(lpFilt,tmp);
-    
+
     % downsample the data
     tmp_lp = resample(tmp_lp,200,800);
     tmp_hg = resample(tmp_hg,200,800)*5e2;
-    
+
     % spatial pool
     %tmp_lp = spatial_pool(tmp_lp,TrialData);
     %tmp_hg = spatial_pool(tmp_hg,TrialData);
     %tmp_beta = spatial_pool(tmp_beta,TrialData);
     %tmp_delta = spatial_pool(tmp_delta,TrialData);
-    
-    
+
+
     % make new data structure
     %tmp = [tmp_hg tmp_beta tmp_delta];
     tmp = [tmp_hg tmp_lp];
-    
-    
+
+
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
@@ -1669,19 +1669,19 @@ net_bilstm_hand_FT = trainNetwork(XTrain,YTrain,layers,options);
 decodes_overall=[];k=1;
 for i=1:length(test_files)
     disp(i)
-    
+
     % load
     load(test_files{i})
-    
+
     if TrialData.TargetID<=8
-        
+
         % create buffer
         data_buffer = randn(800,128)*0.25;
-        
+
         %get data
         raw_data = TrialData.BroadbandData;
         raw_data1=cell2mat(raw_data');
-        
+
         % state of trial
         state_idx = TrialData.TaskState;
         decodes=[];
@@ -1694,7 +1694,7 @@ for i=1:length(test_files)
             else
                 data_buffer(1:end,:)=tmp(s-800+1:end,:);
             end
-            
+
             %hg features
             filtered_data=zeros(size(data_buffer,1),size(data_buffer,2),8);
             for ii=1:length(Params.FilterBank)
@@ -1705,21 +1705,21 @@ for i=1:length(test_files)
             end
             tmp_hg = squeeze(mean(filtered_data.^2,3));
             tmp_hg = resample(tmp_hg,200,800)*5e2;
-            
-            
-            
+
+
+
             % low-pass features
             tmp_lp = filter(lpFilt,data_buffer);
             tmp_lp = resample(tmp_lp,200,800);
-            
+
             % concatenate
             neural_features = [tmp_hg tmp_lp];
-            
+
             % classifier output
             out=predict(net_bilstm_hand_FT,neural_features');
             [aa bb]=max(out);
             class_predict = bb;
-            
+
             % store results
             if state_idx(j)==3
                 decodes=[decodes class_predict];
@@ -1776,8 +1776,8 @@ foldernames = {'20220128','20220204','20220209','20220218','20220223','20220302'
 cd(root_path)
 
 hand_files=[];
-for i=1:length(foldernames)
-    folderpath = fullfile(root_path, foldernames{i},'Hand')
+for i=length(foldernames)
+    folderpath = fullfile(root_path, foldernames{i},'HandOnline')
     %     if ~exist(folderpath)
     %         folderpath = fullfile(root_path, foldernames{i},'HandOnline')
     %     end
@@ -1808,19 +1808,19 @@ D10=[];%wrist in
 for i=1:length(hand_files)
     disp(i/length(hand_files)*100)
     load(hand_files{i})
-    
+
     features  = TrialData.SmoothedNeuralFeatures;
     kinax = TrialData.TaskState;
     kinax = find(kinax==3);
     temp = cell2mat(features(kinax));
-    
-    if regexp(hand_files{i},'20220302')
-        len = size(temp,2);
-        if len>20
-            temp=temp(:,1:20);
-        end
-    end
-    
+
+    %     if regexp(hand_files{i},'20220302')
+    %         len = size(temp,2);
+    %         if len>20
+    %             temp=temp(:,1:20);
+    %         end
+    %     end
+
     % get smoothed delta hg and beta features
     new_temp=[];
     [xx yy] = size(TrialData.Params.ChMap);
@@ -1828,20 +1828,24 @@ for i=1:length(hand_files)
         tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
         tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
         tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+        tmp4 = temp(641:768,k);tmp4 = tmp4(TrialData.Params.ChMap);
+        tmp5 = temp(385:512,k);tmp5 = tmp5(TrialData.Params.ChMap);
         pooled_data=[];
         for i=1:2:xx
             for j=1:2:yy
                 delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
                 beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
                 hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-                pooled_data = [pooled_data; delta; beta ;hg];
+                lg = (tmp4(i:i+1,j:j+1));lg=mean(lg(:));
+                %alp = (tmp5(i:i+1,j:j+1));alp=mean(alp(:));
+                pooled_data = [pooled_data; delta; lg;hg];
             end
         end
         new_temp= [new_temp pooled_data];
     end
     temp=new_temp;
-    
-    
+
+
     if TrialData.TargetID == 1
         D1 = [D1 temp];
     elseif TrialData.TargetID == 2
@@ -1865,18 +1869,18 @@ for i=1:length(hand_files)
     end
 end
 
-
+clear condn_data
 idx = [1:96];
 condn_data{1}=[D1(idx,:) ]';
 condn_data{2}= [D2(idx,:)]';
 condn_data{3}=[D3(idx,:)]';
 condn_data{4}=[D4(idx,:)]';
 condn_data{5}=[D5(idx,:)]';
-condn_data{6}=[D6(idx,:)]';
-condn_data{7}=[D7(idx,:)]';
-condn_data{8}=[D8(idx,:)]';
-condn_data{9}=[D9(idx,:)]';
-condn_data{10}=[D10(idx,:)]';
+% condn_data{6}=[D6(idx,:)]';
+% condn_data{7}=[D7(idx,:)]';
+% condn_data{8}=[D8(idx,:)]';
+% condn_data{9}=[D9(idx,:)]';
+% condn_data{10}=[D10(idx,:)]';
 
 
 % 2norm
@@ -1895,20 +1899,48 @@ B = condn_data{2};
 C = condn_data{3};
 D = condn_data{4};
 E = condn_data{5};
-F = condn_data{6};
-G = condn_data{7};
-H = condn_data{8};
-I = condn_data{9};
-J = condn_data{10};
+% F = condn_data{6};
+% G = condn_data{7};
+% H = condn_data{8};
+% I = condn_data{9};
+% J = condn_data{10};
+
+%
+% clear N
+% N = [A' B' C' D' E' F' G' H' I' J'];
+% T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
+%     5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1);8*ones(size(H,1),1);...
+%     9*ones(size(I,1),1);10*ones(size(J,1),1)];
+%
+% T = zeros(size(T1,1),10);
+% [aa bb]=find(T1==1);[aa(1) aa(end)]
+% T(aa(1):aa(end),1)=1;
+% [aa bb]=find(T1==2);[aa(1) aa(end)]
+% T(aa(1):aa(end),2)=1;
+% [aa bb]=find(T1==3);[aa(1) aa(end)]
+% T(aa(1):aa(end),3)=1;
+% [aa bb]=find(T1==4);[aa(1) aa(end)]
+% T(aa(1):aa(end),4)=1;
+% [aa bb]=find(T1==5);[aa(1) aa(end)]
+% T(aa(1):aa(end),5)=1;
+% [aa bb]=find(T1==6);[aa(1) aa(end)]
+% T(aa(1):aa(end),6)=1;
+% [aa bb]=find(T1==7);[aa(1) aa(end)]
+% T(aa(1):aa(end),7)=1;
+% [aa bb]=find(T1==8);[aa(1) aa(end)]
+% T(aa(1):aa(end),8)=1;
+% [aa bb]=find(T1==9);[aa(1) aa(end)]
+% T(aa(1):aa(end),9)=1;
+% [aa bb]=find(T1==10);[aa(1) aa(end)]
+% T(aa(1):aa(end),10)=1;
 
 
 clear N
-N = [A' B' C' D' E' F' G' H' I' J'];
+N = [A' B' C' D' E'];
 T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
-    5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1);8*ones(size(H,1),1);...
-    9*ones(size(I,1),1);10*ones(size(J,1),1)];
+    5*ones(size(E,1),1)];
 
-T = zeros(size(T1,1),10);
+T = zeros(size(T1,1),5);
 [aa bb]=find(T1==1);[aa(1) aa(end)]
 T(aa(1):aa(end),1)=1;
 [aa bb]=find(T1==2);[aa(1) aa(end)]
@@ -1919,16 +1951,6 @@ T(aa(1):aa(end),3)=1;
 T(aa(1):aa(end),4)=1;
 [aa bb]=find(T1==5);[aa(1) aa(end)]
 T(aa(1):aa(end),5)=1;
-[aa bb]=find(T1==6);[aa(1) aa(end)]
-T(aa(1):aa(end),6)=1;
-[aa bb]=find(T1==7);[aa(1) aa(end)]
-T(aa(1):aa(end),7)=1;
-[aa bb]=find(T1==8);[aa(1) aa(end)]
-T(aa(1):aa(end),8)=1;
-[aa bb]=find(T1==9);[aa(1) aa(end)]
-T(aa(1):aa(end),9)=1;
-[aa bb]=find(T1==10);[aa(1) aa(end)]
-T(aa(1):aa(end),10)=1;
 
 
 % code to train a neural network
@@ -1942,19 +1964,19 @@ save net_hand_mlp_0303 net_hand_mlp_0303
 % using custom layers
 layers = [ ...
     featureInputLayer(96)
-    fullyConnectedLayer(96)
+    fullyConnectedLayer(48)
     batchNormalizationLayer
-    leakyReluLayer
+    reluLayer
     dropoutLayer(0.4)
-    fullyConnectedLayer(96)
+    fullyConnectedLayer(48)
     batchNormalizationLayer
-    leakyReluLayer
+    reluLayer
     dropoutLayer(0.4)
-    fullyConnectedLayer(96)
+    fullyConnectedLayer(48)
     batchNormalizationLayer
-    leakyReluLayer
+    reluLayer
     dropoutLayer(0.4)
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(5)
     softmaxLayer
     classificationLayer
     ];
@@ -1994,18 +2016,21 @@ save net_mlp_hand_adam_64 net_mlp_hand_adam_64
 
 
 
-%% LDA on hand imagined data
-
-
+%% LDA on hand online data
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
-foldernames = {'20220302'};
+foldernames = {'20220302','20220223'};
 cd(root_path)
 
 imagined_files=[];
-for i=1:length(foldernames)
-    folderpath = fullfile(root_path, foldernames{i},'HandOnline')
+for i=1:1%length(foldernames)
+    if i==1
+        folderpath = fullfile(root_path, foldernames{i},'HandOnline')
+    else
+        folderpath = fullfile(root_path, foldernames{i},'Hand')
+    end
+
     D=dir(folderpath);
     if i==3
         D = D([1:3 5:7 9:end]);
@@ -2014,7 +2039,7 @@ for i=1:length(foldernames)
     elseif i==6
         D = D([1:5 7:end]);
     end
-    
+
     for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'Imagined');
         if ~exist(filepath)
@@ -2025,198 +2050,247 @@ for i=1:length(foldernames)
     end
 end
 
+res_overall=[];
+for iter=1:15
+    disp(iter)
 
-% load the data for the imagined files, if they belong to right thumb,
-% index, middle, ring, pinky, pinch, tripod, power
-D1i={};
-D2i={};
-D3i={};
-D4i={};
-D5i={};
-D6i={};
-D7i={};
-D8i={};
-D9i={};
-D10i={};
-idx = randperm(length(imagined_files),round(0.8*length(imagined_files)));
-train_files = imagined_files(idx);
-I = ones(length(imagined_files),1);
-I(idx)=0;
-test_files = imagined_files(find(I==1));
 
-for i=1:length(train_files)
-    disp(i/length(train_files)*100)
-    try
-        load(train_files{i})
-        file_loaded = true;
-    catch
-        file_loaded=false;
-        disp(['Could not load ' files{j}]);
-    end
-    
-    
-    if file_loaded
-        action = TrialData.TargetID;
-        features  = TrialData.SmoothedNeuralFeatures;
-        kinax = TrialData.TaskState;
-        kinax = find(kinax==3);
-        temp = cell2mat(features(kinax));
-        temp = temp(:,5:end);
-        
-        % get the smoothed and pooled data
-        % get smoothed delta hg and beta features
-        new_temp=[];
-        [xx yy] = size(TrialData.Params.ChMap);
-        for k=1:size(temp,2)
-            tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
-            tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
-            tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-            pooled_data=[];
-            for i=1:2:xx
-                for j=1:2:yy
-                    delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
-                    beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
-                    hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-                    pooled_data = [pooled_data; delta; beta ;hg];
+    % load the data for the imagined files, if they belong to right thumb,
+    % index, middle, ring, pinky, pinch, tripod, power
+    D1i={};
+    D2i={};
+    D3i={};
+    D4i={};
+    D5i={};
+    D6i={};
+    D7i={};
+    D8i={};
+    D9i={};
+    D10i={};
+    idx = randperm(length(imagined_files),round(0.8*length(imagined_files)));
+    train_files = imagined_files(idx);
+    I = ones(length(imagined_files),1);
+    I(idx)=0;
+    test_files = imagined_files(find(I==1));
+
+    for i=1:length(train_files)
+        %disp(i/length(train_files)*100)
+        try
+            load(train_files{i})
+            file_loaded = true;
+        catch
+            file_loaded=false;
+            disp(['Could not load ' files{j}]);
+        end
+
+
+        if file_loaded
+            action = TrialData.TargetID;
+            features  = TrialData.SmoothedNeuralFeatures;
+            kinax = TrialData.TaskState;
+            kinax = find(kinax==3);
+            temp = cell2mat(features(kinax));
+            temp = temp(:,1:end);
+
+            % get the smoothed and pooled data
+            % get smoothed delta hg and beta features
+            new_temp=[];
+            [xx yy] = size(TrialData.Params.ChMap);
+            for k=1:size(temp,2)
+                tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                tmp4 = temp(641:768,k);tmp4 = tmp4(TrialData.Params.ChMap);
+                tmp5 = temp(385:512,k);tmp5 = tmp5(TrialData.Params.ChMap);
+                pooled_data=[];
+                for i=1:2:xx
+                    for j=1:2:yy
+                        delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                        beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                        hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                        lg = (tmp4(i:i+1,j:j+1));lg=mean(lg(:));
+                        %alp = (tmp5(i:i+1,j:j+1));alp=mean(alp(:));
+                        pooled_data = [pooled_data; delta; lg;hg];
+                    end
                 end
+                new_temp= [new_temp pooled_data];
             end
-            new_temp= [new_temp pooled_data];
-        end
-        temp=new_temp;
-        data_seg = temp(1:96,:); % only high gamma
-        %data_seg = mean(data_seg,2);
-        
-        if action ==1
-            D1i = cat(2,D1i,data_seg);
-            %D1f = cat(2,D1f,feat_stats1);
-        elseif action ==2
-            D2i = cat(2,D2i,data_seg);
-            %D2f = cat(2,D2f,feat_stats1);
-        elseif action ==3
-            D3i = cat(2,D3i,data_seg);
-            %D3f = cat(2,D3f,feat_stats1);
-        elseif action ==4
-            D4i = cat(2,D4i,data_seg);
-            %D4f = cat(2,D4f,feat_stats1);
-        elseif action ==5
-            D5i = cat(2,D5i,data_seg);
-            %D5f = cat(2,D5f,feat_stats1);
-        elseif action ==6
-            D6i = cat(2,D6i,data_seg);
-            %D6f = cat(2,D6f,feat_stats1);
-        elseif action ==7
-            D7i = cat(2,D7i,data_seg);
-            %D7f = cat(2,D7f,feat_stats1);
-        elseif action ==8
-            D8i = cat(2,D8i,data_seg);
-            %D7f = cat(2,D7f,feat_stats1);
-        elseif action ==9
-            D9i = cat(2,D9i,data_seg);
-        elseif action ==10
-            D10i = cat(2,D10i,data_seg);
+            temp=new_temp;
+            data_seg = temp(1:end,:); % only high gamma
+            %data_seg = mean(data_seg,2);
+
+            if action ==1
+                D1i = cat(2,D1i,data_seg);
+                %D1f = cat(2,D1f,feat_stats1);
+            elseif action ==2
+                D2i = cat(2,D2i,data_seg);
+                %D2f = cat(2,D2f,feat_stats1);
+            elseif action ==3
+                D3i = cat(2,D3i,data_seg);
+                %D3f = cat(2,D3f,feat_stats1);
+            elseif action ==4
+                D4i = cat(2,D4i,data_seg);
+                %D4f = cat(2,D4f,feat_stats1);
+            elseif action ==5
+                D5i = cat(2,D5i,data_seg);
+                %D5f = cat(2,D5f,feat_stats1);
+            elseif action ==6
+                D6i = cat(2,D6i,data_seg);
+                %D6f = cat(2,D6f,feat_stats1);
+            elseif action ==7
+                D7i = cat(2,D7i,data_seg);
+                %D7f = cat(2,D7f,feat_stats1);
+            elseif action ==8
+                D8i = cat(2,D8i,data_seg);
+                %D7f = cat(2,D7f,feat_stats1);
+            elseif action ==9
+                D9i = cat(2,D9i,data_seg);
+            elseif action ==10
+                D10i = cat(2,D10i,data_seg);
+            end
         end
     end
-end
 
-data=[];
-Y=[];
-data=[data cell2mat(D1i)]; Y=[Y;0*ones(size(cell2mat(D1i),2),1)];
-data=[data cell2mat(D2i)];  Y=[Y;1*ones(size(cell2mat(D2i),2),1)];
-data=[data cell2mat(D3i)];  Y=[Y;2*ones(size(cell2mat(D3i),2),1)];
-data=[data cell2mat(D4i)];  Y=[Y;3*ones(size(cell2mat(D4i),2),1)];
-data=[data cell2mat(D5i)];  Y=[Y;4*ones(size(cell2mat(D5i),2),1)];
-data=[data cell2mat(D6i)];  Y=[Y;5*ones(size(cell2mat(D6i),2),1)];
-%data=[data cell2mat(D7i)];  Y=[Y;6*ones(size(cell2mat(D7i),2),1)];
-%data=[data cell2mat(D8i)];  Y=[Y;7*ones(size(cell2mat(D8i),2),1)];
-data=[data cell2mat(D9i)];  Y=[Y;6*ones(size(cell2mat(D9i),2),1)];
-data=[data cell2mat(D10i)];  Y=[Y;7*ones(size(cell2mat(D10i),2),1)];
-data=data';
+    data=[];
+    Y=[];
+    data=[data cell2mat(D1i)]; Y=[Y;0*ones(size(cell2mat(D1i),2),1)];
+    data=[data cell2mat(D2i)];  Y=[Y;1*ones(size(cell2mat(D2i),2),1)];
+    data=[data cell2mat(D3i)];  Y=[Y;2*ones(size(cell2mat(D3i),2),1)];
+    data=[data cell2mat(D4i)];  Y=[Y;3*ones(size(cell2mat(D4i),2),1)];
+    data=[data cell2mat(D5i)];  Y=[Y;4*ones(size(cell2mat(D5i),2),1)];
+    data=[data cell2mat(D6i)];  Y=[Y;5*ones(size(cell2mat(D6i),2),1)];
+    %data=[data cell2mat(D7i)];  Y=[Y;6*ones(size(cell2mat(D7i),2),1)];
+    %data=[data cell2mat(D8i)];  Y=[Y;7*ones(size(cell2mat(D8i),2),1)];
+    data=[data cell2mat(D9i)];  Y=[Y;6*ones(size(cell2mat(D9i),2),1)];
+    data=[data cell2mat(D10i)];  Y=[Y;7*ones(size(cell2mat(D10i),2),1)];
+    data=data';
 
-% run LDA
-W = LDA(data,Y);
+    % run LDA
+    W = LDA(data,Y);
 
-% run it on the held out files and get classification accuracies
-acc=zeros(size(W,1));
-for i=1:length(test_files)
-    disp(i/length(test_files)*100)
-    try
-        load(test_files{i})
-        file_loaded = true;
-    catch
-        file_loaded=false;
-        disp(['Could not load ' files{j}]);
-    end
-    
-    
-    if file_loaded
-        action = TrialData.TargetID;
-        features  = TrialData.SmoothedNeuralFeatures;
-        kinax = TrialData.TaskState;
-        kinax = find(kinax==3);
-        temp = cell2mat(features(kinax));
-        temp = temp(:,5:end);
-        
-        % get the smoothed and pooled data
-        % get smoothed delta hg and beta features
-        new_temp=[];
-        [xx yy] = size(TrialData.Params.ChMap);
-        for k=1:size(temp,2)
-            tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
-            tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
-            tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-            pooled_data=[];
-            for i=1:2:xx
-                for j=1:2:yy
-                    delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
-                    beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
-                    hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-                    pooled_data = [pooled_data; delta; beta ;hg];
+    % run it on the held out files and get classification accuracies
+    acc=zeros(size(W,1));
+    for i=1:length(test_files)
+        %disp(i/length(test_files)*100)
+        try
+            load(test_files{i})
+            file_loaded = true;
+        catch
+            file_loaded=false;
+            disp(['Could not load ' files{j}]);
+        end
+
+
+        if file_loaded
+            action = TrialData.TargetID;
+            features  = TrialData.SmoothedNeuralFeatures;
+            kinax = TrialData.TaskState;
+            kinax = find(kinax==3);
+            temp = cell2mat(features(kinax));
+            temp = temp(:,5:end);
+
+            % get the smoothed and pooled data
+            % get smoothed delta hg and beta features
+            new_temp=[];
+            [xx yy] = size(TrialData.Params.ChMap);
+            for k=1:size(temp,2)
+                tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                tmp4 = temp(641:768,k);tmp4 = tmp4(TrialData.Params.ChMap);
+                tmp5 = temp(385:512,k);tmp5 = tmp5(TrialData.Params.ChMap);
+                pooled_data=[];
+                for i=1:2:xx
+                    for j=1:2:yy
+                        delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                        beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                        hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                        lg = (tmp4(i:i+1,j:j+1));lg=mean(lg(:));
+                        %alp = (tmp5(i:i+1,j:j+1));alp=mean(alp(:));
+                        pooled_data = [pooled_data; delta; lg;hg];
+                    end
                 end
+                new_temp= [new_temp pooled_data];
             end
-            new_temp= [new_temp pooled_data];
+            temp=new_temp;
+            data_seg = temp(1:end,:); % only high gamma
+            %data_seg = mean(data_seg,2);
         end
-        temp=new_temp;
-        data_seg = temp(1:96,:); % only high gamma
-        %data_seg = mean(data_seg,2);
+        data_seg = data_seg';
+
+        % run it thru the LDA
+        L = [ones(size(data_seg,1),1) data_seg] * W';
+
+        % get classification prob
+        P = exp(L) ./ repmat(sum(exp(L),2),[1 size(L,2)]);
+
+        %average prob
+        decision = nanmean(P(1:end,:));
+        %decision = P;
+        [aa bb]=max(decision);
+
+        % correction for online trials
+        if TrialData.TargetID==9
+            TrialData.TargetID = 7;
+        elseif TrialData.TargetID==10
+            TrialData.TargetID = 8;
+        end
+
+
+        % store results
+        if TrialData.TargetID <=10
+            acc(TrialData.TargetID,bb) = acc(TrialData.TargetID,bb)+1;
+        end
     end
-    data_seg = data_seg';
-    
-    % run it thru the LDA
-    L = [ones(size(data_seg,1),1) data_seg] * W';
-    
-    % get classification prob
-    P = exp(L) ./ repmat(sum(exp(L),2),[1 size(L,2)]);
-    
-    %average prob
-    decision = mean(P(1:end,:));
-    %decision = P;
-    [aa bb]=max(decision);
-    
-    % correction for online trials
-    if TrialData.TargetID==9
-        TrialData.TargetID = 7;
-    elseif TrialData.TargetID==10
-        TrialData.TargetID = 8;
+
+    for i=1:length(acc)
+        acc(i,:)= acc(i,:)/sum(acc(i,:));
     end
-    
-    
-    % store results
-    if TrialData.TargetID <=10
-        acc(TrialData.TargetID,bb) = acc(TrialData.TargetID,bb)+1;
-    end
+    %figure;imagesc(acc)
+    %diag(acc)
+    %mean(ans)
+
+    res_overall(iter,:,:)=acc;
+
 end
 
-for i=1:length(acc)
-    acc(i,:)= acc(i,:)/sum(acc(i,:));
-end
+acc=squeeze(nanmean(res_overall,1));
 figure;imagesc(acc)
 diag(acc)
 mean(ans)
+colormap bone
+caxis([0 1])
+set(gcf,'Color','w')
+title(['Av. Classif. Acc of ' num2str(mean(diag(acc))) '%'])
+% xticks(1:5)
+% yticks(1:5)
+% xticklabels({'Thumb','Index','Middle','Ring','Little'})
+% yticklabels({'Thumb','Index','Middle','Ring','Little'})
+set(gca,'FontSize',14)
 
 
 
+%% REGRESSION OF NEURAL FEATURES HG AND LMP ONTO SMOOTHED KINEMATICS
 
-%% USING GRU ON THE NEURAL FEATURES ITSELF 
+clc;clear
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+foldernames={'20220624'};
+
+imagined_files=[];
+for i=1:length(foldernames)
+    folderpath = fullfile(root_path, foldernames{i},'HandImagined');
+    D=dir(folderpath);
+    
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');        
+        tmp=dir(filepath);
+        imagined_files = [imagined_files;findfiles('',filepath)'];
+    end
+end
+
+
+% split into training and testing, for first 5 fingers alone 
+for i=1:length(imagined_files)
 
 
 

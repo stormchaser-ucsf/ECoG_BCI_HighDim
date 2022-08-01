@@ -1271,6 +1271,8 @@ Params.ImaginedMvmtTime = 4; % A green square, subject has actively imagine the 
 lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'PassbandFrequency',5,'PassbandRipple',0.2, ...
     'SampleRate',1e3);
+
+
 % 
 % % log spaced hg filters
 % Params.Fs = 1000;
@@ -1304,22 +1306,22 @@ for i=1:length(files)
 
 
     %get hG through filter bank approach
-%     filtered_data=zeros(size(features,1),size(features,2),8);
-%     k=1;
-%     for ii=9:16
-%         filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
-%             Params.FilterBank(ii).b, ...
-%             Params.FilterBank(ii).a, ...
-%             features)));
-%         k=k+1;
-%     end
-%     %tmp_hg = squeeze(mean(filtered_data.^2,3));
-    %tmp_hg = squeeze(mean(filtered_data,3));
+    filtered_data=zeros(size(features,1),size(features,2),2);
+    k=1;
+    for ii=4:5 %9:16 is hG, 4:5 is beta
+        filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
+            Params.FilterBank(ii).b, ...
+            Params.FilterBank(ii).a, ...
+            features)));
+        k=k+1;
+    end
+    %tmp_hg = squeeze(mean(filtered_data.^2,3));
+    tmp_hg = squeeze(mean(filtered_data,3));
 
     % low pass filter the data 
-    features1 = [randn(4000,128);features;randn(4000,128)];
-    tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
-    tmp_hg = tmp_hg(4001:end-4000,:);
+%     features1 = [randn(4000,128);features;randn(4000,128)];
+%     tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+%     tmp_hg = tmp_hg(4001:end-4000,:);
 
     task_state = TrialData.TaskState;
     idx=[];
@@ -1357,7 +1359,8 @@ for i=1:length(files)
     end
 end
 
-save high_res_erp_LMP_imagined_data -v7.3
+save high_res_erp_beta_imagined_data -v7.3
+%save high_res_erp_LMP_imagined_data -v7.3
 %save high_res_erp_imagined_data -v7.3
 
 % plot ERPs at all channels with tests for significance
@@ -1371,6 +1374,7 @@ for i=1:length(idx)
     ha=tight_subplot(8,16);
     d = 1;
     set(gcf,'Color','w')
+    set(gcf,'WindowState','maximized')
     data = ERP_Data{idx(i)};
     for ch=1:128
 
@@ -1459,9 +1463,14 @@ for i=1:length(idx)
             set(gca,'XColor',box_col)
             set(gca,'YColor',box_col)
         end        
-    end
+    end    
     sgtitle(ImaginedMvmt(idx(i)))
+    filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
+    saveas(gcf,filename)
+    set(gcf,'PaperPositionMode','auto')
+    print(gcf,filename,'-dpng','-r500')
 end
+%save ERPs_sig_ch_beta -v7.3
 save ERPs_sig_ch_LMP -v7.3
 %save ERPs_sig_ch_hg -v7.3
 
@@ -1604,14 +1613,14 @@ central=[33	49	64	58
 5	20	14	11];central=central(:);
 
 %condn_idx = [1 23  3  24 ];
-condn_idx = [1 3 6  10  12 15 ];
+condn_idx = [1 25  10  26 ];
 
 Data_left=[];Data_right=[];
 for i=1:length(condn_idx)
     tmp = ERP_Data{condn_idx(i)};
     tmp=squeeze(mean(tmp,3));
     %tmp = tmp(:,M1);
-    if i>3
+    if i>2
         Data_left=cat(3,Data_left,tmp');
     else
         Data_right=cat(3,Data_right,tmp');
@@ -1623,7 +1632,7 @@ Data(:,:,2,:) = permute(Data_left,[1 3 2]);
 firingRatesAverage=Data;
 
 % plot all right/left finger ERPs
-idx = [1:9];
+idx = [10:18];
 ch=106;
 figure;
 hold on
@@ -1641,6 +1650,142 @@ set(gca,'FontSize',12)
 legend(ImaginedMvmt(idx))
 
 
+% sig channel from the ERP analyses
+% head 
+tmp = sig_ch(27:28,:);
+tmp=mean(abs(tmp),1);
+tmp(tmp~=0)=1;
+figure;imagesc(abs(tmp(chMap)))
+set(gcf,'Color','w')
+axis off
+set(gcf,'Color','w')
+figure;
+c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh')
+e_h = el_add(elecmatrix(find(tmp~=0),:),'color','b')
+set(gcf,'Color','w')
+
+% getting a map of significant channels based on an ANOVA model. % Rt
+% single digit, Lt single digit, Head, Lips/Tongue, Rt Proximal (Bi/Tri),
+% Lt Proximal (Bi/Tri), Distal (Lt leg)
+
+
+% get the data
+% right sindle digit
+rt_idx = [10:18];rt_data=[];
+for i=1:length(rt_idx)
+    rt_data(i,:,:,:) = ERP_Data{rt_idx(i)};
+end
+rt_data = squeeze(mean(rt_data,1));
+% left sindle digit
+lt_idx = [10:18];lt_data=[];
+for i=1:length(lt_idx)
+    lt_data(i,:,:,:) = ERP_Data{lt_idx(i)};
+end
+lt_data = squeeze(mean(lt_data,1));
+% head
+head = ERP_Data{20};
+% lips tong
+lips_tong=[];
+lips_tong = cat(4,lips_tong,ERP_Data{29},ERP_Data{30},ERP_Data{20});
+lips_tong = permute(lips_tong,[4 1 2 3]);
+lips_tong = squeeze(mean(lips_tong,4));
+% rt prximal
+rt_prox=[];
+rt_prox = cat(4,rt_prox,ERP_Data{21},ERP_Data{22},...
+    ERP_Data{23},ERP_Data{24},ERP_Data{25},ERP_Data{26});
+rt_prox = permute(rt_prox,[4 1 2 3]);
+rt_prox = squeeze(mean(rt_prox,4));
+% lt proximal
+lt_prox=[];
+lt_prox = cat(4,lt_prox,ERP_Data{24},ERP_Data{24});
+lt_prox = squeeze(mean(lt_prox,4));
+% legs
+legs=[];
+legs = cat(4,legs,ERP_Data{27},ERP_Data{28});
+legs = permute(legs,[4 1 2 3]);
+legs = squeeze(mean(legs,4));
+
+% run the test at each channel, avg activity 3200-5000 time-pts
+anova_sig_ch_pval=[];
+time_idx=3200:5000;
+for i=1:128
+    anova_data = [squeeze(mean(rt_data(time_idx,i,:)))...
+        squeeze(mean(lt_data(time_idx,i,:)))...
+        squeeze(mean(head(time_idx,i,:)))...
+        squeeze(mean(lips_tong(time_idx,i,:)))...
+        squeeze(mean(rt_prox(time_idx,i,:)))...
+        squeeze(mean(lt_prox(time_idx,i,:)))...
+        squeeze(mean(legs(time_idx,i,:)))];
+    [p,tbl,stats]=anova1(anova_data,[],'off');
+    anova_sig_ch_pval(i)=p;
+end
+sum(anova_sig_ch_pval<=0.05)
+
+% anova on movements within a body part set e.g., all rt hand movements on
+% a sample by sample basis
+anova_sig_ch_pval=[];
+time_idx=4000:5500;
+for i=1:128
+    disp(i)
+    parfor time_idx=3000:5000
+        anova_data = squeeze(mean(rt_data(:,time_idx,i,:),2))';
+        tmp=zscore(anova_data);
+        bad_idx = abs(tmp)>2.0;
+        anova_data(logical(bad_idx))=NaN;
+        [p,tbl,stats]=anova1(anova_data,[],'off');
+        anova_sig_ch_pval(i,time_idx)=p;
+    end
+end
+anova_sig_ch_pval=anova_sig_ch_pval(:,3000:end);
+[pfdr,pvals]=fdr(anova_sig_ch_pval(:),0.05);
+sum(anova_sig_ch_pval(:)<=0.05)
+%sum(anova_sig_ch_pval(:)<=pfdr)
+%tmp = anova_sig_ch_pval<=pfdr;
+tmp = anova_sig_ch_pval<=1e-4;
+figure;imagesc(tmp)
+tmp1=sum(tmp');
+tmp1(tmp1>0)=1;
+figure;stem(tmp1)
+figure;imagesc(tmp1(chMap))
+
+% anova on movements within a body part set e.g., all rt hand movements on
+% averaged over time
+anova_sig_ch_pval=[];
+time_idx=3200:5000;
+for i=1:128    
+    anova_data = squeeze(mean(rt_data(:,time_idx,i,:),2))';
+    [p,tbl,stats]=anova1(anova_data,[],'off');
+    anova_sig_ch_pval(i)=p;
+end
+[pfdr,pvals]=fdr(anova_sig_ch_pval(:),0.05);
+sum(anova_sig_ch_pval(:)<=0.05)
+tmp = anova_sig_ch_pval<=0.05;
+figure;imagesc(tmp(chMap))
+axis off
+set(gcf,'Color','w')
+
+% same as above but with bad trial removal
+anova_sig_ch_pval=[];
+time_idx=3200:5000;
+for i=1:128    
+    anova_data = squeeze(mean(rt_data(:,time_idx,i,:),2))';
+    tmp=zscore(anova_data);
+    bad_idx = abs(tmp)>2.0;
+    anova_data(logical(bad_idx))=NaN;
+    [p,tbl,stats]=anova1(anova_data,[],'off');
+    anova_sig_ch_pval(i)=p;
+end
+[pfdr,pvals]=fdr(anova_sig_ch_pval(:),0.01);
+sum(anova_sig_ch_pval(:)<=0.01)
+tmp = anova_sig_ch_pval<=0.05;
+figure;imagesc(tmp(chMap))
+axis off
+set(gcf,'Color','w')
+   
+
+
+% delta -> covers rt shoulder, lt shoulder and leg but also in same hand
+% knob regions
 % now look at Mahab distance using this new data from 3000-6000 samples
 % mean for each trial, std across trials
 D=[];
@@ -1710,7 +1855,21 @@ set(gcf,'Color','w')
  % ([left hand], [right hand], [lips, tongue, head], [proximal], [distal])
  % and then compare the spatial maps against each other
 
- %dPCA to show that interaction of movement X ROI is significant
+ 
+
+ % saving dpng images for all erps in various bands
+ filepath='F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\beta';
+ D=dir(filepath); 
+ for i=3:length(D)
+     disp(i-2)
+     filename = fullfile(D(i).folder,D(i).name);
+     openfig(filename);
+     set(gcf,'WindowState','maximized')
+     filename_to_save = fullfile(D(i).folder,D(i).name(1:end-4));
+     set(gcf,'PaperPositionMode','auto')
+     print(gcf,filename_to_save,'-dpng','-r500')
+     close all
+ end
 
 
 %% ERPs of imagined actions
@@ -2923,9 +3082,58 @@ stem(cumsum(l)./sum(l))
 
 
 
+%% boostrapping
+
+fs=1e3;
+t=1:2e3;
+f1=2;
+f2=4;
+x=sin(2*pi*(f1/fs)*(t))' + randn(length(t),1);
+y=sin(2*pi*(f2/fs)*(t))' + randn(length(t),1);
+
+[C,lags]=xcorr(x,y);
+figure;plot(lags,C)
+
+% bootstrapping with circular shuffle
+Cboot=[];
+pow_boot=[];
+for iter=1:1000
+    k = randperm(length(x),1);
+    l = randperm(length(y),1);
+    x1 = circshift(x,k);
+    y1 = circshift(y,k);
+    Cboot(iter,:) = xcorr(x1,y)-C;
+    [pow_boot(iter,:), F] = pwelch(Cboot(iter,:),[],[],[],fs);
+end
+figure;plot(lags,Cboot','Color',[.5 .5 .5 .25])
+hold on
+plot(lags,C,'Color','b','LineWidth',1)
+title('Circ Shuffle - phase is different')
 
 
+% bootstrapping with random permutation
+Cboot=[];
+pow_boot=[];
+for iter=1:1000
+    k = randperm(length(x));    
+    x1 = x(k);    
+    l = randperm(length(y));    
+    y1 = y(l);    
+    Cboot(iter,:) = xcorr(x1,y1);
+    [pow_boot(iter,:), F] = pwelch(Cboot(iter,:),[],[],[],fs);
+end
+figure;plot(lags,Cboot','Color',[.5 .5 .5 .25])
+hold on
+plot(lags,C,'Color','b','LineWidth',1)
+title('Random Permutation - No oscillation present')
 
+
+figure;plot(F,log10(abs(pow_boot)),'Color',[.5 .5 .5 .25])
+hold on
+pow = pwelch(C,[],[],[],fs);
+plot(F,log10(abs(pow)),'b','LineWidth',1)
+xlim([0 100])
+title('Significant rhythmicity based on FFT of correlation')
 
 
 
