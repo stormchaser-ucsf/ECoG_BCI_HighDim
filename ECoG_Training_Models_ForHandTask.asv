@@ -2398,14 +2398,14 @@ for i=1:length(imagined_files)
         data_seg={};
         data_kin={};
         chmap=TrialData.Params.ChMap;
-        for j=1:length(start_time_neural)
+        for j=2:length(start_time_neural)
             tmp = (raw_data(start_time_neural(j):stop_time_neural(j),:));
             tmp1 = zscore(tmp_hg(start_time_neural(j):stop_time_neural(j),:));
             tmp2 = zscore(tmp_lmp(start_time_neural(j):stop_time_neural(j),:));
             tmp3 = zscore(tmp_lg(start_time_neural(j):stop_time_neural(j),:));
-            %tmp1=tmp1(:,m1);
-            %tmp2=tmp2(:,m1);
-            %tmp3=tmp3(:,m1);
+            tmp3=tmp3(:,m1);
+            tmp3=tmp3(:,m1);
+            tmp3=tmp3(:,m1);
             %tmp=tmp(1:round(size(tmp,1)/2),:); % only flexion phase
             tmp = [tmp1 tmp2 ];
             data_seg = cat(2,data_seg,tmp);
@@ -2429,7 +2429,7 @@ end
 
 % split into training and testing -> single action 
 overall_r2=[];
-dim=15;
+dim=40;
 parfor iter=1:100
     %disp(iter)
     train_idx=  randperm(length(neural_data),round(0.7*length(neural_data)));
@@ -2445,8 +2445,8 @@ parfor iter=1:100
     train_neural = cell2mat(train_neural');
     train_kin = cell2mat(train_kin');
     train_kin=train_kin(:,1);
-    [c,s,l]=pca(train_neural(:,1:24));
-    [c1,s1,l1]=pca(train_neural(:,25:end));
+    [c,s,l]=pca(train_neural(:,1:128));
+    [c1,s1,l1]=pca(train_neural(:,129:256));
     %[c2,s2,l2]=pca(train_neural(:,257:384));
     train_neural = [s(:,1:dim) s1(:,1:dim) ];
 
@@ -2466,8 +2466,8 @@ parfor iter=1:100
     test_neural = cell2mat(test_neural');
     %[c,s,l]=pca(test_neural(:,1:128));
     %[c1,s1,l1]=pca(test_neural(:,129:256));
-    s=test_neural(:,1:24)*c(:,1:dim);
-    s1=test_neural(:,25:48)*c1(:,1:dim);
+    s=test_neural(:,1:128)*c(:,1:dim);
+    s1=test_neural(:,129:256)*c1(:,1:dim);
     %s2=test_neural(:,257:384)*c2(:,1:dim);
     test_neural = [s(:,1:dim) s1(:,1:dim) ];
     test_kin = cell2mat(test_kin');
@@ -2495,7 +2495,6 @@ figure;boxplot(overall_r2)
 % split into training and testing, swapping weights from one action to
 % another 
 figure;
-r2_finger={};
 for i=1:5
     disp(i)
     r2_comparison=[];
@@ -2512,7 +2511,6 @@ for i=1:5
         % run cross val regression
         [r2b]=run_regression_bci_swap(neural_data_b,kin_data_b,neural_data_a,kin_data_a,40);
         r2_comparison=[r2_comparison r2b'];
-        r2_finger{i,j} = r2_comparison;
     end
     r2mean = sort(bootstrp(1000,@mean,r2_comparison));
     subplot(5,1,i);
@@ -2521,7 +2519,6 @@ for i=1:5
     %title(num2str(i))
 end
 
-save regression_hand_bci -v7.3
 
 
 

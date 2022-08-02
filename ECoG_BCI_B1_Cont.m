@@ -4225,10 +4225,1350 @@ for i=1:size(activations,2)
 end
 
 
-%% GETTING 7DOF DATA FOR JENSEN FOR TESTING META TRANSFER
+%% (MAIN) Classifier with historical data 
+% and also GETTING DATA FOR JENSEN FOR TESTING META TRANSFER 
 % split into erp and online on a day to day basis
 % get the pooled data and feed it to jason
 
+
+clc;clear
+close all
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+
+% for only 6 DoF original:
+%foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
+
+foldernames = {'20210615','20210616','20210623','20210625','20210630','20210702',...
+    '20210707','20210716','20210728','20210804','20210806','20210813','20210818',...
+    '20210825','20210827','20210901','20210903','20210910','20210917','20210929',...
+    '20211001','20211006','20211008','20211013','20211020','20211022','20211027','20211029',...
+    '20211103','20211105','20211117','20211119','20220126','20220128','20220202',...
+    '20220204','20220209','20220211','20220216','20220218','20220223','20220225',...
+    '20220302','20220304','20220309','20220311','20220316','20220323','20220325',...
+    '20220422','20220427','20220429'};
+cd(root_path)
+
+imag_files={};
+online_files={};
+k=1;jj=1;
+for i=1:length(foldernames)
+    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+    D=dir(folderpath);
+    imag_files_temp=[];
+    online_files_temp=[];
+    
+    if i==17
+        D = D([1:2 3:6]);
+    elseif i==19
+        D = D([1:2 5:10]);
+    elseif i==29
+        D = D([1:2 8:9]);        
+    end
+    
+    if strcmp(foldernames{i},'20220427')
+        D=D([1:2 5:7]);        
+    end
+    
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');
+        if exist(filepath)
+            imag_files_temp = [imag_files_temp;findfiles('',filepath)'];
+        end
+        filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        if exist(filepath1)
+            online_files_temp = [online_files_temp;findfiles('',filepath1)'];
+        end
+    end
+    if ~isempty(imag_files_temp)
+        imag_files{k} = imag_files_temp;k=k+1;
+    end
+    if ~isempty(online_files_temp)
+        online_files{jj} = online_files_temp;jj=jj+1;
+    end
+    %     imag_files{i} = imag_files_temp;
+    %     online_files{i} = online_files_temp;
+end
+
+% load the imagined data files
+Data=[];
+files_not_loaded=[];
+for iter=1:length(imag_files)
+    tmp_files = imag_files{iter};
+    D1={};
+    D2={};
+    D3={};
+    D4={};
+    D5={};
+    D6={};
+    D7={};
+    for ii=1:length(tmp_files)
+        disp(ii)
+        
+        indicator=1;
+        try
+            load(tmp_files{ii});
+        catch ME
+            warning('Not able to load file, skipping to next')
+            indicator = 0;
+            files_not_loaded=[files_not_loaded;tmp_files{ii}];
+        end
+        
+        if indicator
+            features  = TrialData.SmoothedNeuralFeatures;
+            kinax = TrialData.TaskState;
+            kinax = [find(kinax==3)];
+            temp = cell2mat(features(kinax));
+            
+            %get the pooled data
+            new_temp=[];
+            [xx yy] = size(TrialData.Params.ChMap);
+            for k=1:size(temp,2)
+                tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                pooled_data=[];
+                for i=1:2:xx
+                    for j=1:2:yy
+                        delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                        beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                        hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                        pooled_data = [pooled_data; delta; beta ;hg];
+                    end
+                end
+                new_temp= [new_temp pooled_data];
+            end
+            temp_data=new_temp;
+            
+            
+%             % get the pooled data for state 1
+%             kinax = TrialData.TaskState;
+%             kinax = [find(kinax==1)];
+%             temp = cell2mat(features(kinax));
+%             
+%             %get the pooled data
+%             new_temp=[];
+%             [xx yy] = size(TrialData.Params.ChMap);
+%             for k=1:size(temp,2)
+%                 tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+%                 tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+%                 tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+%                 pooled_data=[];
+%                 for i=1:2:xx
+%                     for j=1:2:yy
+%                         delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+%                         beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+%                         hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+%                         pooled_data = [pooled_data; delta; beta ;hg];
+%                     end
+%                 end
+%                 new_temp= [new_temp pooled_data];
+%             end
+%             temp_bl = new_temp;
+%             
+            % baseline the data
+            %temp = temp_data - mean(temp_bl,2);
+            
+            
+            % no baseline
+            temp = temp_data;
+            
+            
+            %temp = temp(769:896,:);
+            if TrialData.TargetID == 1
+                D1=cat(2,D1,temp);
+            elseif TrialData.TargetID == 2
+                D2=cat(2,D2,temp);
+            elseif TrialData.TargetID == 3
+                D3=cat(2,D3,temp);
+            elseif TrialData.TargetID == 4
+                D4=cat(2,D4,temp);
+            elseif TrialData.TargetID == 5
+                D5=cat(2,D5,temp);
+            elseif TrialData.TargetID == 6
+                D6=cat(2,D6,temp);
+            elseif TrialData.TargetID == 7
+                D7=cat(2,D7,temp);
+            end
+        end
+    end
+    
+    clear condn_data
+    %idx = [1:128];
+    condn_data{1}=[D1 ]'; % right hand
+    condn_data{2}= [D2]'; % both feet
+    condn_data{3}=[D3]'; % left hand
+    condn_data{4}=[D4]'; % head
+    condn_data{5}=[D5]'; % mime up
+    condn_data{6}=[D6]'; % tongue in
+    condn_data{7}=[D7]'; % squeeze both hands
+    
+    Data.Day(iter).imagined_data = condn_data;
+end
+
+% load the online data files
+files_not_loaded_fixed=[];
+for iter=1:length(online_files)
+    tmp_files = online_files{iter};
+    D1={};
+    D2={};
+    D3={};
+    D4={};
+    D5={};
+    D6={};
+    D7={};
+    for ii=1:length(tmp_files)
+        disp(ii)
+        
+        indicator=1;
+        try
+            load(tmp_files{ii});
+        catch ME
+            warning('Not able to load file, skipping to next')
+            indicator = 0;
+            files_not_loaded_fixed=[files_not_loaded_fixed;tmp_files{ii}];
+        end
+        
+        if indicator
+            
+            features  = TrialData.SmoothedNeuralFeatures;
+            kinax = TrialData.TaskState;
+            kinax = [find(kinax==3)];
+            temp = cell2mat(features(kinax));
+            
+            %get the pooled data
+            new_temp=[];
+            [xx yy] = size(TrialData.Params.ChMap);
+            for k=1:size(temp,2)
+                tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                pooled_data=[];
+                for i=1:2:xx
+                    for j=1:2:yy
+                        delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                        beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                        hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                        pooled_data = [pooled_data; delta; beta ;hg];
+                    end
+                end
+                new_temp= [new_temp pooled_data];
+            end
+            temp_data=new_temp;
+            
+            
+%             % get the pooled data for state 1
+%             kinax = TrialData.TaskState;
+%             kinax = [find(kinax==1)];
+%             temp = cell2mat(features(kinax));
+%             
+%             %get the pooled data
+%             new_temp=[];
+%             [xx yy] = size(TrialData.Params.ChMap);
+%             for k=1:size(temp,2)
+%                 tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+%                 tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+%                 tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+%                 pooled_data=[];
+%                 for i=1:2:xx
+%                     for j=1:2:yy
+%                         delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+%                         beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+%                         hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+%                         pooled_data = [pooled_data; delta; beta ;hg];
+%                     end
+%                 end
+%                 new_temp= [new_temp pooled_data];
+%             end
+%             temp_bl = new_temp;
+            
+            % baseline the data
+            %temp = temp_data - mean(temp_bl,2);
+            
+            % no baseline
+            temp = temp_data;
+            
+            %temp = temp(769:896,:);
+            if TrialData.TargetID == 1
+                D1=cat(2,D1,temp);
+            elseif TrialData.TargetID == 2
+                D2=cat(2,D2,temp);
+            elseif TrialData.TargetID == 3
+                D3=cat(2,D3,temp);
+            elseif TrialData.TargetID == 4
+                D4=cat(2,D4,temp);
+            elseif TrialData.TargetID == 5
+                D5=cat(2,D5,temp);
+            elseif TrialData.TargetID == 6
+                D6=cat(2,D6,temp);
+            elseif TrialData.TargetID == 7
+                D7=cat(2,D7,temp);
+            end
+        end
+    end
+    
+    clear condn_data
+    %idx = [1:128];
+    condn_data{1}=[D1 ]'; % right hand
+    condn_data{2}= [D2]'; % both feet
+    condn_data{3}=[D3]'; % left hand
+    condn_data{4}=[D4]'; % head
+    condn_data{5}=[D5]'; % mime up
+    condn_data{6}=[D6]'; % tongue in
+    condn_data{7}=[D7]'; % squeeze both hands
+    
+    Data.Day(iter).online_data = condn_data;
+end
+
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+save 7DoF_Data_SpatioTemp_AcrossDays_20220429 Data -v7.3
+
+condn_data={};
+for i=1:7
+    data=[];
+    for j=8
+        tmp = Data.Day(j).online_data;
+        tmp = tmp{i};
+        data = [data;tmp];
+    end
+    condn_data{i} = data;
+end
+
+
+
+% train an autoencoder and see how it goes
+X=[];
+idx=[];
+for i=1:length(condn_data)
+    tmp = condn_data{i};
+    X = [X;tmp];
+    idx = [idx ;i*ones(size(tmp,1),1)];
+end
+% artfiact correct
+m = mean(X);
+for i=1:size(X,2)
+    [aa bb] = find(abs(X(:,i))>=4);
+    X(aa,i) = m(i);
+end
+X=X';
+size(X)
+
+
+% X7 is day 7
+% X6 is day 6
+% need to project data from day 7 onto space spanned by day 6 as decoder is
+% built on day 6
+
+jj = randperm(size(X7,1),size(X6,1));
+X7a = X7(jj,:);
+A = X6\X7a;
+X = X7*A;
+X=X';
+
+%
+% autoenc = trainAutoencoder(X,5,...
+%      'EncoderTransferFunction','satlin',...
+%         'DecoderTransferFunction','satlin',...
+%         'L2WeightRegularization',0.1,...
+%         'SparsityRegularization',4,...
+%         'SparsityProportion',0.15,...
+%         'ScaleData',0,...
+%         'MaxEpochs',1000,...
+%         'UseGPU',1);
+%
+% XReconstructed = predict(autoenc,X);
+% mseError = mse(X-XReconstructed)
+%
+% Z = encode(autoenc,X);
+% [coeff,score,latent]=pca(Z');
+% Z = score';
+% cmap = parula(7);
+% figure;hold on
+% for i=1:7
+%     idxx = find(idx==i);
+%     plot3(Z(1,idxx),Z(2,idxx),Z(3,idxx),'.','color',cmap(i,:));
+% end
+
+latent_Z=[];
+for loop=1:10
+    
+    
+    % using custom layers
+    layers = [ ...
+        featureInputLayer(96)
+        fullyConnectedLayer(64)
+        batchNormalizationLayer
+        reluLayer
+        fullyConnectedLayer(32)
+        batchNormalizationLayer
+        reluLayer
+        fullyConnectedLayer(8)
+        batchNormalizationLayer
+        reluLayer('Name','autoencoder')
+        fullyConnectedLayer(32)
+        batchNormalizationLayer
+        reluLayer
+        fullyConnectedLayer(64)
+        batchNormalizationLayer
+        reluLayer
+        fullyConnectedLayer(96)
+        regressionLayer];
+    
+    
+    %'ValidationData',{XTest,YTest},...
+    options = trainingOptions('sgdm', ...
+        'InitialLearnRate',0.01, ...
+        'MaxEpochs',500, ...
+        'Shuffle','every-epoch', ...
+        'Verbose',true, ...
+        'Plots','training-progress',...
+        'MiniBatchSize',4096,...
+        'ValidationFrequency',30,...
+        'L2Regularization',1e-4,...
+        'ExecutionEnvironment','gpu');
+    
+    % build the autoencoder
+    net = trainNetwork(X',X',layers,options);
+    
+    % MSE
+    tmp = predict(net,X');
+    mseError = mse(X-tmp')
+    %
+    % % now get activations in deepest layer
+    Z = activations(net,X','autoencoder');
+    %
+    %     % plotting
+    %     [coeff,score,latent]=pca(Z');
+    %     Z = score';
+    %     cmap = parula(7);
+    %     figure;hold on
+    %     for i=1:7
+    %         idxx = find(idx==i);
+    %         plot3(Z(1,idxx),Z(2,idxx),Z(3,idxx),'.','color',cmap(i,:));
+    %     end
+    %     title(num2str(loop))
+    latent_Z(loop,:,:) = Z;
+end
+
+Z = squeeze(mean(latent_Z,1));
+[coeff,score,latent]=pca(Z');
+Z = score';
+cmap = parula(7);
+figure;hold on
+for i=1:7
+    idxx = find(idx==i);
+    plot3(Z(1,idxx),Z(2,idxx),Z(3,idxx),'.','color',cmap(i,:));
+end
+
+
+%
+%Z = activations(net,X','autoencoder');
+Z = squeeze(mean(latent_Z,1));
+Y = tsne(Z','Algorithm','exact','Standardize',false,'Perplexity',30,'NumDimensions',3,...
+    'Exaggeration',10);
+Y=Y';
+cmap = parula(7);
+figure;hold on
+for i=1:7
+    idxx = find(idx==i);
+    plot3(Y(1,idxx),Y(2,idxx),Y(3,idxx),'.','color',cmap(i,:));
+    %plot(Y(1,idxx),Y(2,idxx),'.','color',cmap(i,:));
+end
+
+
+layers1=layers;
+layers1=layers1(1:10);
+layers2 = [layers1
+    fullyConnectedLayer(7)
+    softmaxLayer
+    classificationLayer]
+
+
+
+%'ValidationData',{XTest,YTest},...
+options = trainingOptions('adam', ...
+    'InitialLearnRate',0.01, ...
+    'MaxEpochs',100, ...
+    'Shuffle','every-epoch', ...
+    'Verbose',true, ...
+    'Plots','training-progress',...
+    'MiniBatchSize',512,...
+    'ValidationFrequency',30,...
+    'L2Regularization',1e-4,...
+    'ExecutionEnvironment','auto');
+
+Y=categorical(idx);
+% build the classifier
+net = trainNetwork(X',Y,layers2,options);
+
+
+% % now get activations in deepest layer
+Z = activations(net,X','autoencoder');
+
+% plotting
+[coeff,score,latent]=pca(Z');
+Z = score';
+cmap = parula(7);
+figure;hold on
+for i=1:7
+    idxx = find(idx==i);
+    plot3(Z(1,idxx),Z(2,idxx),Z(3,idxx),'.','color',cmap(i,:));
+end
+
+
+cmap = parula(7);
+figure;hold on
+for i=1:7
+    idxx = find(idx==i);
+    plot3(Z(7,idxx),Z(8,idxx),Z(9,idxx),'color',cmap(i,:));
+end
+
+
+%% (MAIN) building a neural decoder with all the historical data
+
+clc;clear
+
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+load 7DoF_Data_SpatioTemp_AcrossDays_20220429
+%load 7DoF_Data_SpatioTemp_AcrossDays_20220224
+%load Data_SpatioTemp_AcrossDays
+%load Data_SpatioTemp_AcrossDays_9282021
+%load 7DoF_Data_Training
+
+% get the training data
+D1i=[];
+D2i=[];
+D3i=[];
+D4i=[];
+D5i=[];
+D6i=[];
+D7i=[];
+for i=1:15%length(Data.Day)
+    disp(i)
+    tmp=Data.Day(i).imagined_data;
+    D1i = [D1i cell2mat(tmp{1}')];
+    D2i = [D2i cell2mat(tmp{2}')];
+    D3i = [D3i cell2mat(tmp{3}')];
+    D4i = [D4i cell2mat(tmp{4}')];
+    D5i = [D5i cell2mat(tmp{5}')];
+    D6i = [D6i cell2mat(tmp{6}')];
+    D7i = [D7i cell2mat(tmp{7}')];
+end
+
+D1=[];
+D2=[];
+D3=[];
+D4=[];
+D5=[];
+D6=[];
+D7=[];
+for i=1:length(Data.Day)
+    disp(i)
+    tmp=Data.Day(i).online_data;
+    D1 = [D1 cell2mat(tmp{1}')];
+    D2 = [D2 cell2mat(tmp{2}')];
+    D3 = [D3 cell2mat(tmp{3}')];
+    D4 = [D4 cell2mat(tmp{4}')];
+    D5 = [D5 cell2mat(tmp{5}')];
+    D6 = [D6 cell2mat(tmp{6}')];
+    D7 = [D7 cell2mat(tmp{7}')];
+end
+
+
+% build the decoder; compare ML using patternet and using layers
+clear condn_data
+% combing both onlien plus offline
+%idx=641;
+idx = [1:96];
+condn_data{1}=[D1(idx,:) D1i]'; % right hand
+condn_data{2}= [D2(idx,:) D2i]'; % both feet
+condn_data{3}=[D3(idx,:) D3i]'; % left hand
+condn_data{4}=[D4(idx,:) D4i]'; % head
+condn_data{5}=[D5(idx,:) D5i]'; % mime up
+condn_data{6}=[D6(idx,:) D6i]'; % tongue in
+condn_data{7}=[D7(idx,:) D7i]'; % both hands
+
+% 2norm
+for i=1:length(condn_data)
+   tmp = condn_data{i}; 
+   for j=1:size(tmp,1)
+       tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+   end
+   condn_data{i}=tmp;
+end
+
+A = condn_data{1};
+B = condn_data{2};
+C = condn_data{3};
+D = condn_data{4};
+E = condn_data{5};
+F = condn_data{6};
+G = condn_data{7};
+
+
+clear N
+N = [A' B' C' D' E' F' G'];
+T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
+    5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1)];
+
+T = zeros(size(T1,1),7);
+[aa bb]=find(T1==1);[aa(1) aa(end)]
+T(aa(1):aa(end),1)=1;
+[aa bb]=find(T1==2);[aa(1) aa(end)]
+T(aa(1):aa(end),2)=1;
+[aa bb]=find(T1==3);[aa(1) aa(end)]
+T(aa(1):aa(end),3)=1;
+[aa bb]=find(T1==4);[aa(1) aa(end)]
+T(aa(1):aa(end),4)=1;
+[aa bb]=find(T1==5);[aa(1) aa(end)]
+T(aa(1):aa(end),5)=1;
+[aa bb]=find(T1==6);[aa(1) aa(end)]
+T(aa(1):aa(end),6)=1;
+[aa bb]=find(T1==7);[aa(1) aa(end)]
+T(aa(1):aa(end),7)=1;
+
+% code to train an ensemble of neural networks
+clear net_7DoF_PnP4
+for i=1:10
+    disp(i)
+    clear net
+    net = patternnet([64 64 64]) ;
+    net.performParam.regularization=0.2;
+    net.trainParam.epochs=1500;
+    net = train(net,N,T','useParallel','yes');
+    net_7DoF_PnP4{i}=net;
+end
+%pretrain_net.layers{1}.transferFcn = 'poslin';
+%pretrain_net.layers{2}.transferFcn = 'poslin';
+%pretrain_net.layers{3}.transferFcn = 'poslin';
+%net1.divideParam.trainRatio
+net_7DoF_PnP_2022Feb_2norm = net_7DoF_PnP3;
+genFunction(net_7DoF_PnP_2022Feb_2norm,'MLP_7DoF_PnP_2022Feb_2norm')
+save net_7DoF_PnP_2022Feb_2norm net_7DoF_PnP_2022Feb_2norm
+% now train a NN using layers
+% organize the data
+
+net_7DoF_PnP4_ensemble = net_7DoF_PnP4
+save net_7DoF_PnP4_ensemble net_7DoF_PnP4_ensemble 
+
+
+% using custom layers
+layers = [ ...
+    featureInputLayer(96)
+    fullyConnectedLayer(96)
+    layerNormalizationLayer
+    leakyReluLayer
+    dropoutLayer(0.3)
+    fullyConnectedLayer(96)
+    layerNormalizationLayer
+    eluReluLayer
+    dropoutLayer(0.5)
+    fullyConnectedLayer(64)
+    layerNormalizationLayer
+    sigmoidLayer
+    dropoutLayer(0.3)
+    fullyConnectedLayer(7)
+    softmaxLayer
+    classificationLayer
+    ];
+
+
+
+X = N;
+Y=categorical(T1);
+idx = randperm(length(Y),round(0.8*length(Y)));
+Xtrain = X(:,idx);
+Ytrain = Y(idx);
+I = ones(length(Y),1);
+I(idx)=0;
+idx1 = find(I~=0);
+Xtest = X(:,idx1);
+Ytest = Y(idx1);
+
+
+
+%'ValidationData',{XTest,YTest},...
+options = trainingOptions('adam', ...
+    'InitialLearnRate',0.01, ...
+    'MaxEpochs',15, ...
+    'Verbose',true, ...
+    'Plots','training-progress',...
+    'MiniBatchSize',256,...
+    'ValidationFrequency',30,...
+    'ValidationPatience',5,...
+    'ExecutionEnvironment','gpu',...
+    'ValidationData',{Xtest',Ytest});
+
+% build the classifier
+net = trainNetwork(Xtrain',Ytrain,layers,options);
+net_mlp_7DoF_Feb2022 = net;
+save net_mlp_7DoF_Feb2022 net_mlp_7DoF_Feb2022
+save net net
+genFunction(net,'MLP_PreTrained_7DoF_PnP4_New')
+
+% get the data and test on held out day
+D1i=[];
+D2i=[];
+D3i=[];
+D4i=[];
+D5i=[];
+D6i=[];
+D7i=[];
+for i=length(Data.Day)
+    disp(i)
+    tmp=Data.Day(i).imagined_data;
+    D1i = [D1i cell2mat(tmp{1}')];
+    D2i = [D2i cell2mat(tmp{2}')];
+    D3i = [D3i cell2mat(tmp{3}')];
+    D4i = [D4i cell2mat(tmp{4}')];
+    D5i = [D5i cell2mat(tmp{5}')];
+    D6i = [D6i cell2mat(tmp{6}')];
+    D7i = [D7i cell2mat(tmp{7}')];
+end
+
+
+D1=[];
+D2=[];
+D3=[];
+D4=[];
+D5=[];
+D6=[];
+D7=[];
+for i=length(Data.Day)
+    disp(i)
+    tmp=Data.Day(i).online_data;
+    D1 = [D1 cell2mat(tmp{1}')];
+    D2 = [D2 cell2mat(tmp{2}')];
+    D3 = [D3 cell2mat(tmp{3}')];
+    D4 = [D4 cell2mat(tmp{4}')];
+    D5 = [D5 cell2mat(tmp{5}')];
+    D6 = [D6 cell2mat(tmp{6}')];
+    D7 = [D7 cell2mat(tmp{7}')];
+end
+
+
+% test the classifier output on imagined data
+condn_data{1}=[D1(:,201:end)]'; % right hand
+condn_data{2}= [ D2(:,201:end)]'; % both feet
+condn_data{3}=[ D3(:,201:end)]'; % left hand
+condn_data{4}=[ D4(:,201:end)]'; % head
+condn_data{5}=[D5(:,201:end)]'; % mime up
+condn_data{6}=[ D6(:,201:end)]'; % tongue in
+condn_data{7}=[ D7(:,201:end)]'; % both hands
+acc_layers=zeros(7);
+acc_net=zeros(7);
+for i=1:length(condn_data)
+    disp(i)
+    X = condn_data{i};
+    for j=1:size(X,1)
+        res=predict(net,X(j,:));
+        [aa bb]=max(res);
+        acc_layers(i,bb) = acc_layers(i,bb)+1;
+        
+        res = net1(X(j,:)');
+        [aa bb]=max(res);
+        acc_net(i,bb) = acc_net(i,bb)+1;
+    end
+end
+for i=1:7
+    acc_net(i,:) = acc_net(i,:)./sum(acc_net(i,:));
+    acc_layers(i,:) = acc_layers(i,:)./sum(acc_layers(i,:));
+end
+[diag(acc_layers)  diag(acc_net)]
+mean(ans)
+
+% adapt the network to imagined data and test on online data
+net1=pretrain_net;
+A = condn_data{1};
+B = condn_data{2};
+C = condn_data{3};
+D = condn_data{4};
+E = condn_data{5};
+F = condn_data{6};
+G = condn_data{7};
+clear N
+N = [A' B' C' D' E' F' G'];
+T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
+    5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1)];
+T = zeros(size(T1,1),7);
+[aa bb]=find(T1==1);[aa(1) aa(end)]
+T(aa(1):aa(end),1)=1;
+[aa bb]=find(T1==2);[aa(1) aa(end)]
+T(aa(1):aa(end),2)=1;
+[aa bb]=find(T1==3);[aa(1) aa(end)]
+T(aa(1):aa(end),3)=1;
+[aa bb]=find(T1==4);[aa(1) aa(end)]
+T(aa(1):aa(end),4)=1;
+[aa bb]=find(T1==5);[aa(1) aa(end)]
+T(aa(1):aa(end),5)=1;
+[aa bb]=find(T1==6);[aa(1) aa(end)]
+T(aa(1):aa(end),6)=1;
+[aa bb]=find(T1==7);[aa(1) aa(end)]
+T(aa(1):aa(end),7)=1;
+% code to train a neural network
+net1 = train(net1,N,T','UseGPU','yes');
+% net1.divideParam.trainRatio = 0.8;
+% net1.divideParam.valRatio = 0.1;
+% net1.divideParam.testRatio = 0.1;
+
+% update the deep layernetowkr now
+X = N;
+Y=categorical(T1);
+idx = randperm(length(Y),round(0.8*length(Y)));
+Xtrain = X(:,idx);
+Ytrain = Y(idx);
+I = ones(length(Y),1);
+I(idx)=0;
+idx1 = find(I~=0);
+Xtest = X(:,idx);
+Ytest = Y(idx);
+
+% retrain the deep network
+options = trainingOptions('adam', ...
+    'InitialLearnRate',0.01, ...
+    'MaxEpochs',20, ...
+    'Verbose',true, ...
+    'Plots','training-progress',...
+    'MiniBatchSize',64,...
+    'ValidationFrequency',50,...
+    'ExecutionEnvironment','gpu',...
+    'ValidationData',{Xtest',Ytest});
+net = trainNetwork(Xtrain',Ytrain,net.Layers,options);
+
+
+
+% test the data on a held out day
+folderpath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
+files=findfiles('mat',folderpath,1)';
+
+acc=zeros(7,8);
+mlp_acc=zeros(7,8);
+for i=1:length(files)
+    disp(i)
+    if regexp(files{i},'BCI_Fixed')
+        try
+            load(files{i})
+            files_loaded=1;
+        catch
+            files_loaded=0;
+        end
+        
+        if files_loaded
+            idx = find(TrialData.TaskState==3);
+            feat = (TrialData.SmoothedNeuralFeatures);
+            temp = cell2mat(feat(idx));
+            
+            % pooling
+            new_temp=[];
+            [xx yy] = size(TrialData.Params.ChMap);
+            for k=1:size(temp,2)
+                tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                pooled_data=[];
+                for i=1:2:xx
+                    for j=1:2:yy
+                        delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                        beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                        hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                        pooled_data = [pooled_data; delta; beta ;hg];
+                    end
+                end
+                new_temp= [new_temp pooled_data];
+            end
+            temp=new_temp;
+            
+            decodes=[];
+            for j=1:size(temp,2)
+                temp(:,j) = temp(:,j)./norm(temp(:,j));
+                %act = predict(net_7DoF_PnP_2022Feb_norm2,temp(:,j)');
+                act = net_7DoF_PnP_2022Feb_norm2(temp(:,j))';
+                [aa bb]=max(act);
+                decodes = [decodes; act];
+                if aa>=0.5
+                    acc(TrialData.TargetID,bb)=acc(TrialData.TargetID,bb)+1;
+                else
+                    acc(TrialData.TargetID,8)=acc(TrialData.TargetID,8)+1;
+                end
+            end
+            
+            decodes = TrialData.ClickerState;
+            for j=1:length(decodes)
+                if decodes(j)==0
+                    mlp_acc(TrialData.TargetID,8) = mlp_acc(TrialData.TargetID,8)+1;
+                else
+                    mlp_acc(TrialData.TargetID,decodes(j)) = ...
+                        mlp_acc(TrialData.TargetID,decodes(j))+1;
+                end
+                
+            end
+        end
+    end
+end
+
+for i=1:size(mlp_acc,1)
+    mlp_acc(i,:) = mlp_acc(i,:)/sum(mlp_acc(i,:));
+    acc(i,:) = acc(i,:)/sum(acc(i,:));
+end
+
+[(diag(acc)) (diag(mlp_acc))]
+
+
+
+% test the data on a held out day with mode filtering
+
+
+%% (MAIN) UPDATING HISTORICAL DECODER FEB 2022 WITH NEW TRAINING DATA
+
+clc;clear
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+root_path=pwd;
+%load net_7DoF_PnP_2022Feb_2norm
+
+% get the training data from March
+foldernames = {'20220304','20220309','20220311','20220316','20220318','20220323',...
+    '20220325','20220330','20220420','20220422','20220427','20220429'};
+
+
+arrow_files={};
+robot_files={};
+k=1;jj=1;kk=1;
+for i=1:length(foldernames)
+%     %arrow files    
+%     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+%     D=dir(folderpath);
+%     online_files_temp=[];
+%     for j=3:length(D)        
+%         filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
+%         if exist(filepath1)
+%             online_files_temp = [online_files_temp;findfiles('',filepath1)'];
+%         end
+%     end
+%     
+%     if i==6
+%         online_files_temp = online_files_temp([1:21 23:end]);
+%     end
+%     
+%     if ~isempty(online_files_temp)
+%         arrow_files{jj} = online_files_temp;jj=jj+1;
+%     end    
+    
+    %robot files
+    folderpath = fullfile(root_path, foldernames{i},'RealRobotBatch');
+    D=dir(folderpath);
+    online_files_temp=[];
+    for j=3:length(D)        
+        filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        if exist(filepath1)
+            online_files_temp = [online_files_temp;findfiles('',filepath1)'];
+        end
+    end
+    
+    if i==6
+        online_files_temp = online_files_temp([1:21 23:end]);
+    end
+    
+    if ~isempty(online_files_temp)
+        robot_files{kk} = online_files_temp;kk=kk+1;
+    end    
+end
+
+% load the online data files
+online_files = [arrow_files robot_files];
+Data=[];
+files_not_loaded_fixed=[];
+for iter=1:length(online_files)
+    tmp_files = online_files{iter};
+    D1={};
+    D2={};
+    D3={};
+    D4={};
+    D5={};
+    D6={};
+    D7={};
+    for ii=1:length(tmp_files)
+        disp(ii)
+        
+        indicator=1;
+        try
+            load(tmp_files{ii});
+        catch ME
+            warning('Not able to load file, skipping to next')
+            indicator = 0;
+            files_not_loaded_fixed=[files_not_loaded_fixed;tmp_files{ii}];
+        end
+        
+        if indicator
+            
+            features  = TrialData.SmoothedNeuralFeatures;
+            kinax = TrialData.TaskState;
+            kinax = [find(kinax==3)];
+            temp = cell2mat(features(kinax));
+            temp = temp(:,5:end);
+            
+            %get the pooled data
+            new_temp=[];
+            [xx yy] = size(TrialData.Params.ChMap);
+            for k=1:size(temp,2)
+                tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                pooled_data=[];
+                for i=1:2:xx
+                    for j=1:2:yy
+                        delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                        beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                        hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                        pooled_data = [pooled_data; delta; beta ;hg];
+                    end
+                end
+                new_temp= [new_temp pooled_data];
+            end
+            temp_data=new_temp;
+            
+            
+            % no baseline
+            temp = temp_data;
+            
+            %temp = temp(769:896,:);
+            if TrialData.TargetID == 1
+                D1=cat(2,D1,temp);
+            elseif TrialData.TargetID == 2
+                D2=cat(2,D2,temp);
+            elseif TrialData.TargetID == 3
+                D3=cat(2,D3,temp);
+            elseif TrialData.TargetID == 4
+                D4=cat(2,D4,temp);
+            elseif TrialData.TargetID == 5
+                D5=cat(2,D5,temp);
+            elseif TrialData.TargetID == 6
+                D6=cat(2,D6,temp);
+            elseif TrialData.TargetID == 7
+                D7=cat(2,D7,temp);
+            end
+        end
+    end
+    
+    clear condn_data
+    %idx = [1:128];
+    condn_data{1}=[D1 ]'; % right hand
+    condn_data{2}= [D2]'; % both feet
+    condn_data{3}=[D3]'; % left hand
+    condn_data{4}=[D4]'; % head
+    condn_data{5}=[D5]'; % mime up
+    condn_data{6}=[D6]'; % tongue in
+    condn_data{7}=[D7]'; % squeeze both hands
+    
+    Data.Day(iter).online_data = condn_data;
+end
+
+
+D1=[];
+D2=[];
+D3=[];
+D4=[];
+D5=[];
+D6=[];
+D7=[];
+for i=1:length(Data.Day)
+    disp(i)
+    tmp=Data.Day(i).online_data;
+    D1 = [D1 cell2mat(tmp{1}')];
+    D2 = [D2 cell2mat(tmp{2}')];
+    D3 = [D3 cell2mat(tmp{3}')];
+    D4 = [D4 cell2mat(tmp{4}')];
+    D5 = [D5 cell2mat(tmp{5}')];
+    D6 = [D6 cell2mat(tmp{6}')];
+    D7 = [D7 cell2mat(tmp{7}')];
+end
+
+
+% build the decoder; compare ML using patternet and using layers
+clear condn_data
+% combing both onlien plus offline
+%idx=641;
+idx = [1:96];
+condn_data{1}=[D1(idx,:) ]'; % right hand
+condn_data{2}= [D2(idx,:) ]'; % both feet
+condn_data{3}=[D3(idx,:) ]'; % left hand
+condn_data{4}=[D4(idx,:) ]'; % head
+condn_data{5}=[D5(idx,:) ]'; % mime up
+condn_data{6}=[D6(idx,:) ]'; % tongue in
+condn_data{7}=[D7(idx,:) ]'; % both hands
+
+% 2norm
+for i=1:length(condn_data)
+   tmp = condn_data{i}; 
+   for j=1:size(tmp,1)
+       tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+   end
+   condn_data{i}=tmp;
+end
+
+A = condn_data{1};
+B = condn_data{2};
+C = condn_data{3};
+D = condn_data{4};
+E = condn_data{5};
+F = condn_data{6};
+G = condn_data{7};
+
+
+clear N
+N = [A' B' C' D' E' F' G'];
+T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
+    5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1)];
+
+T = zeros(size(T1,1),7);
+[aa bb]=find(T1==1);[aa(1) aa(end)]
+T(aa(1):aa(end),1)=1;
+[aa bb]=find(T1==2);[aa(1) aa(end)]
+T(aa(1):aa(end),2)=1;
+[aa bb]=find(T1==3);[aa(1) aa(end)]
+T(aa(1):aa(end),3)=1;
+[aa bb]=find(T1==4);[aa(1) aa(end)]
+T(aa(1):aa(end),4)=1;
+[aa bb]=find(T1==5);[aa(1) aa(end)]
+T(aa(1):aa(end),5)=1;
+[aa bb]=find(T1==6);[aa(1) aa(end)]
+T(aa(1):aa(end),6)=1;
+[aa bb]=find(T1==7);[aa(1) aa(end)]
+T(aa(1):aa(end),7)=1;
+
+% updating the pretrained decoder
+% net_7DoF_PnP_2022Feb_2norm = train(net_7DoF_PnP_2022Feb_2norm,...
+%     N,T','useParallel','yes');
+
+% updating the ensemble decoder
+load net_7DoF_PnP4_ensemble
+clear net_7DoF_PnP4_ensemble_batch
+for i=1:length(net_7DoF_PnP4_ensemble)
+    disp(i)
+    net = net_7DoF_PnP4_ensemble{i};
+    net = train(net,N,T','useParallel','yes');
+    net_7DoF_PnP4_ensemble_batch{i} = net;
+end
+
+save net_7DoF_PnP4_ensemble_batch net_7DoF_PnP4_ensemble_batch
+
+% 
+% % save the data 
+% net_7DoF_PnP_2022Mar_2norm = net_7DoF_PnP_2022Feb_2norm;
+% genFunction(net_7DoF_PnP_2022Mar_2norm,'MLP_7DoF_PnP_2022Mar_2norm')
+% save net_7DoF_PnP_2022Mar_2norm net_7DoF_PnP_2022Mar_2norm
+
+
+
+%% (MAIN) checking to see if the data from problematic sessions are out of range
+
+
+clc;clear
+
+%%%%% first get the distribution of the data from the good days
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+load 7DoF_Data_SpatioTemp_AcrossDays_20220224
+%load Data_SpatioTemp_AcrossDays
+%load Data_SpatioTemp_AcrossDays_9282021
+%load 7DoF_Data_Training
+
+% get the training data
+D1i=[];
+D2i=[];
+D3i=[];
+D4i=[];
+D5i=[];
+D6i=[];
+D7i=[];
+for i=1:15%length(Data.Day)
+    disp(i)
+    tmp=Data.Day(i).imagined_data;
+    D1i = [D1i cell2mat(tmp{1}')];
+    D2i = [D2i cell2mat(tmp{2}')];
+    D3i = [D3i cell2mat(tmp{3}')];
+    D4i = [D4i cell2mat(tmp{4}')];
+    D5i = [D5i cell2mat(tmp{5}')];
+    D6i = [D6i cell2mat(tmp{6}')];
+    D7i = [D7i cell2mat(tmp{7}')];
+end
+
+D1=[];
+D2=[];
+D3=[];
+D4=[];
+D5=[];
+D6=[];
+D7=[];
+for i=1:length(Data.Day)
+    disp(i)
+    tmp=Data.Day(i).online_data;
+    D1 = [D1 cell2mat(tmp{1}')];
+    D2 = [D2 cell2mat(tmp{2}')];
+    D3 = [D3 cell2mat(tmp{3}')];
+    D4 = [D4 cell2mat(tmp{4}')];
+    D5 = [D5 cell2mat(tmp{5}')];
+    D6 = [D6 cell2mat(tmp{6}')];
+    D7 = [D7 cell2mat(tmp{7}')];
+end
+
+
+% build the decoder; compare ML using patternet and using layers
+clear condn_data
+% combing both onlien plus offline
+%idx=641;
+idx = [1:96];
+condn_data{1}=[D1(idx,:) D1i]'; % right hand
+condn_data{2}= [D2(idx,:) D2i]'; % both feet
+condn_data{3}=[D3(idx,:) D3i]'; % left hand
+condn_data{4}=[D4(idx,:) D4i]'; % head
+condn_data{5}=[D5(idx,:) D5i]'; % mime up
+condn_data{6}=[D6(idx,:) D6i]'; % tongue in
+condn_data{7}=[D7(idx,:) D7i]'; % both hands
+
+% 2norm
+for i=1:length(condn_data)
+   tmp = condn_data{i}; 
+   for j=1:size(tmp,1)
+       tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+   end
+   condn_data{i}=tmp;
+end
+
+distribution_features=[];
+for i=1:length(condn_data)
+   tmp=condn_data{i}; 
+   m = mean(tmp,1);
+   s = std(tmp,1);
+   temp = [m+s; m-s]; 
+   distribution_features(i,:,:)=temp; 
+end
+
+save distribution_features distribution_features -v7.3
+
+
+% now compare it to a held out day 
+clear
+load distribution_features
+
+foldernames = {'20220427'};
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+files=[];
+for i=1:length(foldernames)
+    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+    D=dir(folderpath);
+    for j=7:length(D)
+        filepath=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        files = [files;findfiles('',filepath)'];
+    end
+end
+
+
+% load the online data files
+files_not_loaded_fixed=[];
+D1=[];D2=[];D3=[];D4=[];D5=[];D6=[];D7=[];
+for iter=1:length(files)
+    disp(iter)
+    
+    indicator=1;
+    try
+        load(files{iter});
+    catch ME
+        warning('Not able to load file, skipping to next')
+        indicator = 0;
+        files_not_loaded_fixed=[files_not_loaded_fixed;files{iter}];
+    end
+    
+    if indicator
+        
+        features  = TrialData.SmoothedNeuralFeatures;
+        kinax = TrialData.TaskState;
+        kinax = [find(kinax==3)];
+        temp = cell2mat(features(kinax));
+        
+        %get the pooled data
+        new_temp=[];
+        [xx yy] = size(TrialData.Params.ChMap);
+        for k=1:size(temp,2)
+            tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+            tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+            tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+            pooled_data=[];
+            for i=1:2:xx
+                for j=1:2:yy
+                    delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                    beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                    hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                    pooled_data = [pooled_data; delta; beta ;hg];
+                end
+            end
+            new_temp= [new_temp pooled_data];
+        end
+        temp_data=new_temp;
+        
+        temp = temp_data;
+        
+        %temp = temp(769:896,:);
+        if TrialData.TargetID == 1
+            D1=cat(2,D1,temp);
+        elseif TrialData.TargetID == 2
+            D2=cat(2,D2,temp);
+        elseif TrialData.TargetID == 3
+            D3=cat(2,D3,temp);
+        elseif TrialData.TargetID == 4
+            D4=cat(2,D4,temp);
+        elseif TrialData.TargetID == 5
+            D5=cat(2,D5,temp);
+        elseif TrialData.TargetID == 6
+            D6=cat(2,D6,temp);
+        elseif TrialData.TargetID == 7
+            D7=cat(2,D7,temp);
+        end
+    end    
+end
+
+condn_data{1}=[ D1]'; % right hand
+condn_data{2}= [ D2]'; % both feet
+condn_data{3}=[ D3]'; % left hand
+condn_data{4}=[ D4]'; % head
+condn_data{5}=[ D5]'; % mime up
+condn_data{6}=[ D6]'; % tongue in
+condn_data{7}=[ D7]'; % both hands
+
+
+
+% 2norm
+for i=1:length(condn_data)
+   tmp = condn_data{i}; 
+   for j=1:size(tmp,1)
+       tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+   end
+   condn_data{i}=tmp;
+end
+
+figure;
+for i=1:length(condn_data)
+    subplot(4,2,i)
+    tmp=condn_data{i};
+    m = mean(tmp,1);
+    s= std(tmp,1);
+    %figure;
+    hold on
+    plot(m+s,'-k')
+    plot(squeeze(distribution_features(i,1,:)),'-r')
+    plot(m-s,'-k')
+    plot(squeeze(distribution_features(i,2,:)),'-r')
+    title(['Target ' num2str(i)])
+    set(gcf,'Color','w')
+    xlabel('Feature')
+    ylabel('Norm value')
+    if i== 7
+        legend({'20220427','Historical Data'})
+    end
+    ylim([-0.4 .4])
+end
+
+%% GETTING 7DOF DATA FOR JENSEN FOR TESTING META TRANSFER
+% split into erp and online on a day to day basis
+% get the pooled data and feed it to jason
+% THIS IS A POSSIBLE REPEAT OF ABOVE CELLS
 
 
 clc;clear
@@ -4725,7 +6065,7 @@ end
 
 
 %% building a neural decoder with all the online data
-
+%POSSIBLE REPEAT OF ABOVE CELLS
 clc;clear
 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
@@ -5095,7 +6435,7 @@ end
 
 
 %% BUILDING AN AUTOENCODER WITH ALL THE META LEARNING DATA
-
+%POSSIBLE REPEAT OF ABOVE CELLS
 
 clc;clear
 

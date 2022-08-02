@@ -284,6 +284,156 @@ stem(cumsum(l)./sum(l))
 
 
 
+%% NEW HAND DATA MULTI CYCLIC
+% extract single trials 
+% get the time-freq features in raw and in hG
+% train a bi-GRU
 
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
+foldernames = {'20220608','20220610','20220622','20220624'};
+cd(root_path)
+
+imagined_files=[];
+for i=1:length(foldernames)
+    folderpath = fullfile(root_path, foldernames{i},'HandImagined')
+    D=dir(folderpath);
+    
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');
+        if ~exist(filepath)
+            filepath=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        end
+        tmp=dir(filepath);
+        imagined_files = [imagined_files;findfiles('',filepath)'];
+    end
+end
+
+
+% load the data for the imagined files, if they belong to right thumb,
+% index, middle, ring, pinky, pinch, tripod, power
+D1i={};
+D2i={};
+D3i={};
+D4i={};
+D5i={};
+D6i={};
+D7i={};
+D8i={};
+D9i={};
+D10i={};
+D11i={};
+D12i={};
+D13i={};
+D14i={};
+for i=1:length(imagined_files)
+    disp(i/length(imagined_files)*100)
+    try
+        load(imagined_files{i})
+        file_loaded = true;
+    catch
+        file_loaded=false;
+        disp(['Could not load ' files{j}]);
+    end
+    
+    if file_loaded
+        action = TrialData.TargetID;
+        %disp(action)
+
+        % find the bins when state 3 happened and then extract each
+        % individual cycle (2.6s length) as a trial
+        
+        % get times for state 3 from the sample rate of screen refresh
+        time  = TrialData.Time;
+        time = time - time(1);        
+        idx = find(TrialData.TaskState==3) ;
+        task_time = time(idx);     
+
+        % get the kinematics and extract times in state 3 when trials
+        % started and ended
+        kin = TrialData.CursorState;
+        kin=kin(1,idx);
+        kind = [0 diff(kin)];
+        aa=find(kind==0);
+        kin_st=[];
+        kin_stp=[];
+        for j=1:length(aa)-1
+            if (aa(j+1)-aa(j))>1
+                kin_st = [kin_st aa(j)];
+                kin_stp = [kin_stp aa(j+1)-1];
+            end
+        end
+
+        %getting start and stop times
+        start_time = task_time(kin_st);
+        stp_time = task_time(kin_stp);
+        
+
+        % get corresponding neural times indices
+%         neural_time  = TrialData.NeuralTime;
+%         neural_time = neural_time-neural_time(1);
+%         neural_st=[];
+%         neural_stp=[];
+%         st_time_neural=[];
+%         stp_time_neural=[];
+%         for j=1:length(start_time)
+%             [aa bb]=min(abs(neural_time-start_time(j)));
+%             neural_st = [neural_st; bb];
+%             st_time_neural = [st_time_neural;neural_time(bb)];
+%             [aa bb]=min(abs(neural_time-stp_time(j)));
+%             neural_stp = [neural_stp; bb-1];
+%             stp_time_neural = [stp_time_neural;neural_time(bb)];
+%         end
+
+        % get the broadband data for each trial
+        raw_data=cell2mat(TrialData.BroadbandData');
+
+        % extract the broadband data (Fs-1KhZ) based on rough estimate of
+        % the start and stop times from the kinematic data
+        start_time_neural = round(start_time*1e3);
+        stop_time_neural = round(stp_time*1e3);
+        data_seg={};
+        for j=1:length(start_time_neural)
+            tmp = (raw_data(start_time_neural(j):stop_time_neural(j),:));   
+            tmp=tmp(1:round(size(tmp,1)/2),:);
+            % pca step
+            %m=mean(tmp);
+            %[c,s,l]=pca(tmp,'centered','off');
+            %tmp = (s(:,1)*c(:,1)')+m;
+            data_seg = cat(2,data_seg,tmp);            
+        end
+        
+        if action==1
+            D1i = cat(2,D1i,data_seg);        
+        elseif action==2
+            D2i = cat(2,D2i,data_seg);            
+        elseif action==3
+            D3i = cat(2,D3i,data_seg);            
+        elseif action==4
+            D4i = cat(2,D4i,data_seg);            
+        elseif action==5
+            D5i = cat(2,D5i,data_seg);            
+        elseif action==6
+            D6i = cat(2,D6i,data_seg);
+        elseif action==7
+            D7i = cat(2,D7i,data_seg);
+        elseif action==8
+            D8i = cat(2,D8i,data_seg);
+        elseif action==9
+            D9i = cat(2,D9i,data_seg);
+        elseif action==10
+            D10i = cat(2,D10i,data_seg);
+        elseif action==11
+            D11i = cat(2,D11i,data_seg);
+        elseif action==12
+            D12i = cat(2,D12i,data_seg);
+        elseif action==13
+            D13i = cat(2,D13i,data_seg);
+        elseif action==14
+            D14i = cat(2,D14i,data_seg);
+        end
+    end
+end
 
 
