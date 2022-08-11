@@ -818,6 +818,10 @@ cd(root_path)
 load session_data
 dist_online_total=[];
 dist_imag_total=[];
+var_imag_total=[];
+mean_imag_total=[];
+var_online_total=[];
+mean_online_total=[];
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
@@ -849,8 +853,10 @@ for i=1:length(session_data)
 
     % get activations in deepest layer but averaged over a trial        
     imag=1;
-    [TrialZ_imag,dist_imagined] = get_latent(files,net,imag);
+    [TrialZ_imag,dist_imagined,mean_imagined,var_imagined] = get_latent(files,net,imag);
     dist_imag_total = [dist_imag_total;dist_imagined];
+    mean_imag_total=[mean_imag_total;pdist(mean_imagined)];
+    var_imag_total=[var_imag_total;var_imagined'];
 
     %%%%%%online data
     folders = session_data(i).folders(online_idx);
@@ -867,8 +873,10 @@ for i=1:length(session_data)
     
     % get activations in deepest layer 
     imag=0;
-    [TrialZ_online,dist_online] = get_latent(files,net,imag);
+    [TrialZ_online,dist_online,mean_online,var_online] = get_latent(files,net,imag);
     dist_online_total = [dist_online_total;dist_online];
+    mean_online_total=[mean_online_total;pdist(mean_online)];
+    var_online_total=[var_online_total;var_online'];
 
 %      plot
 % 
@@ -935,12 +943,109 @@ col=winter(length(ang));
 for i=1:length(ang)
     plot([1 2]+idx(i,:),(ang(i,:)),'Color',[.5 .5 .5 .5],'LineWidth',1)
 end
-ylim([0 60])
+ylim([5 65])
 set(gcf,'Color','w')
 xticks(1:2)
 xticklabels({'Imagined Data','Online Data'})
 ylabel('Mahalanobis distance')
 set(gca,'FontSize',14)
+
+%plotting changes in the variance of the latent distributions
+figure;boxplot([var_imag_total(:) var_online_total(:)])
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Variance in latent space')
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+set(gca,'LineWidth',2)
+box off
+
+ang=[mean(var_imag_total,2) mean(var_online_total,2)];
+figure;hold on
+idx = 0.05*randn(length(ang),2);
+scatter(ones(length(ang),1)+idx(:,1),ang(:,1),100);
+scatter(2*ones(length(ang),1)+idx(:,2),ang(:,2),100)
+xlim([0.5 2.5])
+col=parula(length(ang));
+for i=1:length(ang)
+    %plot([1 2]+idx(i,:),(ang(i,:)),'Color',[.5 .5 .5 .5],'LineWidth',1)
+    plot([1 2]+idx(i,:),(ang(i,:)),'Color',col(i,:),'LineWidth',1)
+end
+set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Variance in latent space')
+set(gca,'FontSize',14)
+[h p tb st]=ttest(ang(:,1),ang(:,2))
+
+figure;
+plot(ang(:,2)-ang(:,1),'.k','MarkerSize',20)
+tmp=ang(:,2)-ang(:,1);
+
+% plotting changes in the mean distance between distributions over learning
+figure;boxplot([mean_imag_total(:) mean_online_total(:)])
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Variance in latent space')
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+set(gca,'LineWidth',2)
+box off
+
+ang=[mean(mean_imag_total,2) mean(mean_online_total,2)];
+figure;hold on
+idx = 0.05*randn(length(ang),2);
+scatter(ones(length(ang),1)+idx(:,1),ang(:,1),100);
+scatter(2*ones(length(ang),1)+idx(:,2),ang(:,2),100)
+xlim([0.5 2.5])
+col=parula(length(ang));
+for i=1:length(ang)
+    %plot([1 2]+idx(i,:),(ang(i,:)),'Color',[.5 .5 .5 .5],'LineWidth',1)
+    plot([1 2]+idx(i,:),(ang(i,:)),'Color',col(i,:),'LineWidth',1)
+end
+set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Distance b/w means in latent space')
+set(gca,'FontSize',14)
+[h p tb st]=ttest(ang(:,1),ang(:,2))
+
+figure;
+plot(ang(:,2)-ang(:,1),'.k','MarkerSize',20)
+tmp=ang(:,2)-ang(:,1);
+[bhat p wh se ci t_stat]=robust_fit((1:length(tmp))',tmp,1);
+hold on
+plot([ (1:length(tmp))'],...
+    [ ones(size(tmp,1),1) (1:length(tmp))']*bhat,'k','LineWidth',1);
+xlim([0.5 12])
+xlabel('Days')
+ylabel('Delta Online vs. Imagined')
+title('Mean Separation in Latent Space')
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+box off
+
+% boostrapped test 
+bhat_boot=[];
+parfor iter=1:500
+    x=1:length(tmp);
+    x=x(randperm(length(x)));
+    [bhat1 p wh se ci t_stat]=robust_fit(x',tmp,1);
+    bhat_boot(iter)=bhat1(2);
+end
+sum(bhat_boot>bhat(2))/length(bhat_boot)
+
+x= [ ones(size(tmp,1),1) (1:length(tmp))'];
+y = tmp;
+[B,BINT,R,RINT,STATS] = regress(y,x);
+STATS(3)
+
+
+
+%save bci_manifold_results_learning -v7.3
+
+ 
+
 
 %% getting the proportion of correct bins within a session
 % goal here is to see if there is learning i.e. the ratio of correct
@@ -1022,7 +1127,61 @@ figure;boxplot([acc_bins_ratio(1:4)' acc_bins_ratio(end-3:end)'])
 
 % first four days: build AE on imagined, then feed in data from online
 
+%% LOOKING AT WHETHER THE MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (7DOF)
+
+% a few options
+% FIRST is to take distribution of prin angles between imagined files per
+% action to other imagined files as compared to prin angles between
+% imagined files and online files
+% SECOND is to compare the angles between the 7 actions and see if there is
+% greater separation during online vs imagined 
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+load session_data
+
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    if i~=6
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_imag(folders_am==0)=0;
+        folders_online(folders_am==0)=0;
+    end
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+
+    %%%%%%imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
 
 
+    %%%%%%online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files1=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        files1 = [files1;findfiles('',folderpath)'];
+    end
 
+    % get the principal angles between the various commands
+    prin_angles = get_prin_angles(files,files1);
+
+end
+
+
+%% DOES THE VARIANCE ACCOUNTED FOR BY THE PCS CHANGE B/W IMAGINED AND ONLINE
+
+
+%% LOOKING AT WHETHER THE MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (HAND)
 

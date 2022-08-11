@@ -7837,22 +7837,45 @@ folder_days = {'20210716','20210728','20210804','20210806','20210813','20220202'
 % download 05042022 and 20220506 data
 
 files=[];
+python_files=[];
 for i=1:length(folder_days)
     folder_path = fullfile(root_folder,folder_days{i},'RealRobotBatch');
     files = [files;findfiles('',folder_path,1)'];
+
+%     python_folder_path = dir(folder_path);
+%     python_folders={};
+%     for j=3:length(python_folder_path)
+%         python_folders=cat(2,python_folders,python_folder_path(j).name);
+%     end
+% 
+%     for j=1:length(python_folders)
+%         folder_path = fullfile(root_folder,folder_days{i},'Python',folder_days{i});
+%     end
 end
+
+files1=[];
+for i=1:length(files)
+    if length(regexp(files{i},'Data'))>0
+        files1=[files1;files(i)];
+    end
+end
+files=files1;
 
 Trials={};
 for ii=1:length(files)
     disp(ii/length(files)*100)
+
     load(files{ii})
-    
+
+
+
     idx=find(TrialData.TaskState==3);
     temp = cell2mat(TrialData.SmoothedNeuralFeatures(idx));
     kin=TrialData.CursorState;
+    decodes = TrialData.FilteredClickerState;
     kin = kin(:,idx);
 
-     % perform the pooling here
+    % perform the pooling here
     new_temp=[];
     [xx yy] = size(TrialData.Params.ChMap);
     for k=1:size(temp,2)
@@ -7875,12 +7898,22 @@ for ii=1:length(files)
     temp=new_temp;
     neural_features = temp;
 
+
     Trials(ii).TargetDir = TrialData.TargetID;
     Trials(ii).NeuralFeatures = neural_features;
     Trials(ii).Kinematics = kin;
+    Trials(ii).decodes = decodes;
+
+    %         % load python data if exists
+    %         python_folderpath=[files{ii}(1:60) 'Python\' files{ii}(61:69)];
+    %         python_foldername=files{ii}(85:90);
+    %         python_filename =   str2num(files{ii}(106:109))
+
+
 end
 
 
+save RealRobotBatchTrials Trials  -v7.3
 
 
 %% HONGYI PATH ANALYSIS

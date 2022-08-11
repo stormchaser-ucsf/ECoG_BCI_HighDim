@@ -1,4 +1,4 @@
-function [TrialZ,dist_val] = get_latent(files,net,imag)
+function [TrialZ,dist_val,mean_latent,var_latent] = get_latent(files,net,imag)
 %function [TrialZ,dist_val] = get_latent(files,net,imag)
 
 idx=[];
@@ -75,14 +75,21 @@ set(gca,'FontSize',12)
 % get pairwise mahalanbois distance
 len = length(unique(idx));
 D = zeros(len);
+var_latent=[];
+mean_latent=[];
+%mean_latent=zeros(len);
 for i=1:len
     idxx = find(idx==i);
     A=Z(:,idxx);
+    mean_latent=[mean_latent;mean(A,2)'];
+    var_latent = [var_latent;det(cov(A'))];
     for j=i+1:len
         idxx = find(idx==j);
         B=Z(:,idxx);
         D(i,j) = mahal2(A',B',2);
         D(j,i) = D(i,j);
+
+        %mean_latent(i,j)=mahal2(A',B',3);
     end
 end
 dist_val = squareform(D);

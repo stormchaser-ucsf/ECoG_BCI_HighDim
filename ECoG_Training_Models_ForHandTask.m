@@ -2020,25 +2020,20 @@ save net_mlp_hand_adam_64 net_mlp_hand_adam_64
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
-foldernames = {'20220302','20220223'};
+foldernames = {'20220302'}'%{'20220302','20220223'};20220302 is online hand...amaze
 cd(root_path)
 
 imagined_files=[];
 for i=1:1%length(foldernames)
     if i==1
-        folderpath = fullfile(root_path, foldernames{i},'HandOnline')
+       folderpath = fullfile(root_path, foldernames{i},'HandOnline')
     else
-        folderpath = fullfile(root_path, foldernames{i},'Hand')
+       folderpath = fullfile(root_path, foldernames{i},'Hand')
     end
+       %folderpath = fullfile(root_path, foldernames{i},'Hand');
 
     D=dir(folderpath);
-    if i==3
-        D = D([1:3 5:7 9:end]);
-    elseif i==4
-        D = D([1:3 5:end]);
-    elseif i==6
-        D = D([1:5 7:end]);
-    end
+    
 
     for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'Imagined');
@@ -2158,11 +2153,11 @@ for iter=1:15
     data=[data cell2mat(D3i)];  Y=[Y;2*ones(size(cell2mat(D3i),2),1)];
     data=[data cell2mat(D4i)];  Y=[Y;3*ones(size(cell2mat(D4i),2),1)];
     data=[data cell2mat(D5i)];  Y=[Y;4*ones(size(cell2mat(D5i),2),1)];
-    data=[data cell2mat(D6i)];  Y=[Y;5*ones(size(cell2mat(D6i),2),1)];
+    %data=[data cell2mat(D6i)];  Y=[Y;5*ones(size(cell2mat(D6i),2),1)];
     %data=[data cell2mat(D7i)];  Y=[Y;6*ones(size(cell2mat(D7i),2),1)];
     %data=[data cell2mat(D8i)];  Y=[Y;7*ones(size(cell2mat(D8i),2),1)];
-    data=[data cell2mat(D9i)];  Y=[Y;6*ones(size(cell2mat(D9i),2),1)];
-    data=[data cell2mat(D10i)];  Y=[Y;7*ones(size(cell2mat(D10i),2),1)];
+    %data=[data cell2mat(D9i)];  Y=[Y;6*ones(size(cell2mat(D9i),2),1)];
+    %data=[data cell2mat(D10i)];  Y=[Y;7*ones(size(cell2mat(D10i),2),1)];
     data=data';
 
     % run LDA
@@ -2230,15 +2225,15 @@ for iter=1:15
         [aa bb]=max(decision);
 
         % correction for online trials
-        if TrialData.TargetID==9
-            TrialData.TargetID = 7;
-        elseif TrialData.TargetID==10
-            TrialData.TargetID = 8;
-        end
+%         if TrialData.TargetID==9
+%             TrialData.TargetID = 7;
+%         elseif TrialData.TargetID==10
+%             TrialData.TargetID = 8;
+%         end
 
 
         % store results
-        if TrialData.TargetID <=10
+        if TrialData.TargetID <=5
             acc(TrialData.TargetID,bb) = acc(TrialData.TargetID,bb)+1;
         end
     end
@@ -2262,10 +2257,10 @@ colormap bone
 caxis([0 1])
 set(gcf,'Color','w')
 title(['Av. Classif. Acc of ' num2str(mean(diag(acc))) '%'])
-% xticks(1:5)
-% yticks(1:5)
-% xticklabels({'Thumb','Index','Middle','Ring','Little'})
-% yticklabels({'Thumb','Index','Middle','Ring','Little'})
+%  xticks(1:5)
+%  yticks(1:5)
+%  xticklabels({'Thumb','Index','Middle','Ring','Little'})
+%  yticklabels({'Thumb','Index','Middle','Ring','Little'})
 set(gca,'FontSize',14)
 
 
@@ -2315,7 +2310,7 @@ for i=1:length(imagined_files)
 
     action = TrialData.TargetID;
 
-    if file_loaded && action <=5
+    if file_loaded && action ==1
 
         % get times for state 3 from the sample rate of screen refresh
         time  = TrialData.Time;
@@ -2362,7 +2357,7 @@ for i=1:length(imagined_files)
 
 
         %extract LMP data
-        tmp_lmp = filtfilt(lpFilt,raw_data);
+        tmp_lmp = ((filtfilt(lpFilt,raw_data)));
 
 
         % upsample the kinematic data for later extraction in ms
@@ -2415,8 +2410,8 @@ for i=1:length(imagined_files)
             tmp_kin=randn(length(tmp),1)*1e-6;
             tmp_kin(:,1) = tmp;
             % velocity
-            tmp_kin= zscore(diff(tmp_kin));
-            tmp_kin = [tmp_kin(1) ;tmp_kin];
+            %tmp_kin= zscore(diff(tmp_kin));
+            %tmp_kin = [tmp_kin(1) ;tmp_kin];
             data_kin = cat(2,data_kin,tmp_kin);
 
             targetID=[targetID action];
@@ -2427,9 +2422,21 @@ for i=1:length(imagined_files)
 end
 
 
+% plot ERPs from channel 106
+ch_data = [];
+for i=1:length(neural_data)
+    tmp=cell2mat(neural_data(i));
+    tmp=tmp(1:2690,:);
+    ch_data=cat(3,ch_data,tmp);
+end
+ch3=squeeze(ch_data(:,106+128,:));
+figure;plot(ch3,'Color',[.5 .5 .5 .5])
+hold on
+plot(mean(ch3,2),'Color','k')
+
 % split into training and testing -> single action 
 overall_r2=[];
-dim=15;
+dim=30;
 parfor iter=1:100
     %disp(iter)
     train_idx=  randperm(length(neural_data),round(0.7*length(neural_data)));
@@ -2445,8 +2452,8 @@ parfor iter=1:100
     train_neural = cell2mat(train_neural');
     train_kin = cell2mat(train_kin');
     train_kin=train_kin(:,1);
-    [c,s,l]=pca(train_neural(:,1:24));
-    [c1,s1,l1]=pca(train_neural(:,25:end));
+    [c,s,l]=pca(train_neural(:,1:128));
+    [c1,s1,l1]=pca(train_neural(:,129:end));
     %[c2,s2,l2]=pca(train_neural(:,257:384));
     train_neural = [s(:,1:dim) s1(:,1:dim) ];
 
@@ -2458,16 +2465,16 @@ parfor iter=1:100
     end
     y=y-mean(y);
     % OLS or ridge or weiner etc
-    %bhat = pinv(x)*y;
-    bhat = (x'*x  + 0.01*eye(size(x,2)))\(x'*y);
+    bhat = pinv(x)*y;
+    %bhat = (x'*x  + 0.01*eye(size(x,2)))\(x'*y);
     yhat = x*bhat;
 
     % test it out on held out data
     test_neural = cell2mat(test_neural');
     %[c,s,l]=pca(test_neural(:,1:128));
     %[c1,s1,l1]=pca(test_neural(:,129:256));
-    s=test_neural(:,1:24)*c(:,1:dim);
-    s1=test_neural(:,25:48)*c1(:,1:dim);
+    s=test_neural(:,1:128)*c(:,1:dim);
+    s1=test_neural(:,129:end)*c1(:,1:dim);
     %s2=test_neural(:,257:384)*c2(:,1:dim);
     test_neural = [s(:,1:dim) s1(:,1:dim) ];
     test_kin = cell2mat(test_kin');
@@ -2523,5 +2530,18 @@ end
 
 save regression_hand_bci -v7.3
 
-
-
+tmp=r2_finger{1,5};
+r2mean = sort(bootstrp(1000,@mean,tmp));
+figure;
+yneg = r2mean(500,:)-r2mean(25,:);
+ypos = r2mean(975,:)-r2mean(500,:);
+errorbar(1:5,r2mean(500,:),yneg,ypos,'.','LineWidth',1)
+xlim([0 6])
+hold on
+plot(1:5,r2mean(500,:),'o','MarkerSize',20,'LineWidth',1)
+xticks(1:5)
+xticklabels({'Thumb','Index','Middle','Ring','Index'})
+ylabel('Corr with Kin')
+title('Thumb submanifold')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
