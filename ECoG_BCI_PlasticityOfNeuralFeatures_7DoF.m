@@ -851,7 +851,7 @@ for i=1:length(session_data)
     %[net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
     [net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
 
-    % get activations in deepest layer but averaged over a trial        
+    % get activations in deepest layer but averaged over a trial
     imag=1;
     [TrialZ_imag,dist_imagined,mean_imagined,var_imagined] = get_latent(files,net,imag);
     dist_imag_total = [dist_imag_total;dist_imagined];
@@ -866,29 +866,29 @@ for i=1:length(session_data)
         folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
         files = [files;findfiles('',folderpath)'];
     end
-   
+
 
     %load the data
     condn_data = load_data_for_MLP(files);
-    
-    % get activations in deepest layer 
+
+    % get activations in deepest layer
     imag=0;
     [TrialZ_online,dist_online,mean_online,var_online] = get_latent(files,net,imag);
     dist_online_total = [dist_online_total;dist_online];
     mean_online_total=[mean_online_total;pdist(mean_online)];
     var_online_total=[var_online_total;var_online'];
 
-%      plot
-% 
-%     figure;boxplot([dist_imagined' dist_online'])
-%     box off
-%     set(gcf,'Color','w')
-%     xticks(1:2)
-%     xticklabels({'Imagined Data','Online Data'})
-%     ylabel('Distance')
-%     title('Inter-class distances')
-%     set(gca,'LineWidth',1)
-%     set(gca,'FontSize',12)
+    %      plot
+    %
+    %     figure;boxplot([dist_imagined' dist_online'])
+    %     box off
+    %     set(gcf,'Color','w')
+    %     xticks(1:2)
+    %     xticklabels({'Imagined Data','Online Data'})
+    %     ylabel('Distance')
+    %     title('Inter-class distances')
+    %     set(gca,'LineWidth',1)
+    %     set(gca,'FontSize',12)
 
     [h p tb st]=ttest(dist_imagined,dist_online);
     disp([p mean([dist_imagined' dist_online'])]);
@@ -1025,7 +1025,7 @@ set(gca,'FontSize',14)
 set(gcf,'Color','w')
 box off
 
-% boostrapped test 
+% boostrapped test
 bhat_boot=[];
 parfor iter=1:500
     x=1:length(tmp);
@@ -1044,7 +1044,7 @@ STATS(3)
 
 %save bci_manifold_results_learning -v7.3
 
- 
+
 
 
 %% getting the proportion of correct bins within a session
@@ -1127,14 +1127,14 @@ figure;boxplot([acc_bins_ratio(1:4)' acc_bins_ratio(end-3:end)'])
 
 % first four days: build AE on imagined, then feed in data from online
 
-%% LOOKING AT WHETHER THE MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (7DOF)
+%% LOOKING AT WHETHER THE PRIN ANGLES OF MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (7DOF)
 
 % a few options
 % FIRST is to take distribution of prin angles between imagined files per
 % action to other imagined files as compared to prin angles between
 % imagined files and online files
 % SECOND is to compare the angles between the 7 actions and see if there is
-% greater separation during online vs imagined 
+% greater separation during online vs imagined
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
@@ -1180,8 +1180,193 @@ for i=1:length(session_data)
 end
 
 
-%% DOES THE VARIANCE ACCOUNTED FOR BY THE PCS CHANGE B/W IMAGINED AND ONLINE
 
+
+
+%% COLLATE AE ACTIVATION DURING PNP DAYS
+% INVOLVES FIRST BUILDING THE AE SPACE FOR ALL DATA FROM FIRST 11 DAYS
+
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+load session_data
+
+% option of maybe aligning all the data to the first day using procrustus
+files=[];
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+
+
+    %%%%%%imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %%%%%%online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %%%%%%batch data
+    folders = session_data(i).folders(batch_idx);
+    day_date = session_data(i).Day;
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+end
+
+% build a massive autoencoder by loading all the data from all 11day files
+condn_data = load_data_for_MLP(files);
+[net,Xtrain,Ytrain] = build_mlp_AE_supervised_total(condn_data);
+
+% save the AE
+net_AE_total=net;
+save net_AE_total net_AE_total
+
+
+
+%% LOOKING AT TEMPORAL DYNAMICS OF AE LATENT SPACE ACTIVATION IN THE PATH TASK
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+foldernames={'20210825','20210827'} %20210818
+
+% load the total AE
+load net_AE_total
+
+% get the files
+files=[];
+for i=1:length(foldernames)
+    folderpath = fullfile(root_path, foldernames{i},...
+        'Robot3DPath');
+    files = [files;findfiles('',folderpath,1)'];
+end
+
+% remove persistence files
+files1=[];
+for i=1:length(files)
+    if ~isempty(regexp(files{i},'Data'))
+        files1=[files1;files(i)];
+    end
+end
+files=files1;
+
+% get all the paths
+Params.Paths{1} = [[200, -200, 0]; [0, -200, 0]; [0,0,0];  [-200, 0,0]; [-200, 200, 0]];
+Params.Paths{2} = [[-200, 200, 0]; [-200, 0,0]; [0,0,0]; [0, -200, 0]; [200, -200, 0]];
+Params.Paths{3} = [[200,0,-100]; [200, 0, 100]; [0, 0, 100];[0, 0, -100]; [-200, 0, -100]];
+Params.Paths{4} = [ [-200, 0, -100]; [0, 0, -100]; [0, 0, 100];[200, 0, 100]; [200,0,-100]];
+Params.Paths{5} = [[200, -100, 0]; [0, -100, 0]; [-141.4, 41.4, 0]; [0,180, 0]; [200, 180, 0]];
+Params.Paths{6} = [[200, 180, 0];[0,180, 0]; [-141.4, 41.4, 0]; [0, -100, 0];[200, -100, 0]];
+
+% load a specific file and look at latent activity
+load(files{1})
+target_id=TrialData.TargetID;
+target_pos = TrialData.TargetPosition;
+target_path = Params.Paths{target_id};
+%target_path=flipud(target_path);
+%target_path = cumsum(target_path);
+start_pos = TrialData.CursorState(:,1);
+kin = TrialData.CursorState;
+kinax = TrialData.TaskState;
+kinax = [find(kinax==3)];
+kin=kin(:,kinax);
+
+% plot the data
+cmap=turbo(size(kin,2));
+figure;
+for i=1:size(kin,2)
+    plot3(kin(1,i),kin(2,i),kin(3,i),'.','MarkerSize',30,'Color',cmap(i,:))
+    hold on
+end
+plot3(kin(1,1),kin(2,1),kin(3,1),'xg','MarkerSize',30)
+plot3(target_pos(1),target_pos(2),target_pos(3),'xr','MarkerSize',30)
+for i=size(target_path,1):-1:1
+    plot3(target_path(i,1),target_path(i,2),target_path(i,3),'ob','MarkerSize',30)
+end
+
+%%%%% project data into latent space
+clicker_output = TrialData.FilteredClickerState;
+features  = TrialData.SmoothedNeuralFeatures;
+temp = cell2mat(features(kinax));
+chmap = TrialData.Params.ChMap;
+X = bci_pooling(temp,chmap);
+%2-norm the data
+for j=1:size(X,2)
+    X(:,j)=X(:,j)./norm(X(:,j));
+end
+% feed it through the AE
+X = X(1:96,:);
+Z = activations(net_AE_total,X','autoencoder');
+figure;hold on
+view(56,35)
+%cmap=parula(size(Z,2));
+cmap=parula(8);
+for i=1:size(Z,2)
+    decode = clicker_output(i)+1;
+    plot3(Z(1,i),Z(2,i),Z(3,i),'.','MarkerSize',20,'Color',cmap(decode,:))
+    pause(0.05)
+end
+
+% plot video together
+v = VideoWriter('PathTrial2.avi');
+v.FrameRate=12;
+open(v);
+figure;
+set(gcf,'Color','w')
+subplot(2,1,1)
+hold on
+xlim([min(kin(1,:)) max(kin(1,:))])
+ylim([min(kin(2,:)) max(kin(2,:))])
+%zlim([min(kin(3,:)) max(kin(3,:))])
+zlim([-1 1])
+for ii=size(target_path,1):-1:1
+    plot3(target_path(ii,1),target_path(ii,2),target_path(ii,3),'ob','MarkerSize',30)
+end
+hold on
+plot3(target_pos(1),target_pos(2),target_pos(3),'xr','MarkerSize',30)
+view(56,35)
+axis tight
+cmap=parula(7);
+for i=1:size(Z,2)
+   
+    subplot(2,1,1)
+    plot3(kin(1,i),kin(2,i),kin(3,i),'.k','MarkerSize',30)
+    hold on    
+
+    subplot(2,1,2)
+    view(56,35)
+    xlim([-1 4])
+    ylim([-1 3])
+    zlim([-0.5 2])
+    decode = clicker_output(i);
+    if decode>0
+        plot3(Z(1,i),Z(2,i),Z(3,i),'.','MarkerSize',20,'Color',cmap(decode,:))
+        hold on
+    end
+    pause(0.05)
+
+    frame=getframe(gcf);
+    writeVideo(v,frame);
+end
+close(v)
 
 %% LOOKING AT WHETHER THE MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (HAND)
 

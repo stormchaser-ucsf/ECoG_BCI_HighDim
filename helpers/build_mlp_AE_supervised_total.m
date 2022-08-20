@@ -1,4 +1,4 @@
-function [net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data)
+function [net,Xtrain,Ytrain] = build_mlp_AE_supervised_total(condn_data)
 %function [net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data)
 
 
@@ -21,6 +21,19 @@ for i=1:length(condn_data)
    condn_data{i}=tmp;
    Y=[Y;i*ones(size(tmp,1),1)];
 end
+
+% % data augmentation, add random offsets
+% for i=1:length(condn_data)
+%    tmp0 = condn_data{i}; 
+%    noise = randn(size(tmp0))*(std(tmp0(:))/4);
+%    tmp=tmp0+noise;
+% 
+%     for j=1:size(tmp,1)
+%        tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+%     end  
+%    condn_data{i}=[tmp0;tmp];
+%    Y=[Y;i*ones(size(tmp,1),1)];
+% end
 
 
 
@@ -56,12 +69,20 @@ T(aa(1):aa(end),7)=1;
 % using custom layers
 layers = [ ...
     featureInputLayer(96)    
+    fullyConnectedLayer(32)
+    eluLayer   
+    batchNormalizationLayer
     fullyConnectedLayer(8)
     eluLayer    
+    batchNormalizationLayer
     fullyConnectedLayer(3)    
     eluLayer('Name','autoencoder')    
     fullyConnectedLayer(8)
     eluLayer
+    batchNormalizationLayer
+    fullyConnectedLayer(32)
+    eluLayer
+    batchNormalizationLayer
     fullyConnectedLayer(96)    
     fullyConnectedLayer(7)    
     softmaxLayer
@@ -96,14 +117,20 @@ Ytest = Y(idx1);
 
 
 %'ValidationData',{XTest,YTest},...
-options = trainingOptions('adam', ...    
-    'MaxEpochs',50, ...
+batch_size=64;
+val_freq = floor(size(Xtrain,2)/batch_size);
+options = trainingOptions('adam', ...
+    'MaxEpochs',200, ...
     'Verbose',true, ...
     'Plots','training-progress',...
-    'MiniBatchSize',64,...
-    'ValidationFrequency',643,...
+    'MiniBatchSize',batch_size,...
+    'ValidationFrequency',val_freq,...
     'ExecutionEnvironment','gpu',...
     'ValidationPatience',6,...
+    'LearnRateDropFactor',0.1,...
+    'OutputNetwork','best-validation-loss',...
+    'LearnRateSchedule','piecewise',...
+    'LearnRateDropPeriod',50,...
     'ValidationData',{Xtest',Ytest});
 %'InitialLearnRate',0.01, ...
 

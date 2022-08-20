@@ -2046,7 +2046,7 @@ for i=1:1%length(foldernames)
 end
 
 res_overall=[];
-for iter=1:15
+for iter=1:20
     disp(iter)
 
 
@@ -2105,7 +2105,7 @@ for iter=1:15
                         hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
                         lg = (tmp4(i:i+1,j:j+1));lg=mean(lg(:));
                         %alp = (tmp5(i:i+1,j:j+1));alp=mean(alp(:));
-                        pooled_data = [pooled_data; delta; lg;hg];
+                        pooled_data = [pooled_data; delta;lg;hg];
                     end
                 end
                 new_temp= [new_temp pooled_data];
@@ -2202,7 +2202,7 @@ for iter=1:15
                         hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
                         lg = (tmp4(i:i+1,j:j+1));lg=mean(lg(:));
                         %alp = (tmp5(i:i+1,j:j+1));alp=mean(alp(:));
-                        pooled_data = [pooled_data; delta; lg;hg];
+                        pooled_data = [pooled_data; delta;lg;hg];
                     end
                 end
                 new_temp= [new_temp pooled_data];
@@ -2249,7 +2249,7 @@ for iter=1:15
 
 end
 
-acc=squeeze(nanmean(res_overall,1));
+acc=squeeze(nanmedian(res_overall,1));
 figure;imagesc(acc)
 diag(acc)
 mean(ans)
@@ -2257,10 +2257,10 @@ colormap bone
 caxis([0 1])
 set(gcf,'Color','w')
 title(['Av. Classif. Acc of ' num2str(mean(diag(acc))) '%'])
-%  xticks(1:5)
-%  yticks(1:5)
-%  xticklabels({'Thumb','Index','Middle','Ring','Little'})
-%  yticklabels({'Thumb','Index','Middle','Ring','Little'})
+xticks(1:5)
+yticks(1:5)
+xticklabels({'Thumb','Index','Middle','Ring','Little'})
+yticklabels({'Thumb','Index','Middle','Ring','Little'})
 set(gca,'FontSize',14)
 
 

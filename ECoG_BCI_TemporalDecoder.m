@@ -14,7 +14,8 @@ foldernames = {'20210613','20210616','20210623','20210625','20210630','20210702'
     '20211001''20211006','20211008','20211013','20211015','20211022','20211027','20211029','20211103',...
     '20211105','20211117','20211119','20220126','20220128','20220202','20220204','20220209','20220211',...
     '20220218','20220223','20220225','20220302','20220309','20220311',...
-    '20220316','20220323','20220325','20220520','20220722','20220727'};
+    '20220316','20220323','20220325','20220520','20220722','20220727','20220729',...
+    '20220803','20220810','20220812','20220817'};
 cd(root_path)
 
 imag_files={};
@@ -62,7 +63,7 @@ end
 % GETTING DATA FROM IMAGINED CONTROL IN THE ARROW TASK
 % get state 2 data, randomly selected between 300 and 400ms after target on
 % for state 3 data, start daq randomly between onset and 200ms, with next
-% bin randomly between 400 and 500ms. 
+% bin randomly between 400 and 500ms.
 D1i={};
 D2i={};
 D3i={};
@@ -103,9 +104,9 @@ for i=1:length(imag_files)
                 data_seg = raw_data;
             elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
                 %bins =1:400:s; % originally only for state 3
-                bins = 250:400:s;       
+                bins = 250:400:s;
                 jitter = round(100*rand(size(bins)));
-                bins=bins+jitter;                
+                bins=bins+jitter;
                 raw_data = [raw_data;raw_data4];
                 for k=1:length(bins)-1
                     tmp = raw_data(bins(k)+[0:799],:);
@@ -268,43 +269,16 @@ save lstm_7DoF_online_data_with_state2 D1 D2 D3 D4 D5 D6 D7 -v7.3
 clear;clc
 
 Y=[];
-
+addpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers')
 condn_data_new=[];jj=1;
 
 load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20211001\Robot3DArrow\103931\BCI_Fixed\Data0001.mat')
 chmap = TrialData.Params.ChMap;
 
-% filter and downsample the data, with spatial smoothing
-% keep hG envelope as well as LFO activity
-
-% hg filter
-hgFilt = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',70,'HalfPowerFrequency2',150, ...
-    'SampleRate',1e3);
 % low pass filter of raw
 lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'PassbandFrequency',25,'PassbandRipple',0.2, ...
     'SampleRate',1e3);
-lpFilt1 = designfilt('lowpassiir','FilterOrder',4, ...
-    'PassbandFrequency',10,'PassbandRipple',0.2, ...
-    'SampleRate',1e3);
-% lpFilt = designfilt('bandpassiir','FilterOrder',4, ...
-%     'HalfPowerFrequency1',1,'HalfPowerFrequency2',30, ...
-%     'SampleRate',1e3);
-% delta signal
-deltaFilt = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',0.5,'HalfPowerFrequency2',4, ...
-    'SampleRate',1e3);
-% beta signal
-betaFilt = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',13,'HalfPowerFrequency2',30, ...
-    'SampleRate',1e3);
-%lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
-%    'PassbandFrequency',30,'PassbandRipple',0.2, ...
-%    'SampleRate',1e3);
-%fvtool(lpFilt)
-
-
 
 % log spaced hg filters
 Params=[];
@@ -317,9 +291,9 @@ Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
 Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
 Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
 Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
-Params.FilterBank(end+1).fpass = [0.5,4]; % low pass
-Params.FilterBank(end+1).fpass = [13,19]; % beta1
-Params.FilterBank(end+1).fpass = [19,30]; % beta2
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
 
 % compute filter coefficients
 for i=1:length(Params.FilterBank),
@@ -327,36 +301,6 @@ for i=1:length(Params.FilterBank),
     Params.FilterBank(i).b = b;
     Params.FilterBank(i).a = a;
 end
-
-%hg1
-hg1 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',70,'HalfPowerFrequency2',77, ...
-    'SampleRate',1e3);
-hg2 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',77,'HalfPowerFrequency2',85, ...
-    'SampleRate',1e3);
-hg3 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',85,'HalfPowerFrequency2',93, ...
-    'SampleRate',1e3);
-hg4 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',93,'HalfPowerFrequency2',102, ...
-    'SampleRate',1e3);
-hg5 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',102,'HalfPowerFrequency2',113, ...
-    'SampleRate',1e3);
-hg6 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',113,'HalfPowerFrequency2',124, ...
-    'SampleRate',1e3);
-hg7 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',124,'HalfPowerFrequency2',136, ...
-    'SampleRate',1e3);
-hg8 = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',136,'HalfPowerFrequency2',150, ...
-    'SampleRate',1e3);
-
-
-
-
 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 load('lstm_7DoF_online_data_with_state2','D1');
@@ -389,37 +333,7 @@ for ii=1:size(condn_data1,3)
 
     tmp = squeeze(condn_data1(:,:,ii));
 
-    %get hG through filter bank approach
-    filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-    for i=1:8 % only hg
-        filtered_data(:,:,i) =  ((filter(...
-            Params.FilterBank(i).b, ...
-            Params.FilterBank(i).a, ...
-            tmp)));
-    end
-    tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-    % LFO low pass filtering
-    tmp_lp = filter(lpFilt,tmp);
-
-    % downsample the data
-    %     tmp_lp = resample(tmp_lp,200,800);
-    %     tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-    % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
-%     tmp_hg1=[];
-%     tmp_lp1=[];
-%     for i=1:size(tmp_hg,2)
-%         tmp_hg1(:,i) = decimate(tmp_hg(:,i),20)*5e2;
-%         tmp_lp1(:,i) = decimate(tmp_lp(:,i),20);
-%     end
-
-    % resample
-    tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-    tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));   
-
-    % make new data structure
-    tmp = [tmp_hg1 tmp_lp1];
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -456,39 +370,7 @@ for ii=1:size(condn_data2,3)
 
     tmp = squeeze(condn_data2(:,:,ii));
 
-
-    %get hG through filter bank approach
-    filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-    for i=1:8 % only hg
-        filtered_data(:,:,i) =  ((filter(...
-            Params.FilterBank(i).b, ...
-            Params.FilterBank(i).a, ...
-            tmp)));
-    end
-    tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-    % LFO low pass filtering
-    tmp_lp = filter(lpFilt,tmp);
-
-    % downsample the data
-    %     tmp_lp = resample(tmp_lp,200,800);
-    %     tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-    % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
-   %     tmp_hg1=[];
-%     tmp_lp1=[];
-%     for i=1:size(tmp_hg,2)
-%         tmp_hg1(:,i) = decimate(tmp_hg(:,i),20)*5e2;
-%         tmp_lp1(:,i) = decimate(tmp_lp(:,i),20);
-%     end
-
-    % resample
-    tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-    tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));   
-
-
-    % make new data structure
-    tmp = [tmp_hg1 tmp_lp1];
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -509,7 +391,7 @@ for i=1:length(D3)
     Y = [Y ;3];
 end
 for i=1:length(D3i)
-   %disp(k)
+    %disp(k)
     tmp = D3i{i};
     %tmp1(:,1,:)=tmp;
     tmp1=tmp;
@@ -525,38 +407,7 @@ for ii=1:size(condn_data3,3)
 
     tmp = squeeze(condn_data3(:,:,ii));
 
-    %get hG through filter bank approach
-    filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-    for i=1:8 % only hg
-        filtered_data(:,:,i) =  ((filter(...
-            Params.FilterBank(i).b, ...
-            Params.FilterBank(i).a, ...
-            tmp)));
-    end
-    tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-    % LFO low pass filtering
-    tmp_lp = filter(lpFilt,tmp);
-
-      % downsample the data
-    %     tmp_lp = resample(tmp_lp,200,800);
-    %     tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-    % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
- %     tmp_hg1=[];
-%     tmp_lp1=[];
-%     for i=1:size(tmp_hg,2)
-%         tmp_hg1(:,i) = decimate(tmp_hg(:,i),20)*5e2;
-%         tmp_lp1(:,i) = decimate(tmp_lp(:,i),20);
-%     end
-
-    % resample
-    tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-    tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));   
-
-
-    % make new data structure
-    tmp = [tmp_hg1 tmp_lp1];
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -570,7 +421,7 @@ load('lstm_7DoF_imag_data_with_state2','D4i');
 condn_data4 = zeros(800,128,length(D4)+length(D4i));
 k=1;
 for i=1:length(D4)
-   %disp(k)
+    %disp(k)
     tmp = D4{i};
     %tmp1(:,1,:)=tmp;
     tmp1=tmp;
@@ -595,38 +446,7 @@ for ii=1:size(condn_data4,3)
 
     tmp = squeeze(condn_data4(:,:,ii));
 
-    %get hG through filter bank approach
-    filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-    for i=1:8 % only hg
-        filtered_data(:,:,i) =  ((filter(...
-            Params.FilterBank(i).b, ...
-            Params.FilterBank(i).a, ...
-            tmp)));
-    end
-    tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-    % LFO low pass filtering
-    tmp_lp = filter(lpFilt,tmp);
-
-       % downsample the data
-    %     tmp_lp = resample(tmp_lp,200,800);
-    %     tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-    % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
- %     tmp_hg1=[];
-%     tmp_lp1=[];
-%     for i=1:size(tmp_hg,2)
-%         tmp_hg1(:,i) = decimate(tmp_hg(:,i),20)*5e2;
-%         tmp_lp1(:,i) = decimate(tmp_lp(:,i),20);
-%     end
-
-    % resample
-    tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-    tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));   
-
-
-    % make new data structure
-    tmp = [tmp_hg1 tmp_lp1];
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
 
 
     % store
@@ -640,7 +460,7 @@ load('lstm_7DoF_imag_data_with_state2','D5i');
 condn_data5 = zeros(800,128,length(D5)+length(D5i));
 k=1;
 for i=1:length(D5)
-  %disp(k)
+    %disp(k)
     tmp = D5{i};
     %tmp1(:,1,:)=tmp;
     tmp1=tmp;
@@ -649,7 +469,7 @@ for i=1:length(D5)
     Y = [Y ;5];
 end
 for i=1:length(D5i)
-   %disp(k)
+    %disp(k)
     tmp = D5i{i};
     %tmp1(:,1,:)=tmp;
     tmp1=tmp;
@@ -666,39 +486,7 @@ for ii=1:size(condn_data5,3)
     tmp = squeeze(condn_data5(:,:,ii));
 
 
-    %get hG through filter bank approach
-    filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-    for i=1:8 % only hg
-        filtered_data(:,:,i) =  ((filter(...
-            Params.FilterBank(i).b, ...
-            Params.FilterBank(i).a, ...
-            tmp)));
-    end
-    tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-    % LFO low pass filtering
-    tmp_lp = filter(lpFilt,tmp);
-
-       % downsample the data
-    %     tmp_lp = resample(tmp_lp,200,800);
-    %     tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-    % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
- %     tmp_hg1=[];
-%     tmp_lp1=[];
-%     for i=1:size(tmp_hg,2)
-%         tmp_hg1(:,i) = decimate(tmp_hg(:,i),20)*5e2;
-%         tmp_lp1(:,i) = decimate(tmp_lp(:,i),20);
-%     end
-
-    % resample
-    tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-    tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));   
-
-
-    % make new data structure
-    tmp = [tmp_hg1 tmp_lp1];
-
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -721,7 +509,7 @@ for i=1:length(D6)
     Y = [Y ;6];
 end
 for i=1:length(D6i)
-   %disp(k)
+    %disp(k)
     tmp = D6i{i};
     %tmp1(:,1,:)=tmp;
     tmp1=tmp;
@@ -737,38 +525,7 @@ for ii=1:size(condn_data6,3)
 
     tmp = squeeze(condn_data6(:,:,ii));
 
-    %get hG through filter bank approach
-    filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-    for i=1:8 % only hg
-        filtered_data(:,:,i) =  ((filter(...
-            Params.FilterBank(i).b, ...
-            Params.FilterBank(i).a, ...
-            tmp)));
-    end
-    tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-    % LFO low pass filtering
-    tmp_lp = filter(lpFilt,tmp);
-
-      % downsample the data
-    %     tmp_lp = resample(tmp_lp,200,800);
-    %     tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-    % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
-%     tmp_hg1=[];
-%     tmp_lp1=[];
-%     for i=1:size(tmp_hg,2)
-%         tmp_hg1(:,i) = decimate(tmp_hg(:,i),20)*5e2;
-%         tmp_lp1(:,i) = decimate(tmp_lp(:,i),20);
-%     end
-
-    % resample
-    tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-    tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));   
-
-
-    % make new data structure
-    tmp = [tmp_hg1 tmp_lp1];
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -807,38 +564,7 @@ for ii=1:size(condn_data7,3)
 
     tmp = squeeze(condn_data7(:,:,ii));
 
-    %get hG through filter bank approach
-    filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-    for i=1:8 % only hg
-        filtered_data(:,:,i) =  ((filter(...
-            Params.FilterBank(i).b, ...
-            Params.FilterBank(i).a, ...
-            tmp)));
-    end
-    tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-    % LFO low pass filtering
-    tmp_lp = filter(lpFilt,tmp);
-   
-        % downsample the data
-    %     tmp_lp = resample(tmp_lp,200,800);
-    %     tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-    % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
-%     tmp_hg1=[];
-%     tmp_lp1=[];
-%     for i=1:size(tmp_hg,2)
-%         tmp_hg1(:,i) = decimate(tmp_hg(:,i),20)*5e2;
-%         tmp_lp1(:,i) = decimate(tmp_lp(:,i),20);
-%     end
-
-    % resample
-    tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-    tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));   
-
-
-    % make new data structure
-    tmp = [tmp_hg1 tmp_lp1];
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
 
 
     % store
@@ -847,13 +573,13 @@ for ii=1:size(condn_data7,3)
 end
 
 
-%save decimated_lstm_data_below25Hz condn_data_new Y -v7.3
+save decimated_lstm_data_below25Hz condn_data_new Y -v7.3
 %save downsampled_lstm_data_below25Hz condn_data_new Y -v7.3
-save decimated_lstm_data_below25Hz_WithState2 condn_data_new Y -v7.3
-
+%save decimated_lstm_data_below25Hz_WithState2_with_lg condn_data_new Y -v7.3
+%load decimated_lstm_data_below25Hz_WithState2
 
 % set aside training and testing data in a cell format
-clear condn_data  condn_data7
+%clear condn_data  condn_data7
 
 % get rid of artifacts, any channel with activity >15SD, set it to near zero
 for i=1:size(condn_data_new,3)
@@ -870,25 +596,69 @@ for i=1:size(condn_data_new,3)
     [aa bb]=find(I>0);
     xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
     condn_data_new(:,129:256,i)=xx;
+
+%     xx=squeeze(condn_data_new(:,257:384,i));
+%     I = abs(xx)>15;
+%     I = sum(I);
+%     [aa bb]=find(I>0);
+%     xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
+%     condn_data_new(:,257:384,i)=xx;
 end
 
 % normalize the data to be between 0 and 1
 for i=1:size(condn_data_new,3)
-    tmp=squeeze(condn_data_new(:,:,i));    
+    tmp=squeeze(condn_data_new(:,:,i));
     tmp1=tmp(:,1:128);
     tmp1 = (tmp1 - min(tmp1(:)))/(max(tmp1(:))-min(tmp1(:)));
 
     tmp2=tmp(:,129:256);
     tmp2 = (tmp2 - min(tmp2(:)))/(max(tmp2(:))-min(tmp2(:)));
-   
-    tmp = [tmp1 tmp2];    
+
+%     tmp3=tmp(:,257:384);
+%     tmp3 = (tmp3 - min(tmp3(:)))/(max(tmp3(:))-min(tmp3(:)));
+
+    %tmp = [tmp1 tmp2 tmp3];
+    tmp = [tmp1 tmp2 ];
     condn_data_new(:,:,i)=tmp;
 end
 
 
+% plotting for presentation
+tmp=squeeze(condn_data_new(:,:,1245));
+figure;
+imagesc(tmp(:,1:128)')
+caxis([0 .5])
+figure;%hg
+offset = 0:.1:127*.1;
+tmp1=tmp(:,1:128)+offset;
+tt=(1:80)*(1/100);
+plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xlabel('Time in sec')
+ylabel('hG norm')
+box off
+yticks ''
+
+figure;%lmp
+offset = 0:.2:127*.2;
+tmp1=tmp(:,129:256)+offset;
+tt=(1:80)*(1/100);
+plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xlabel('Time in sec')
+ylabel('LPF norm')
+box off
+yticks ''
+
+
+
 % % normalize the data to 2-norm
 % for i=1:size(condn_data_new,3)
-%     tmp=squeeze(condn_data_new(:,:,i));    
+%     tmp=squeeze(condn_data_new(:,:,i));
 %     tmp1=tmp(:,1:256);
 %     tmp1=tmp1./norm(tmp1(:));
 %     %tmp2=tmp(:,129:256);
@@ -926,20 +696,23 @@ YTrain = categorical(YTrain');
 YTest = categorical(YTest');
 
 % data augmentation: introduce random noise plus some mean shift to each
-% channel for about 20k samples
-aug_idx = randperm(length(XTrain),4e4);
+% channel for about 50k samples
+aug_idx = randperm(length(XTrain),5.2e4);
 for i=1:length(aug_idx)
     tmp = XTrain{aug_idx(i)}';
     t_id=categorical(YTrain(aug_idx(i)));
 
     % hG
     tmp1 = tmp(:,1:128);
-    % add noise var
-    add_noise=randn(size(tmp1)).*std(tmp1).*.795;
+    % add variable noise 
+    %var_noise=randsample(400:1200,size(tmp1,2))/1e3;
+    var_noise=0.8;
+    add_noise=randn(size(tmp1)).*std(tmp1).*var_noise;
     tmp1n = tmp1 + add_noise;
-    % add mean offset by 10% 
+    % add variable mean offset between 5 and 25%
     m=mean(tmp1);
     add_mean =  m*.2;
+    %add_mean=randsample(0:500,size(tmp1,2))/1e3;
     flip_sign = rand(size(add_mean));
     flip_sign(flip_sign>0.5)=1;
     flip_sign(flip_sign<=0.5)=-1;
@@ -947,14 +720,17 @@ for i=1:length(aug_idx)
     tmp1m = tmp1n + add_mean;
     tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
 
-    % hG
+    % lmp
     tmp2 = tmp(:,129:256);
-    % add noise var
-    add_noise=randn(size(tmp2)).*std(tmp2).*.795;
+    % add variable noise 
+    var_noise=0.8;
+    %var_noise=randsample(400:1200,size(tmp2,2))/1e3;
+    add_noise=randn(size(tmp2)).*std(tmp2).*var_noise;    
     tmp2n = tmp2 + add_noise;
-    % add mean offset by 10% 
+    % add variable mean offset between 5 and 25%
     m=mean(tmp2);
-    add_mean =  m*.2;
+    add_mean =  m*.25;
+    %add_mean=randsample(0:500,size(tmp2,2))/1e3;
     flip_sign = rand(size(add_mean));
     flip_sign(flip_sign>0.5)=1;
     flip_sign(flip_sign<=0.5)=-1;
@@ -962,13 +738,66 @@ for i=1:length(aug_idx)
     tmp2m = tmp2n + add_mean;
     tmp2m = (tmp2m-min(tmp2m(:)))/(max(tmp2m(:))-min(tmp2m(:)));
 
+%     %lg
+%     tmp3 = tmp(:,257:384);
+%     % add noise var
+%     add_noise=randn(size(tmp3)).*std(tmp3).*.795;
+%     tmp3n = tmp3 + add_noise;
+%     % add mean offset by 20%
+%     m=mean(tmp3);
+%     add_mean =  m*.2;
+%     flip_sign = rand(size(add_mean));
+%     flip_sign(flip_sign>0.5)=1;
+%     flip_sign(flip_sign<=0.5)=-1;
+%     add_mean=add_mean.*flip_sign+m;
+%     tmp3m = tmp3n + add_mean;
+%     tmp3m = (tmp3m-min(tmp3m(:)))/(max(tmp3m(:))-min(tmp3m(:)));
+
+    %tmp=[tmp1m tmp2m tmp3m]';
     tmp=[tmp1m tmp2m]';
 
-    XTrain=cat(1,XTrain,tmp);    
+    XTrain=cat(1,XTrain,tmp);
     YTrain = cat(1,YTrain,t_id);
 end
 
 
+% plotting examples
+tmp=tmp1;
+figure;%hg
+offset = 0:.2:127*.2;
+tmp11=tmp(:,1:128)+offset;
+tt=(1:80)*(1/100);
+plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+axis off
+set(gcf,'Color','w')
+tmp=add_noise;
+figure;%hg
+offset = 0:.2:127*.2;
+tmp11=tmp(:,1:128)+offset;
+tt=(1:80)*(1/100);
+plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+axis off
+set(gcf,'Color','w')
+tmp=repmat(add_mean,80,1);
+figure;%hg
+offset = 0:.2:127*.2;
+tmp11=tmp(:,1:128)+offset;
+tt=(1:80)*(1/100);
+plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+axis off
+set(gcf,'Color','w')
+tmp=tmp1m;
+figure;%hg
+offset = 0:.2:127*.2;
+tmp11=tmp(:,1:128)+offset;
+tt=(1:80)*(1/100);
+plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+axis off
+set(gcf,'Color','w')
 
 % implement label smoothing to see how that does
 %save training_data_bilstm_pooled3Feat condn_data_new Y -v7.3
@@ -992,16 +821,15 @@ for i=3%1:length(drop1)
     drop=drop1(i);
     layers = [ ...
         sequenceInputLayer(inputSize)
-        %batchNormalizationLayer
         bilstmLayer(numHiddenUnits,'OutputMode','sequence')
         dropoutLayer(drop)
+        %layerNormalizationLayer
         gruLayer(numHiddenUnits/2,'OutputMode','last')
-        %dropoutLayer(drop)
-        %batchNormalizationLayer
-        %fullyConnectedLayer(75)
-        %leakyReluLayer
+        dropoutLayer(drop)
+        %layerNormalizationLayer
         fullyConnectedLayer(25)
         leakyReluLayer
+        batchNormalizationLayer
         fullyConnectedLayer(numClasses)
         softmaxLayer
         classificationLayer];
@@ -1009,12 +837,14 @@ for i=3%1:length(drop1)
 
 
     % options
+    batch_size=128;
+    val_freq = floor(length(XTrain)/batch_size);
     options = trainingOptions('adam', ...
         'MaxEpochs',120, ...
-        'MiniBatchSize',128, ...
+        'MiniBatchSize',batch_size, ...
         'GradientThreshold',10, ...
         'Verbose',true, ...
-        'ValidationFrequency',719,...
+        'ValidationFrequency',val_freq,...
         'Shuffle','every-epoch', ...
         'ValidationData',{XTest,YTest},...
         'ValidationPatience',6,...
@@ -1022,7 +852,7 @@ for i=3%1:length(drop1)
         'LearnRateSchedule','piecewise',...
         'LearnRateDropFactor',0.1,...
         'OutputNetwork','best-validation-loss',...
-        'LearnRateDropPeriod',40,...
+        'LearnRateDropPeriod',50,...
         'InitialLearnRate',0.001);
 
     % train the model
@@ -1032,28 +862,36 @@ end
 % net_800 =net;
 % save net_800 net_800
 
-net_bilstm = net;
-save net_bilstm net_bilstm
+%net_bilstm_lg = net;
+%save net_bilstm_lg net_bilstm_lg
 
+%net_bilstmhg=net; % this has more noise variance in the data augmentation
+%save net_bilstmhg net_bilstmhg 
+
+net_bilstm_20220817 = net;
+save net_bilstm_20220817 net_bilstm_20220817
 
 %% TESTING THE DATA ON ONLINE DATA
 
-clc;clear
-load net_bilstm
+clear
+%load net_bilstm_stacked
+%net_bilstm = net_bilstm_stacked;
+%load net_bilstm_lg
+%net_bilstm = net_bilstm_lg;
+%load net_bilstm
+%load net_bilstmhg
+%net_bilstm = net_bilstmhg;
+load net_bilstm_20220817
+net_bilstm = net_bilstm_20220817;
+
 %filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
-filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220803\Robot3DArrow';
+acc_mlp_days=[];
+acc_days=[];
+addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
-% get the name of the files
-files = findfiles('mat',filepath,1)';
-files1=[];
-for i=1:length(files)
-    if regexp(files{i},'Data')
-        files1=[files1;files(i)];
-    end
-end
-files=files1;
-clear files1
-
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+%foldernames = {'20220803','20220810','20220812','20220817'};
+foldernames = {'20220817'};
 
 % filter bank hg
 Params=[];
@@ -1066,6 +904,9 @@ Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
 Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
 Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
 Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
 % compute filter coefficients
 for i=1:length(Params.FilterBank),
     [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
@@ -1078,163 +919,73 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'PassbandFrequency',25,'PassbandRipple',0.2, ...
     'SampleRate',1e3);
 
-% hg filter
-hgFilt = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',70,'HalfPowerFrequency2',150, ...
-    'SampleRate',1e3);
-
-
-% another low pass filter
-lpFilt1 = designfilt('lowpassiir','FilterOrder',4, ...
-    'PassbandFrequency',10,'PassbandRipple',0.2, ...
-    'SampleRate',1e3);
-
-% load the data, and run it through the classifier
-decodes_overall=[];
-data=[];
-for i=1:length(files)
+for i=1:length(foldernames)
     disp(i)
+    filepath = fullfile(root_path,foldernames{i},'Robot3DArrow');
+    [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
+        =get_lstm_performance(filepath,net_bilstm,Params,lpFilt);
 
-    % load
-    load(files{i})
-
-    % create buffer
-    data_buffer = randn(800,128)*0.25;
-
-    %get data
-    raw_data = TrialData.BroadbandData;
-    raw_data1=cell2mat(raw_data');
-
-    % state of trial
-    state_idx = TrialData.TaskState;
-    decodes=[];
-    trial_data={};
-    for j=1:length(raw_data)
-        tmp = raw_data{j};
-        s=size(tmp,1);
-        if s<800
-            data_buffer = circshift(data_buffer,-s);
-            data_buffer(end-s+1:end,:)=tmp;
-        else
-            data_buffer(1:end,:)=tmp(s-800+1:end,:);
-        end
-
-        % storing the data
-        trial_data{j} = data_buffer;
-
-        %hg features
-        filtered_data=zeros(size(data_buffer,1),size(data_buffer,2),8);
-        for ii=1:length(Params.FilterBank)
-            filtered_data(:,:,ii) =  ((filter(...
-                Params.FilterBank(ii).b, ...
-                Params.FilterBank(ii).a, ...
-                data_buffer)));
-        end
-        tmp_hg = squeeze(mean(filtered_data.^2,3));
-        tmp_hg = resample(tmp_hg,80,size(tmp_hg,1))*5e2;        
-        xx=tmp_hg;%artifact correction
-        I = abs(xx)>15;
-        I = sum(I);
-        [aa bb]=find(I>0);
-        xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
-        tmp_hg=xx;
-        tmp_hg = (tmp_hg - min(tmp_hg(:)))/...
-            (max(tmp_hg(:))-min(tmp_hg(:))); % normalizing
-
-
-        % low-pass features
-        tmp_lp = filter(lpFilt,data_buffer);
-        tmp_lp = resample(tmp_lp,80,size(tmp_lp,1));   
-        xx=tmp_lp;%artifact correction
-        I = abs(xx)>15;
-        I = sum(I);
-        [aa bb]=find(I>0);
-        xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
-        tmp_lp=xx;
-        tmp_lp = (tmp_lp - min(tmp_lp(:)))/...
-            (max(tmp_lp(:))-min(tmp_lp(:))); % normalizing
-
-        % concatenate
-        neural_features = [tmp_hg tmp_lp ];
-
-        % classifier output
-        out=predict(net_bilstm,neural_features');
-        [aa bb]=max(out);
-        class_predict = bb;
-
-        % store results
-        if state_idx(j)==3
-            decodes=[decodes class_predict];
-        end
-    end
-    data(i).task_state = TrialData.TaskState ;
-    data(i).raw_data = trial_data;
-    data(i).TargetID = TrialData.TargetID;
-    %data(i).Task = 'Robot_Online_Data';
-    data(i).Task = '3DArrow';
-    decodes_overall(i).decodes = decodes;
-    decodes_overall(i).tid = TrialData.TargetID;
-end
-%val_robot_data=data;
-%save val_robot_data val_robot_data -v7.3
-
-% looking at the accuracy of the bilstm decoder overall
-acc=zeros(7,7);
-for i=1:length(decodes_overall)
-    tmp = decodes_overall(i).decodes;
-    tid=decodes_overall(i).tid;
-    for j=1:length(tmp)
-        acc(tid,tmp(j)) =  acc(tid,tmp(j))+1;
-    end
-end
-for i=1:length(acc)
-    acc(i,:) = acc(i,:)/sum(acc(i,:));
-end
-
-% looking at accuracy in terms of max decodes
-acc_trial=zeros(7,7);
-for i=1:length(decodes_overall)
-    tmp = decodes_overall(i).decodes;
-    tid=decodes_overall(i).tid;
-    acc1=zeros(7,7);
-    for j=1:length(tmp)
-        acc1(tid,tmp(j)) =  acc1(tid,tmp(j))+1;
-    end
-    acc1=sum(acc1);
-    [aa bb]=max(acc1);
-    acc_trial(tid,bb)=acc_trial(tid,bb)+1;
-end
-for i=1:length(acc_trial)
-    acc_trial(i,:) = acc_trial(i,:)/sum(acc_trial(i,:));
+    acc_days = [acc_days diag(acc_lstm_sample)];
+    acc_mlp_days = [acc_mlp_days diag(acc_mlp_sample)];
 end
 
 
-%comparing to the mlp
-acc_mlp=zeros(7,7);
-acc_mlp_trial=zeros(7,7);
-for i=1:length(files)
-    disp(i)
-
-    % load
-    load(files{i})
-
-    decodes = TrialData.ClickerState;
-    tid=TrialData.TargetID;
-    acc1=zeros(7,7);
-    for j=1:length(decodes)
-        if decodes(j)>0
-            acc_mlp(tid,decodes(j))=acc_mlp(tid,decodes(j))+1;
-            acc1(tid,decodes(j))=acc1(tid,decodes(j))+1;
-        end
-    end
-    tmp=sum(acc1);
-    [aa bb]=max(tmp);
-    acc_mlp_trial(tid,bb)=acc_mlp_trial(tid,bb)+1;
+% 
+figure;
+tmp = [acc_days(:) acc_mlp_days(:)];
+boxplot(tmp)
+hold on
+cmap=turbo(size(acc_days,2));
+for i=1:size(acc_days,2)
+    s=scatter(ones(1,1)+0.05*randn(1,1) , mean(acc_days(:,i))','MarkerEdgeColor',cmap(i,:),...
+        'LineWidth',2);
+    s.SizeData=100;
+    s=scatter(2*ones(1,1)+0.05*randn(1,1) , mean(acc_mlp_days(:,i))',...
+        'MarkerEdgeColor',cmap(i,:),'LineWidth',2);
+    s.SizeData=100;
 end
-for i=1:length(acc_mlp)
-    acc_mlp(i,:) = acc_mlp(i,:)./sum(acc_mlp(i,:));
-    acc_mlp_trial(i,:) = acc_mlp_trial(i,:)./sum(acc_mlp_trial(i,:));
+ylim([0.3 1])
+xticks(1:2)
+xticklabels({'stack biLSTM','MLP'})
+legend({'0803','','0810','','0812','0817'})
+title('Arrow Task')
+ylabel('Accuracy of inidiv. samples at 5Hz')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+box off
+
+% plotting the success of individual actions
+figure;
+hold on
+for i=1:7
+    idx = i:7:size(tmp,1);
+    decodes = tmp(idx,:);   
+    h=bar(2*i-0.25,mean(decodes(:,1)));
+    h1=bar(2*i+0.25,mean(decodes(:,2)));
+    h.BarWidth=0.4;
+    h.FaceColor=[0.2 0.2 0.7];
+    h1.BarWidth=0.4;
+    h1.FaceColor=[0.7 0.2 0.2];
+    h.FaceAlpha=0.85;
+    h1.FaceAlpha=0.85;
+
+%     s=scatter(ones(3,1)*2*i-0.25+0.05*randn(3,1),decodes(:,1),'LineWidth',2);
+%     s.CData = [0.2 0.2 0.7];
+%     s.SizeData=50;
+% 
+%     s=scatter(ones(3,1)*2*i+0.25+0.05*randn(3,1),decodes(:,2),'LineWidth',2);
+%     s.CData = [0.7 0.2 0.2];
+%     s.SizeData=50;
 end
+xticks([2:2:14])
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+ylabel('Decoding Accuracy')
+legend('LSTM','MLP')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+
 
 
 %% GET REALROBOT BATCH DATA ON A TRIAL BY TRIAL LEVEL
@@ -1245,11 +996,10 @@ close all
 root_folder='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 folder_days = {'20210716','20210728','20210804','20210806', '20220202','20220211',...
     '20220225','20220304','20220309','20220311','20220316','20220323','20220325',...
-    '20220330','20220420','20220422','20220429','20220513','20220518','20220520',...
-    '20220715','20220722','20220727','20220729',...
-    '20220803'};
+    '20220330','20220420','20220422','20220429','20220504','20220506','20220513',...
+    '20220518','20220520','20220715','20220722','20220727','20220729',...
+    '20220216','20220803'};
 
-% download 05042022 and 20220506 data
 % 20220216 has 9D robotbatch seems important
 
 files=[];
@@ -1279,6 +1029,13 @@ files=files1;
 
 
 % load the robot data for the LSTM format
+D1={};
+D2={};
+D3={};
+D4={};
+D5={};
+D6={};
+D7={};
 robot_batch_trials_lstm=[];
 files_not_loaded=[];
 for i=1:length(files)
@@ -1287,13 +1044,18 @@ for i=1:length(files)
     try
         load(files{i})
         file_loaded = true;
+        warning('off')
     catch
         file_loaded=false;
         disp(['Could not load ' files{i}]);
         files_not_loaded=[files_not_loaded;files(i)];
     end
     if file_loaded
+
+        idx00 = find(TrialData.TaskState==1) ;
+        idx0 = find(TrialData.TaskState==2) ;
         idx = find(TrialData.TaskState==3) ;
+        idx=[idx00 idx0 idx];
         raw_data = cell2mat(TrialData.BroadbandData(idx)');
         idx1 = find(TrialData.TaskState==4) ;
         raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
@@ -1309,46 +1071,45 @@ for i=1:length(files)
             raw_data = raw_data(1:800,:);
             data_seg = raw_data;
         elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
-            bins =1:400:s;
+            %bins =1:400:s; % originally only for state 3
+            bins = 250:400:s;
+            jitter = round(100*rand(size(bins)));
+            bins=bins+jitter;
             raw_data = [raw_data;raw_data4];
             for k=1:length(bins)-1
-                try
-                    tmp = raw_data(bins(k)+[0:799],:);
-                catch
-                    tmp=[];
-                end
+                tmp = raw_data(bins(k)+[0:799],:);
                 data_seg = cat(2,data_seg,tmp);
             end
         end
-
+        
         feat_stats = TrialData.FeatureStats;
         feat_stats.Mean = feat_stats.Mean(769:end);
         feat_stats.Var = feat_stats.Var(769:end);
         clear feat_stats1
         feat_stats1(1:length(data_seg)) = feat_stats;
 
-        %         if id==1
-        %             D1 = cat(2,D1,data_seg);
-        %             %D1f = cat(2,D1f,feat_stats1);
-        %         elseif id==2
-        %             D2 = cat(2,D2,data_seg);
-        %             %D2f = cat(2,D2f,feat_stats1);
-        %         elseif id==3
-        %             D3 = cat(2,D3,data_seg);
-        %             %D3f = cat(2,D3f,feat_stats1);
-        %         elseif id==4
-        %             D4 = cat(2,D4,data_seg);
-        %             %D4f = cat(2,D4f,feat_stats1);
-        %         elseif id==5
-        %             D5 = cat(2,D5,data_seg);
-        %             %D5f = cat(2,D5f,feat_stats1);
-        %         elseif id==6
-        %             D6 = cat(2,D6,data_seg);
-        %             %D6f = cat(2,D6f,feat_stats1);
-        %         elseif id==7
-        %             D7 = cat(2,D7,data_seg);
-        %             %D7f = cat(2,D7f,feat_stats1);
-        %         end
+        if id==1
+            D1 = cat(2,D1,data_seg);
+            %D1f = cat(2,D1f,feat_stats1);
+        elseif id==2
+            D2 = cat(2,D2,data_seg);
+            %D2f = cat(2,D2f,feat_stats1);
+        elseif id==3
+            D3 = cat(2,D3,data_seg);
+            %D3f = cat(2,D3f,feat_stats1);
+        elseif id==4
+            D4 = cat(2,D4,data_seg);
+            %D4f = cat(2,D4f,feat_stats1);
+        elseif id==5
+            D5 = cat(2,D5,data_seg);
+            %D5f = cat(2,D5f,feat_stats1);
+        elseif id==6
+            D6 = cat(2,D6,data_seg);
+            %D6f = cat(2,D6f,feat_stats1);
+        elseif id==7
+            D7 = cat(2,D7,data_seg);
+            %D7f = cat(2,D7f,feat_stats1);
+        end
         robot_batch_trials_lstm(i).TargetID = id;
         robot_batch_trials_lstm(i).RawData = data_seg;
 
@@ -1363,7 +1124,7 @@ for i=1:length(files)
 end
 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-save robot_batch_trials_lstm robot_batch_trials_lstm -v7.3
+save robot_batch_trials_lstm D1 D2 D3 D4 D5 D6 D7 -v7.3
 
 
 %%%%% get the data for LSTMs on a trial by trial level
@@ -1432,7 +1193,7 @@ for ii=1:length(robot_batch_trials_lstm)
         % make new data structure
         tmp = [tmp_hg1 tmp_lp1];
 
-        % store it 
+        % store it
         temp_lstm{j}=tmp;
     end
 
@@ -1444,6 +1205,608 @@ for ii=1:length(robot_batch_trials_lstm)
         robot_batch_trials_lstm(ii).Day;
 end
 save robot_batch_trials_lstm_features robot_batch_trials_lstm_features -v7.3
+
+
+%% FINE TUNE LSTM ON THE ROBOT BATCH DATA
+
+clear;clc
+
+Y=[];
+addpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers')
+condn_data_new=[];jj=1;
+
+load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20211001\Robot3DArrow\103931\BCI_Fixed\Data0001.mat')
+chmap = TrialData.Params.ChMap;
+
+% low pass filter of raw
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+% log spaced hg filters
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+load('robot_batch_trials_lstm','D1');
+condn_data1 = zeros(800,128,length(D1));
+k=1;
+for i=1:length(D1)
+    %disp(k)
+    tmp = D1{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data1(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;1];
+end
+clear D1 
+
+disp('Processing action 1')
+for ii=1:size(condn_data1,3)
+    % disp(ii)
+
+    tmp = squeeze(condn_data1(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+load('robot_batch_trials_lstm','D2');
+condn_data2 = zeros(800,128,length(D2));
+k=1;
+for i=1:length(D2)
+    %disp(k)
+    tmp = D2{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data2(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;2];
+end
+clear D2 D2i condn_data1
+
+disp('Processing action 2')
+for ii=1:size(condn_data2,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data2(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+load('robot_batch_trials_lstm','D3');
+condn_data3 = zeros(800,128,length(D3));
+k=1;
+for i=1:length(D3)
+    %disp(k)
+    tmp = D3{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data3(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;3];
+end
+clear D3 D3i condn_data2
+
+disp('Processing action 3')
+for ii=1:size(condn_data3,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data3(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+load('robot_batch_trials_lstm','D4');
+condn_data4 = zeros(800,128,length(D4));
+k=1;
+for i=1:length(D4)
+    %disp(k)
+    tmp = D4{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data4(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;4];
+end
+clear D4 D4i condn_data3
+
+disp('Processing action 4')
+for ii=1:size(condn_data4,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data4(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+load('robot_batch_trials_lstm','D5');
+condn_data5 = zeros(800,128,length(D5));
+k=1;
+for i=1:length(D5)
+    %disp(k)
+    tmp = D5{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data5(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;5];
+end
+clear D5 D5i condn_data4
+
+disp('Processing action 5')
+for ii=1:size(condn_data5,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data5(:,:,ii));
+
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+
+
+load('robot_batch_trials_lstm','D6');
+condn_data6 = zeros(800,128,length(D6));
+k=1;
+for i=1:length(D6)
+    %disp(k)
+    tmp = D6{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data6(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;6];
+end
+clear D6 D6i condn_data5
+
+disp('Processing action 6')
+for ii=1:size(condn_data6,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data6(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+load('robot_batch_trials_lstm','D7');
+condn_data7 = zeros(800,128,length(D7));
+k=1;
+for i=1:length(D7)
+    %disp(k)
+    tmp = D7{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data7(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;7];
+end
+clear D7 D7i condn_data6
+
+disp('Processing action 7')
+for ii=1:size(condn_data7,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data7(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+save decimated_lstm_robot_batchData condn_data_new Y -v7.3
+
+% get rid of artifacts, any channel with activity >15SD, set it to near zero
+for i=1:size(condn_data_new,3)
+    xx=squeeze(condn_data_new(:,1:128,i));
+    I = abs(xx)>12;
+    I = sum(I);
+    [aa bb]=find(I>0);
+    xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
+    condn_data_new(:,1:128,i)=xx;
+
+    xx=squeeze(condn_data_new(:,129:256,i));
+    I = abs(xx)>12;
+    I = sum(I);
+    [aa bb]=find(I>0);
+    xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
+    condn_data_new(:,129:256,i)=xx;
+
+%     xx=squeeze(condn_data_new(:,257:384,i));
+%     I = abs(xx)>15;
+%     I = sum(I);
+%     [aa bb]=find(I>0);
+%     xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
+%     condn_data_new(:,257:384,i)=xx;
+end
+
+% normalize the data to be between 0 and 1
+for i=1:size(condn_data_new,3)
+    tmp=squeeze(condn_data_new(:,:,i));
+    tmp1=tmp(:,1:128);
+    tmp1 = (tmp1 - min(tmp1(:)))/(max(tmp1(:))-min(tmp1(:)));
+
+    tmp2=tmp(:,129:256);
+    tmp2 = (tmp2 - min(tmp2(:)))/(max(tmp2(:))-min(tmp2(:)));
+
+%     tmp3=tmp(:,257:384);
+%     tmp3 = (tmp3 - min(tmp3(:)))/(max(tmp3(:))-min(tmp3(:)));
+
+    %tmp = [tmp1 tmp2 tmp3];
+    tmp = [tmp1 tmp2 ];
+    condn_data_new(:,:,i)=tmp;
+end
+
+
+
+% % normalize the data to 2-norm
+% for i=1:size(condn_data_new,3)
+%     tmp=squeeze(condn_data_new(:,:,i));
+%     tmp1=tmp(:,1:256);
+%     tmp1=tmp1./norm(tmp1(:));
+%     %tmp2=tmp(:,129:256);
+%     %tmp2=tmp2./norm(tmp2(:));
+%     %tmp = [tmp1 tmp2];
+%     tmp = [tmp1 ];
+%     condn_data_new(:,:,i)=tmp;
+% end
+
+idx = randperm(size(condn_data_new,3),round(0.85*size(condn_data_new,3)));
+I = zeros(size(condn_data_new,3),1);
+I(idx)=1;
+
+XTrain={};
+XTest={};
+YTrain=[];
+YTest=[];
+for i=1:size(condn_data_new,3)
+    tmp = squeeze(condn_data_new(:,:,i));
+    if I(i)==1
+        XTrain = cat(1,XTrain,tmp');
+        YTrain = [YTrain Y(i)];
+    else
+        XTest = cat(1,XTest,tmp');
+        YTest = [YTest Y(i)];
+    end
+end
+
+% shuffle
+idx  = randperm(length(YTrain));
+XTrain = XTrain(idx);
+YTrain = YTrain(idx);
+
+YTrain = categorical(YTrain');
+YTest = categorical(YTest');
+
+% data augmentation: introduce random noise plus some mean shift to each
+% channel for about 50k samples
+aug_idx = randperm(length(XTrain));
+for i=1:length(aug_idx)
+    tmp = XTrain{aug_idx(i)}';
+    t_id=categorical(YTrain(aug_idx(i)));
+
+    % hG
+    tmp1 = tmp(:,1:128);
+    % add variable noise 
+    %var_noise=randsample(400:1200,size(tmp1,2))/1e3;
+    var_noise=0.8;
+    add_noise=randn(size(tmp1)).*std(tmp1).*var_noise;
+    tmp1n = tmp1 + add_noise;
+    % add variable mean offset between 5 and 25%
+    m=mean(tmp1);
+    add_mean =  m*.2;
+    %add_mean=randsample(0:500,size(tmp1,2))/1e3;
+    flip_sign = rand(size(add_mean));
+    flip_sign(flip_sign>0.5)=1;
+    flip_sign(flip_sign<=0.5)=-1;
+    add_mean=add_mean.*flip_sign+m;
+    tmp1m = tmp1n + add_mean;
+    tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
+
+    % lmp
+    tmp2 = tmp(:,129:256);
+    % add variable noise 
+    var_noise=0.8;
+    %var_noise=randsample(400:1200,size(tmp2,2))/1e3;
+    add_noise=randn(size(tmp2)).*std(tmp2).*var_noise;    
+    tmp2n = tmp2 + add_noise;
+    % add variable mean offset between 5 and 25%
+    m=mean(tmp2);
+    add_mean =  m*.25;
+    %add_mean=randsample(0:500,size(tmp2,2))/1e3;
+    flip_sign = rand(size(add_mean));
+    flip_sign(flip_sign>0.5)=1;
+    flip_sign(flip_sign<=0.5)=-1;
+    add_mean=add_mean.*flip_sign+m;
+    tmp2m = tmp2n + add_mean;
+    tmp2m = (tmp2m-min(tmp2m(:)))/(max(tmp2m(:))-min(tmp2m(:)));
+
+%     %lg
+%     tmp3 = tmp(:,257:384);
+%     % add noise var
+%     add_noise=randn(size(tmp3)).*std(tmp3).*.795;
+%     tmp3n = tmp3 + add_noise;
+%     % add mean offset by 20%
+%     m=mean(tmp3);
+%     add_mean =  m*.2;
+%     flip_sign = rand(size(add_mean));
+%     flip_sign(flip_sign>0.5)=1;
+%     flip_sign(flip_sign<=0.5)=-1;
+%     add_mean=add_mean.*flip_sign+m;
+%     tmp3m = tmp3n + add_mean;
+%     tmp3m = (tmp3m-min(tmp3m(:)))/(max(tmp3m(:))-min(tmp3m(:)));
+
+    %tmp=[tmp1m tmp2m tmp3m]';
+    tmp=[tmp1m tmp2m]';
+
+    XTrain=cat(1,XTrain,tmp);
+    YTrain = cat(1,YTrain,t_id);
+end
+
+
+% implement label smoothing to see how that does
+%
+% tmp=str2num(cell2mat(tmp));
+% a=0.01;
+% tmp1 = (1-a).*tmp + (a)*(1/7);
+% clear YTrain
+% YTrain = tmp1;
+% YTrain =categorical(YTrain);
+%clear condn_data_new
+
+
+% load pretrained LSTM structure
+%load net_bilstm
+load net_bilstm_20220817
+net_bilstm=net_bilstm_20220817;
+layers = net_bilstm.Layers;
+
+% define training options
+batch_size=128;
+val_freq = floor(length(XTrain)/batch_size);
+options = trainingOptions('adam', ...
+    'MaxEpochs',120, ...
+    'MiniBatchSize',batch_size, ...
+    'GradientThreshold',10, ...
+    'Verbose',true, ...
+    'ValidationFrequency',val_freq,...
+    'Shuffle','every-epoch', ...
+    'ValidationData',{XTest,YTest},...
+    'ValidationPatience',6,...
+    'Plots','training-progress',...
+    'LearnRateSchedule','piecewise',...
+    'LearnRateDropFactor',0.1,...
+    'OutputNetwork','best-validation-loss',...
+    'LearnRateDropPeriod',25,...
+    'InitialLearnRate',0.0005);
+
+% train the model
+clear net
+net = trainNetwork(XTrain,YTrain,layers,options);
+
+% save the network
+net_bilstm_robot_20220817 = net;
+save net_bilstm_robot_20220817 net_bilstm_robot_20220817
+
+%%% TRAINING LSTM FROM SCRATCH
+% specify lstm structure
+inputSize = 256;
+numHiddenUnits1 = [  90 120 150 128 325];
+drop1 = [ 0.2 0.2 0.3  0.3 0.4];
+numClasses = 7;
+for i=3%1:length(drop1)
+    numHiddenUnits=numHiddenUnits1(i);
+    drop=drop1(i);
+    layers = [ ...
+        sequenceInputLayer(inputSize)
+        bilstmLayer(numHiddenUnits,'OutputMode','sequence')
+        dropoutLayer(drop)
+        layerNormalizationLayer
+        gruLayer(numHiddenUnits/2,'OutputMode','last')
+        dropoutLayer(drop)
+        layerNormalizationLayer
+        fullyConnectedLayer(25)
+        leakyReluLayer
+        batchNormalizationLayer
+        fullyConnectedLayer(numClasses)
+        softmaxLayer
+        classificationLayer];
+
+
+
+    % options
+    batch_size=256;
+    val_freq = floor(length(XTrain)/batch_size);
+    options = trainingOptions('adam', ...
+        'MaxEpochs',120, ...
+        'MiniBatchSize',batch_size, ...
+        'GradientThreshold',10, ...
+        'Verbose',true, ...
+        'ValidationFrequency',val_freq,...
+        'Shuffle','every-epoch', ...
+        'ValidationData',{XTest,YTest},...
+        'ValidationPatience',6,...
+        'Plots','training-progress',...
+        'LearnRateSchedule','piecewise',...
+        'LearnRateDropFactor',0.1,...
+        'OutputNetwork','best-validation-loss',...
+        'LearnRateDropPeriod',100,...
+        'InitialLearnRate',0.001);
+
+    % train the model
+    net = trainNetwork(XTrain,YTrain,layers,options);
+end
+%
+% net_800 =net;
+% save net_800 net_800
+
+%net_bilstm_lg = net;
+%save net_bilstm_lg net_bilstm_lg
+
+
+%% TEST OUT FINE TUNED LSTM ON HELD OUT ROBOT BATCH DATA 
+
+clear
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+%load net_bilstm_stacked
+%net_bilstm = net_bilstm_stacked;
+%load net_bilstm_lg
+%net_bilstm = net_bilstm_lg;
+%load net_bilstm
+load net_bilstm_robot
+net_bilstm = net_bilstm_robot;
+
+%filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
+acc_mlp_days=[];
+acc_days=[];
+addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+foldernames = {'20220803'};
+
+% filter bank hg
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+
+% low pass filters
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+for i=1:length(foldernames)
+    disp(i)
+    filepath = fullfile(root_path,foldernames{i},'RealRobotBatch');
+    [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
+        = get_lstm_performance(filepath,net_bilstm,Params,lpFilt);
+
+    acc_days = [acc_days diag(acc_lstm_sample)];
+    acc_mlp_days = [acc_mlp_days diag(acc_mlp_sample)];
+end
+
+
+% 
+figure;
+tmp = [acc_days(:) acc_mlp_days(:)];
+boxplot(tmp)
+hold on
+cmap=turbo(size(acc_days,2));
+for i=1:size(acc_days,2)
+    s=scatter(ones(1,1)+0.05*randn(1,1) , mean(acc_days(:,i))','MarkerEdgeColor',cmap(i,:),...
+        'LineWidth',2);
+    s.SizeData=100;
+    s=scatter(2*ones(1,1)+0.05*randn(1,1) , mean(acc_mlp_days(:,i))',...
+        'MarkerEdgeColor',cmap(i,:),'LineWidth',2);
+    s.SizeData=100;
+end
+ylim([0.3 1])
+xticks(1:2)
+xticklabels({'stack biLSTM','MLP'})
+legend({'0803','','0810','','0812'})
+title('Center Out Robot')
+ylabel('Accuracy of inidiv. samples at 5Hz')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+box off
+
+% plotting the success of individual actions
+figure;
+hold on
+for i=1:7
+    %idx = i:7:21;
+    idx=i;
+    decodes = tmp(idx,:);   
+    h=bar(2*i-0.25,mean(decodes(:,1)));
+    h1=bar(2*i+0.25,mean(decodes(:,2)));
+    h.BarWidth=0.4;
+    h.FaceColor=[0.2 0.2 0.7];
+    h1.BarWidth=0.4;
+    h1.FaceColor=[0.7 0.2 0.2];
+    h.FaceAlpha=0.85;
+    h1.FaceAlpha=0.85;
+
+%     s=scatter(ones(3,1)*2*i-0.25+0.05*randn(3,1),decodes(:,1),'LineWidth',2);
+%     s.CData = [0.2 0.2 0.7];
+%     s.SizeData=50;
+% 
+%     s=scatter(ones(3,1)*2*i+0.25+0.05*randn(3,1),decodes(:,2),'LineWidth',2);
+%     s.CData = [0.7 0.2 0.2];
+%     s.SizeData=50;
+end
+xticks([2:2:14])
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+ylabel('Decoding Accuracy')
+legend('LSTM','MLP')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+
+
+
+
 
 %% BUILDING THE DEOCDER usng only online data
 
@@ -1772,6 +2135,31 @@ options = trainingOptions('adam', ...
 
 
 
+%hg1
+hg1 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',70,'HalfPowerFrequency2',77, ...
+    'SampleRate',1e3);
+hg2 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',77,'HalfPowerFrequency2',85, ...
+    'SampleRate',1e3);
+hg3 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',85,'HalfPowerFrequency2',93, ...
+    'SampleRate',1e3);
+hg4 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',93,'HalfPowerFrequency2',102, ...
+    'SampleRate',1e3);
+hg5 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',102,'HalfPowerFrequency2',113, ...
+    'SampleRate',1e3);
+hg6 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',113,'HalfPowerFrequency2',124, ...
+    'SampleRate',1e3);
+hg7 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',124,'HalfPowerFrequency2',136, ...
+    'SampleRate',1e3);
+hg8 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',136,'HalfPowerFrequency2',150, ...
+    'SampleRate',1e3);
 
 
 
