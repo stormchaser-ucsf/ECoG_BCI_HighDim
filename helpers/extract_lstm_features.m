@@ -41,8 +41,8 @@ tmp_lp = filter(lpFilt,tmp);
 
 % resample
 %tmp_lg1=resample(tmp_lg,80,size(tmp_lg,1))*5e2;
-tmp_hg1=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-tmp_lp1=resample(tmp_lp,80,size(tmp_lp,1));
+tmp_hg1=resample(tmp_hg,size(tmp_hg,1)/10,size(tmp_hg,1))*5e2;
+tmp_lp1=resample(tmp_lp,size(tmp_hg,1)/10,size(tmp_lp,1));
 
 % make new data structure
 tmp = [tmp_hg1 tmp_lp1 ];

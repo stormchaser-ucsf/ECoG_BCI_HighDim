@@ -104,12 +104,12 @@ for i=1:length(imag_files)
                 data_seg = raw_data;
             elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
                 %bins =1:400:s; % originally only for state 3
-                bins = 250:400:s;
+                bins = 250:500:s;
                 jitter = round(100*rand(size(bins)));
                 bins=bins+jitter;
                 raw_data = [raw_data;raw_data4];
                 for k=1:length(bins)-1
-                    tmp = raw_data(bins(k)+[0:799],:);
+                    tmp = raw_data(bins(k)+[0:999],:);
                     data_seg = cat(2,data_seg,tmp);
                 end
             end
@@ -196,7 +196,7 @@ for i=1:length(online_files)
                 raw_data = [raw_data;tmp];
                 data_seg = raw_data;
             elseif s>800 && s<1000 % if not so quick, prune to data to 600ms
-                raw_data = raw_data(1:800,:);
+                raw_data = raw_data(1:1000,:);
                 data_seg = raw_data;
             elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
                 % old for state 3 alone
@@ -212,13 +212,13 @@ for i=1:length(online_files)
                 %                 end
 
                 % new for state 2 and 3
-                bins =250:400:s;
+                bins =250:500:s;
                 jitter = round(100*rand(size(bins)));
                 bins=bins+jitter;
                 raw_data = [raw_data;raw_data4];
                 for k=1:length(bins)-1
                     try
-                        tmp = raw_data(bins(k)+[0:799],:);
+                        tmp = raw_data(bins(k)+[0:999],:);
                     catch
                         tmp=[];
                     end
@@ -269,7 +269,7 @@ save lstm_7DoF_online_data_with_state2 D1 D2 D3 D4 D5 D6 D7 -v7.3
 clear;clc
 
 Y=[];
-addpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers')
+addpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers')
 condn_data_new=[];jj=1;
 
 load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20211001\Robot3DArrow\103931\BCI_Fixed\Data0001.mat')
@@ -302,10 +302,11 @@ for i=1:length(Params.FilterBank),
     Params.FilterBank(i).a = a;
 end
 
+len=1000;
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 load('lstm_7DoF_online_data_with_state2','D1');
 load('lstm_7DoF_imag_data_with_state2','D1i');
-condn_data1 = zeros(800,128,length(D1)+length(D1i));
+condn_data1 = zeros(len,128,length(D1)+length(D1i));
 k=1;
 for i=1:length(D1)
     %disp(k)
@@ -342,7 +343,7 @@ end
 
 load('lstm_7DoF_online_data_with_state2','D2');
 load('lstm_7DoF_imag_data_with_state2','D2i');
-condn_data2 = zeros(800,128,length(D2)+length(D2i));
+condn_data2 = zeros(len,128,length(D2)+length(D2i));
 k=1;
 for i=1:length(D2)
     %disp(k)
@@ -379,7 +380,7 @@ end
 
 load('lstm_7DoF_online_data_with_state2','D3');
 load('lstm_7DoF_imag_data_with_state2','D3i');
-condn_data3 = zeros(800,128,length(D3)+length(D3i));
+condn_data3 = zeros(len,128,length(D3)+length(D3i));
 k=1;
 for i=1:length(D3)
     %disp(k)
@@ -418,7 +419,7 @@ end
 
 load('lstm_7DoF_online_data_with_state2','D4');
 load('lstm_7DoF_imag_data_with_state2','D4i');
-condn_data4 = zeros(800,128,length(D4)+length(D4i));
+condn_data4 = zeros(len,128,length(D4)+length(D4i));
 k=1;
 for i=1:length(D4)
     %disp(k)
@@ -457,7 +458,7 @@ end
 
 load('lstm_7DoF_online_data_with_state2','D5');
 load('lstm_7DoF_imag_data_with_state2','D5i');
-condn_data5 = zeros(800,128,length(D5)+length(D5i));
+condn_data5 = zeros(len,128,length(D5)+length(D5i));
 k=1;
 for i=1:length(D5)
     %disp(k)
@@ -497,7 +498,7 @@ end
 
 load('lstm_7DoF_online_data_with_state2','D6');
 load('lstm_7DoF_imag_data_with_state2','D6i');
-condn_data6 = zeros(800,128,length(D6)+length(D6i));
+condn_data6 = zeros(len,128,length(D6)+length(D6i));
 k=1;
 for i=1:length(D6)
     %disp(k)
@@ -536,7 +537,7 @@ end
 
 load('lstm_7DoF_online_data_with_state2','D7');
 load('lstm_7DoF_imag_data_with_state2','D7i');
-condn_data7 = zeros(800,128,length(D7)+length(D7i));
+condn_data7 = zeros(len,128,length(D7)+length(D7i));
 k=1;
 for i=1:length(D7)
     %disp(k)
@@ -572,7 +573,7 @@ for ii=1:size(condn_data7,3)
     jj=jj+1;
 end
 
-
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 save decimated_lstm_data_below25Hz condn_data_new Y -v7.3
 %save downsampled_lstm_data_below25Hz condn_data_new Y -v7.3
 %save decimated_lstm_data_below25Hz_WithState2_with_lg condn_data_new Y -v7.3
@@ -622,37 +623,37 @@ for i=1:size(condn_data_new,3)
     condn_data_new(:,:,i)=tmp;
 end
 
-
-% plotting for presentation
-tmp=squeeze(condn_data_new(:,:,1245));
-figure;
-imagesc(tmp(:,1:128)')
-caxis([0 .5])
-figure;%hg
-offset = 0:.1:127*.1;
-tmp1=tmp(:,1:128)+offset;
-tt=(1:80)*(1/100);
-plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
-axis tight
-set(gcf,'Color','w')
-set(gca,'FontSize',14)
-xlabel('Time in sec')
-ylabel('hG norm')
-box off
-yticks ''
-
-figure;%lmp
-offset = 0:.2:127*.2;
-tmp1=tmp(:,129:256)+offset;
-tt=(1:80)*(1/100);
-plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
-axis tight
-set(gcf,'Color','w')
-set(gca,'FontSize',14)
-xlabel('Time in sec')
-ylabel('LPF norm')
-box off
-yticks ''
+% 
+% % plotting for presentation
+% tmp=squeeze(condn_data_new(:,:,1245));
+% figure;
+% imagesc(tmp(:,1:128)')
+% caxis([0 .5])
+% figure;%hg
+% offset = 0:.1:127*.1;
+% tmp1=tmp(:,1:128)+offset;
+% tt=(1:80)*(1/100);
+% plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
+% axis tight
+% set(gcf,'Color','w')
+% set(gca,'FontSize',14)
+% xlabel('Time in sec')
+% ylabel('hG norm')
+% box off
+% yticks ''
+% 
+% figure;%lmp
+% offset = 0:.2:127*.2;
+% tmp1=tmp(:,129:256)+offset;
+% tt=(1:80)*(1/100);
+% plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
+% axis tight
+% set(gcf,'Color','w')
+% set(gca,'FontSize',14)
+% xlabel('Time in sec')
+% ylabel('LPF norm')
+% box off
+% yticks ''
 
 
 
@@ -697,7 +698,7 @@ YTest = categorical(YTest');
 
 % data augmentation: introduce random noise plus some mean shift to each
 % channel for about 50k samples
-aug_idx = randperm(length(XTrain),5.2e4);
+aug_idx = randperm(length(XTrain));
 for i=1:length(aug_idx)
     tmp = XTrain{aug_idx(i)}';
     t_id=categorical(YTrain(aug_idx(i)));
@@ -760,44 +761,44 @@ for i=1:length(aug_idx)
     YTrain = cat(1,YTrain,t_id);
 end
 
-
-% plotting examples
-tmp=tmp1;
-figure;%hg
-offset = 0:.2:127*.2;
-tmp11=tmp(:,1:128)+offset;
-tt=(1:80)*(1/100);
-plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
-axis tight
-axis off
-set(gcf,'Color','w')
-tmp=add_noise;
-figure;%hg
-offset = 0:.2:127*.2;
-tmp11=tmp(:,1:128)+offset;
-tt=(1:80)*(1/100);
-plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
-axis tight
-axis off
-set(gcf,'Color','w')
-tmp=repmat(add_mean,80,1);
-figure;%hg
-offset = 0:.2:127*.2;
-tmp11=tmp(:,1:128)+offset;
-tt=(1:80)*(1/100);
-plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
-axis tight
-axis off
-set(gcf,'Color','w')
-tmp=tmp1m;
-figure;%hg
-offset = 0:.2:127*.2;
-tmp11=tmp(:,1:128)+offset;
-tt=(1:80)*(1/100);
-plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
-axis tight
-axis off
-set(gcf,'Color','w')
+% 
+% % plotting examples
+% tmp=tmp1;
+% figure;%hg
+% offset = 0:.2:127*.2;
+% tmp11=tmp(:,1:128)+offset;
+% tt=(1:80)*(1/100);
+% plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+% axis tight
+% axis off
+% set(gcf,'Color','w')
+% tmp=add_noise;
+% figure;%hg
+% offset = 0:.2:127*.2;
+% tmp11=tmp(:,1:128)+offset;
+% tt=(1:80)*(1/100);
+% plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+% axis tight
+% axis off
+% set(gcf,'Color','w')
+% tmp=repmat(add_mean,80,1);
+% figure;%hg
+% offset = 0:.2:127*.2;
+% tmp11=tmp(:,1:128)+offset;
+% tt=(1:80)*(1/100);
+% plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+% axis tight
+% axis off
+% set(gcf,'Color','w')
+% tmp=tmp1m;
+% figure;%hg
+% offset = 0:.2:127*.2;
+% tmp11=tmp(:,1:128)+offset;
+% tt=(1:80)*(1/100);
+% plot(tt,tmp11(:,15:17),'k','LineWidth',1,'Color',[.2 .3 .9])
+% axis tight
+% axis off
+% set(gcf,'Color','w')
 
 % implement label smoothing to see how that does
 %save training_data_bilstm_pooled3Feat condn_data_new Y -v7.3
@@ -821,10 +822,10 @@ for i=3%1:length(drop1)
     drop=drop1(i);
     layers = [ ...
         sequenceInputLayer(inputSize)
-        bilstmLayer(numHiddenUnits,'OutputMode','sequence')
+        bilstmLayer(numHiddenUnits,'OutputMode','sequence','Name','lstm_1')
         dropoutLayer(drop)
         %layerNormalizationLayer
-        gruLayer(numHiddenUnits/2,'OutputMode','last')
+        bilstmLayer(numHiddenUnits/2,'OutputMode','last','Name','lstm_2')
         dropoutLayer(drop)
         %layerNormalizationLayer
         fullyConnectedLayer(25)
@@ -852,7 +853,7 @@ for i=3%1:length(drop1)
         'LearnRateSchedule','piecewise',...
         'LearnRateDropFactor',0.1,...
         'OutputNetwork','best-validation-loss',...
-        'LearnRateDropPeriod',50,...
+        'LearnRateDropPeriod',30,...
         'InitialLearnRate',0.001);
 
     % train the model
@@ -868,8 +869,8 @@ end
 %net_bilstmhg=net; % this has more noise variance in the data augmentation
 %save net_bilstmhg net_bilstmhg 
 
-net_bilstm_20220817 = net;
-save net_bilstm_20220817 net_bilstm_20220817
+net_bilstm_20220824B = net;
+save net_bilstm_20220824B net_bilstm_20220824B
 
 %% TESTING THE DATA ON ONLINE DATA
 
@@ -881,17 +882,17 @@ clear
 %load net_bilstm
 %load net_bilstmhg
 %net_bilstm = net_bilstmhg;
-load net_bilstm_20220817
-net_bilstm = net_bilstm_20220817;
+load net_bilstm_20220824
+net_bilstm = net_bilstm_20220824;
 
 %filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
 acc_mlp_days=[];
 acc_days=[];
-addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-%foldernames = {'20220803','20220810','20220812','20220817'};
-foldernames = {'20220817'};
+%foldernames = {'20220803','20220810','20220812'};
+foldernames = {'20220819'};
 
 % filter bank hg
 Params=[];
@@ -961,6 +962,7 @@ hold on
 for i=1:7
     idx = i:7:size(tmp,1);
     decodes = tmp(idx,:);   
+    disp(decodes)
     h=bar(2*i-0.25,mean(decodes(:,1)));
     h1=bar(2*i+0.25,mean(decodes(:,2)));
     h.BarWidth=0.4;
@@ -998,7 +1000,7 @@ folder_days = {'20210716','20210728','20210804','20210806', '20220202','20220211
     '20220225','20220304','20220309','20220311','20220316','20220323','20220325',...
     '20220330','20220420','20220422','20220429','20220504','20220506','20220513',...
     '20220518','20220520','20220715','20220722','20220727','20220729',...
-    '20220216','20220803'};
+    '20220216','20220803','20220819'};
 
 % 20220216 has 9D robotbatch seems important
 
@@ -1061,6 +1063,9 @@ for i=1:length(files)
         raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
         id = TrialData.TargetID;
         s = size(raw_data,1);
+%         if s>7800
+%             s=7800;
+%         end
         data_seg={};
         if s<800 % for really quick decisions just pad data from state 4
             len = 800-s;
@@ -1072,12 +1077,12 @@ for i=1:length(files)
             data_seg = raw_data;
         elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
             %bins =1:400:s; % originally only for state 3
-            bins = 250:400:s;
+            bins = 1:500:s;
             jitter = round(100*rand(size(bins)));
             bins=bins+jitter;
             raw_data = [raw_data;raw_data4];
             for k=1:length(bins)-1
-                tmp = raw_data(bins(k)+[0:799],:);
+                tmp = raw_data(bins(k)+[0:999],:);
                 data_seg = cat(2,data_seg,tmp);
             end
         end
@@ -1165,33 +1170,8 @@ for ii=1:length(robot_batch_trials_lstm)
 
         tmp=tmp_data{j};
 
-        %get hG through filter bank approach
-        filtered_data=zeros(size(tmp,1),size(tmp,2),8);
-        for i=1:8 % only hg
-            filtered_data(:,:,i) =  ((filter(...
-                Params.FilterBank(i).b, ...
-                Params.FilterBank(i).a, ...
-                tmp)));
-        end
-        tmp_hg = squeeze(mean(filtered_data.^2,3));
-
-        % LFO low pass filtering
-        tmp_lp = filter(lpFilt,tmp);
-
-        % downsample the data
-        %tmp_lp = resample(tmp_lp,200,800);
-        %tmp_hg = resample(tmp_hg,200,800)*5e2;
-
-        % decimate the data, USE AN OPTIONAL SMOOTHING INFO HERE
-        tmp_hg1=[];
-        tmp_lp1=[];
-        for i=1:size(tmp_hg,2)
-            tmp_hg1(:,i) = decimate(tmp_hg(:,i),10)*5e2;
-            tmp_lp1(:,i) = decimate(tmp_lp(:,i),10);
-        end
-
-        % make new data structure
-        tmp = [tmp_hg1 tmp_lp1];
+        % extract features
+        tmp = extract_lstm_features(tmp,Params,lpFilt);
 
         % store it
         temp_lstm{j}=tmp;
@@ -1209,10 +1189,10 @@ save robot_batch_trials_lstm_features robot_batch_trials_lstm_features -v7.3
 
 %% FINE TUNE LSTM ON THE ROBOT BATCH DATA
 
-clear;clc
+clear;
 
 Y=[];
-addpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers')
+addpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers')
 condn_data_new=[];jj=1;
 
 load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20211001\Robot3DArrow\103931\BCI_Fixed\Data0001.mat')
@@ -1245,9 +1225,10 @@ for i=1:length(Params.FilterBank),
     Params.FilterBank(i).a = a;
 end
 
+len=1000;
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 load('robot_batch_trials_lstm','D1');
-condn_data1 = zeros(800,128,length(D1));
+condn_data1 = zeros(len,128,length(D1));
 k=1;
 for i=1:length(D1)
     %disp(k)
@@ -1274,7 +1255,7 @@ for ii=1:size(condn_data1,3)
 end
 
 load('robot_batch_trials_lstm','D2');
-condn_data2 = zeros(800,128,length(D2));
+condn_data2 = zeros(len,128,length(D2));
 k=1;
 for i=1:length(D2)
     %disp(k)
@@ -1301,7 +1282,7 @@ for ii=1:size(condn_data2,3)
 end
 
 load('robot_batch_trials_lstm','D3');
-condn_data3 = zeros(800,128,length(D3));
+condn_data3 = zeros(len,128,length(D3));
 k=1;
 for i=1:length(D3)
     %disp(k)
@@ -1328,7 +1309,7 @@ for ii=1:size(condn_data3,3)
 end
 
 load('robot_batch_trials_lstm','D4');
-condn_data4 = zeros(800,128,length(D4));
+condn_data4 = zeros(len,128,length(D4));
 k=1;
 for i=1:length(D4)
     %disp(k)
@@ -1356,7 +1337,7 @@ for ii=1:size(condn_data4,3)
 end
 
 load('robot_batch_trials_lstm','D5');
-condn_data5 = zeros(800,128,length(D5));
+condn_data5 = zeros(len,128,length(D5));
 k=1;
 for i=1:length(D5)
     %disp(k)
@@ -1386,7 +1367,7 @@ end
 
 
 load('robot_batch_trials_lstm','D6');
-condn_data6 = zeros(800,128,length(D6));
+condn_data6 = zeros(len,128,length(D6));
 k=1;
 for i=1:length(D6)
     %disp(k)
@@ -1413,7 +1394,7 @@ for ii=1:size(condn_data6,3)
 end
 
 load('robot_batch_trials_lstm','D7');
-condn_data7 = zeros(800,128,length(D7));
+condn_data7 = zeros(len,128,length(D7));
 k=1;
 for i=1:length(D7)
     %disp(k)
@@ -1445,14 +1426,14 @@ save decimated_lstm_robot_batchData condn_data_new Y -v7.3
 % get rid of artifacts, any channel with activity >15SD, set it to near zero
 for i=1:size(condn_data_new,3)
     xx=squeeze(condn_data_new(:,1:128,i));
-    I = abs(xx)>12;
+    I = abs(xx)>15;
     I = sum(I);
     [aa bb]=find(I>0);
     xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
     condn_data_new(:,1:128,i)=xx;
 
     xx=squeeze(condn_data_new(:,129:256,i));
-    I = abs(xx)>12;
+    I = abs(xx)>15;
     I = sum(I);
     [aa bb]=find(I>0);
     xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
@@ -1603,8 +1584,8 @@ end
 
 % load pretrained LSTM structure
 %load net_bilstm
-load net_bilstm_20220817
-net_bilstm=net_bilstm_20220817;
+load net_bilstm_20220824
+net_bilstm=net_bilstm_20220824;
 layers = net_bilstm.Layers;
 
 % define training options
@@ -1623,7 +1604,7 @@ options = trainingOptions('adam', ...
     'LearnRateSchedule','piecewise',...
     'LearnRateDropFactor',0.1,...
     'OutputNetwork','best-validation-loss',...
-    'LearnRateDropPeriod',25,...
+    'LearnRateDropPeriod',20,...
     'InitialLearnRate',0.0005);
 
 % train the model
@@ -1631,8 +1612,13 @@ clear net
 net = trainNetwork(XTrain,YTrain,layers,options);
 
 % save the network
-net_bilstm_robot_20220817 = net;
-save net_bilstm_robot_20220817 net_bilstm_robot_20220817
+net_bilstm_robot_20220824C = net;
+save net_bilstm_robot_20220824C net_bilstm_robot_20220824C
+
+
+net_bilstm_robot_20220824_early_stop = net_bilstm_robot_20220824C
+save net_bilstm_robot_20220824_early_stop net_bilstm_robot_20220824_early_stop
+
 
 %%% TRAINING LSTM FROM SCRATCH
 % specify lstm structure
@@ -1661,7 +1647,7 @@ for i=3%1:length(drop1)
 
 
     % options
-    batch_size=256;
+    batch_size=128;
     val_freq = floor(length(XTrain)/batch_size);
     options = trainingOptions('adam', ...
         'MaxEpochs',120, ...
@@ -1676,7 +1662,7 @@ for i=3%1:length(drop1)
         'LearnRateSchedule','piecewise',...
         'LearnRateDropFactor',0.1,...
         'OutputNetwork','best-validation-loss',...
-        'LearnRateDropPeriod',100,...
+        'LearnRateDropPeriod',50,...
         'InitialLearnRate',0.001);
 
     % train the model
@@ -1699,8 +1685,8 @@ cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %load net_bilstm_lg
 %net_bilstm = net_bilstm_lg;
 %load net_bilstm
-load net_bilstm_robot
-net_bilstm = net_bilstm_robot;
+load net_bilstm_robot_20220824
+net_bilstm = net_bilstm_robot_20220824;
 
 %filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
 acc_mlp_days=[];
@@ -1708,7 +1694,7 @@ acc_days=[];
 addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-foldernames = {'20220803'};
+foldernames = {'20220819'};
 
 % filter bank hg
 Params=[];

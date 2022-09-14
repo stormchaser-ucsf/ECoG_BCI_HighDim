@@ -20,6 +20,7 @@ clear files1
 % load the data, and run it through the classifier
 decodes_overall=[];
 data=[];
+len=1000;
 for i=1:length(files)
     %disp(i)
 
@@ -27,7 +28,7 @@ for i=1:length(files)
     load(files{i})
 
     % create buffer
-    data_buffer = randn(800,128)*0.25;
+    data_buffer = randn(len,128)*0.25;
 
     %get data
     raw_data = TrialData.BroadbandData;
@@ -41,11 +42,11 @@ for i=1:length(files)
         %disp(j)
         tmp = raw_data{j};
         s=size(tmp,1);
-        if s<800
+        if s<len
             data_buffer = circshift(data_buffer,-s);
             data_buffer(end-s+1:end,:)=tmp;
         else
-            data_buffer(1:end,:)=tmp(s-800+1:end,:);
+            data_buffer(1:end,:)=tmp(s-len+1:end,:);
         end
 
         % storing the data
@@ -63,6 +64,8 @@ for i=1:length(files)
             decodes=[decodes class_predict];
         end
     end
+
+%    decodes = decodes(1:25); % first 5s
     data(i).task_state = TrialData.TaskState ;
     %data(i).raw_data = trial_data;
     data(i).TargetID = TrialData.TargetID;
@@ -115,6 +118,7 @@ for i=1:length(files)
     load(files{i})
 
     decodes = TrialData.ClickerState;
+    %decodes = decodes(1:25);
     tid=TrialData.TargetID;
     acc1=zeros(7,7);
     for j=1:length(decodes)

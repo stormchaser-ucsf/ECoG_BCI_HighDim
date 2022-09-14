@@ -5,32 +5,32 @@ function [net,Xtrain,Ytrain] = build_mlp_AE_supervised_total(condn_data)
 
 idx = [1:96];
 for i=1:length(condn_data)
-   tmp = condn_data{i};
-   tmp=tmp(:,1:96);
-   condn_data{i}=tmp;    
+    tmp = condn_data{i};
+    tmp=tmp(:,1:96);
+    condn_data{i}=tmp;
 end
 
 
 %2norm and get the labels
 Y=[];
 for i=1:length(condn_data)
-   tmp = condn_data{i}; 
-   for j=1:size(tmp,1)
-       tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
-   end
-   condn_data{i}=tmp;
-   Y=[Y;i*ones(size(tmp,1),1)];
+    tmp = condn_data{i};
+    for j=1:size(tmp,1)
+        tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+    end
+    condn_data{i}=tmp;
+    Y=[Y;i*ones(size(tmp,1),1)];
 end
 
 % % data augmentation, add random offsets
 % for i=1:length(condn_data)
-%    tmp0 = condn_data{i}; 
+%    tmp0 = condn_data{i};
 %    noise = randn(size(tmp0))*(std(tmp0(:))/4);
 %    tmp=tmp0+noise;
-% 
+%
 %     for j=1:size(tmp,1)
 %        tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
-%     end  
+%     end
 %    condn_data{i}=[tmp0;tmp];
 %    Y=[Y;i*ones(size(tmp,1),1)];
 % end
@@ -68,15 +68,15 @@ T(aa(1):aa(end),7)=1;
 
 % using custom layers
 layers = [ ...
-    featureInputLayer(96)    
+    featureInputLayer(96)
     fullyConnectedLayer(32)
-    eluLayer   
+    eluLayer
     batchNormalizationLayer
     fullyConnectedLayer(8)
-    eluLayer    
+    eluLayer
     batchNormalizationLayer
-    fullyConnectedLayer(3)    
-    eluLayer('Name','autoencoder')    
+    fullyConnectedLayer(3)
+    eluLayer('Name','autoencoder')
     fullyConnectedLayer(8)
     eluLayer
     batchNormalizationLayer
@@ -84,22 +84,22 @@ layers = [ ...
     eluLayer
     batchNormalizationLayer
     fullyConnectedLayer(96)    
-    fullyConnectedLayer(7)    
+    fullyConnectedLayer(7)
     softmaxLayer
     classificationLayer
     ];
 
 
-% 
+%
 % % using custom layers
 % layers = [ ...
-%     featureInputLayer(96)    
+%     featureInputLayer(96)
 %     fullyConnectedLayer(32)
-%     eluLayer    
+%     eluLayer
 %     fullyConnectedLayer(8)
-%     eluLayer('Name','autoencoder')        
+%     eluLayer('Name','autoencoder')
 %     fullyConnectedLayer(32)
-%     eluLayer        
+%     eluLayer
 %     fullyConnectedLayer(96)
 %     regressionLayer
 %     ];
@@ -130,7 +130,7 @@ options = trainingOptions('adam', ...
     'LearnRateDropFactor',0.1,...
     'OutputNetwork','best-validation-loss',...
     'LearnRateSchedule','piecewise',...
-    'LearnRateDropPeriod',50,...
+    'LearnRateDropPeriod',20,...
     'ValidationData',{Xtest',Ytest});
 %'InitialLearnRate',0.01, ...
 

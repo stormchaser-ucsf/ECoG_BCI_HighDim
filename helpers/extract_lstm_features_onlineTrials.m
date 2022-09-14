@@ -39,22 +39,22 @@ tmp_lg = squeeze(mean(filtered_data.^2,3));
 %     end
 
 % resample
-tmp_lg=resample(tmp_lg,80,size(tmp_lg,1))*5e2;
-tmp_hg=resample(tmp_hg,80,size(tmp_hg,1))*5e2;
-tmp_lp=resample(tmp_lp,80,size(tmp_lp,1));
+tmp_lg=resample(tmp_lg,size(tmp_lg,1)/10,size(tmp_lg,1))*5e2;
+tmp_hg=resample(tmp_hg,size(tmp_hg,1)/10,size(tmp_hg,1))*5e2;
+tmp_lp=resample(tmp_lp,size(tmp_lp,1)/10,size(tmp_lp,1));
 
 % removing errors in the data
-I = abs(tmp_hg>15);
+I = abs(tmp_hg>12);
 I = sum(I);
 [aa bb]=find(I>0);
 tmp_hg(:,bb) = 1e-5*randn(size(tmp_hg(:,bb)));
 
-I = abs(tmp_lp>15);
+I = abs(tmp_lp>12);
 I = sum(I);
 [aa bb]=find(I>0);
 tmp_lp(:,bb) = 1e-5*randn(size(tmp_lp(:,bb)));
 
-I = abs(tmp_lg>15);
+I = abs(tmp_lg>12);
 I = sum(I);
 [aa bb]=find(I>0);
 tmp_lg(:,bb) = 1e-5*randn(size(tmp_lg(:,bb)));

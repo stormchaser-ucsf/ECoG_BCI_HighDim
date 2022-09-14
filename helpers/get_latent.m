@@ -1,8 +1,10 @@
-function [TrialZ,dist_val,mean_latent,var_latent] = get_latent(files,net,imag)
+function [TrialZ,dist_val,mean_latent,var_latent,idx,acc] = get_latent(files,net,imag)
 %function [TrialZ,dist_val] = get_latent(files,net,imag)
 
 idx=[];
 TrialZ=[];
+decodes=[];
+acc=zeros(7);
 for i=1:length(files)
     disp(i)
     file_loaded=1;
@@ -31,15 +33,23 @@ for i=1:length(files)
         % feed it through the AE
         X = X(1:96,:);
         Z = activations(net,X','autoencoder');
+        % also get classification accuracy
+        out = predict(net,X')';
+        decodes =[decodes out];
+        % store classification acc
+        out = mean(out,2);
+        [aa bb]=max(out);
+        acc(TrialData.TargetID,bb)=acc(TrialData.TargetID,bb)+1;
+
         if imag==0
-            if TrialData.SelectedTargetID == TrialData.TargetID
+            %if TrialData.SelectedTargetID == TrialData.TargetID
                 %Z = Z(:,end-4:end);
                 TrialZ = [TrialZ Z];
                 idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
                 %Z = mean(Z,2);
                 %TrialZ = [TrialZ Z];
                 %idx=[idx TrialData.TargetID];
-            end
+            %end
         else
             TrialZ = [TrialZ Z];
             idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
@@ -93,6 +103,13 @@ for i=1:len
     end
 end
 dist_val = squareform(D);
+
+% compute decoding accuracy
+for i=1:length(acc)
+    acc(i,:) = acc(i,:)/sum(acc(i,:));
+end
+
+
 
 
 end

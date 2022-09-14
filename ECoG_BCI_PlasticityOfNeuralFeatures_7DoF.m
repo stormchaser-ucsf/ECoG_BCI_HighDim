@@ -649,8 +649,9 @@ set(gca,'FontSize',12)
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-cd('C:\Users\Nikhlesh\Documents\GitHub\ECoG_BCI_HighDim')
+cd('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim')
 addpath(genpath(pwd))
+addpath('C:\Users\nikic\Documents\MATLAB')
 
 % get the folder names etc
 load session_data
@@ -1127,6 +1128,247 @@ figure;boxplot([acc_bins_ratio(1:4)' acc_bins_ratio(end-3:end)'])
 
 % first four days: build AE on imagined, then feed in data from online
 
+%% HOW DOES MANIFOLD CHANGE ACROSS DAYS...REPRESENTATIONAL DRIFT
+% Representational drift across days, how does latent space spread across
+% days? Is it crystal clear and spaces are set but we just need more data
+% across days to fill it up? The manifold rotates and changes across days,
+% some drift due to baseline issues etc. and you need more days to capture
+% the complexity while plasticity is happening at the same time? Use
+% procrustus analyses here
+
+%one way to do that is to project day two data onto day ones data and see
+%whether projection lies within same pace in latent space i.e., how much
+%procrustus distance between spaces across days...
+
+clc;clear;
+
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+load session_data
+addpath 'C:\Users\nikic\Documents\MATLAB'
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+files=[];
+files1=[];
+
+for i=2:3
+
+
+    day_date = session_data(i).Day;
+    for ii=1:length(session_data(i).folders)
+        if strcmp(session_data(i).folder_type(ii),'I')
+            folderpath =  fullfile(root_path,day_date,'Robot3DArrow',...
+                session_data(i).folders{ii},'Imagined');
+            files = [files;findfiles('',folderpath)'];
+        else
+            folderpath1 =  fullfile(root_path,day_date,'Robot3DArrow',...
+                session_data(i).folders{ii},'BCI_Fixed');
+            files1 =[files1;findfiles('',folderpath1)'];
+        end
+    end
+
+end
+
+% keep apart 20% of files for testing
+idx_train = randperm(length(files1),round(0.80*length(files1)));
+I = ones(size(files1));
+I(idx_train)=0;
+idx_test = find(I==1);
+files_train = files1(idx_train);
+files_test = files1(idx_test);
+
+files_train = [files ;files_train];
+
+
+
+% build an AE latent space for this model uaing just the imagined data
+condn_data = load_data_for_MLP(files_train);
+[net,Xtrain,Ytrain] = build_mlp_AE_supervised_total(condn_data);
+
+% now project data from own day (held out) onto the manifold
+imag=0;
+[TrialZ_online,dist_online,mean_online,var_online,Zidx,acc] = get_latent(files_test,net,imag);
+figure;
+hold on
+tid=find(Zidx==1);
+plot3(TrialZ_online(1,tid),TrialZ_online(2,tid),TrialZ_online(3,tid),'.b','MarkerSize',20)
+tid=find(Zidx==5);
+plot3(TrialZ_online(1,tid),TrialZ_online(2,tid),TrialZ_online(3,tid),'.r','MarkerSize',20)
+tid=find(Zidx==7);
+plot3(TrialZ_online(1,tid),TrialZ_online(2,tid),TrialZ_online(3,tid),'.g','MarkerSize',20)
+axis tight
+xx = get(gca,'xlim');
+yy = get(gca,'ylim');
+zz = get(gca,'zlim');
+view(47,31)
+set(gcf,'Color','w')
+xlabel('Latent 1')
+ylabel('Latent 2')
+zlabel('Latent 3')
+set(gca,'FontSize',14)
+title(['AE through Day ' num2str(i) ' acc of ' num2str(mean(diag(acc)))])
+%title(['AE through Day 2-3 acc of ' num2str(nanmean(diag(acc)))])
+%set(gcf,'Position',[680,50,934,946])
+
+
+%load all of the online data from the all the consecutive days
+acc_overall=[];
+mahab_dist=[];
+I = ones(length(session_data),1);
+I(2:3)=0;
+I=find(I==1);
+for k=1:length(I)
+    j=I(k);
+    files=[];
+    files1=[];
+    day_date = session_data(j).Day;
+    for ii=1:length(session_data(j).folders)
+        if strcmp(session_data(j).folder_type(ii),'I')
+            folderpath =  fullfile(root_path,day_date,'Robot3DArrow',...
+                session_data(j).folders{ii},'Imagined');
+            files = [files;findfiles('',folderpath)'];
+        else
+            folderpath1 =  fullfile(root_path,day_date,'Robot3DArrow',...
+                session_data(j).folders{ii},'BCI_Fixed');
+            files1 =[files1;findfiles('',folderpath1)'];
+        end
+    end
+    
+    % now project data from second day onto the manifold from the first
+    % day
+    imag=0;
+    [TrialZ_online2,dist_online2,mean_online2,var_online2,Zidx2,acc1] = get_latent(files1,net,imag);    
+    close
+    mahab_dist = [mahab_dist;mean(dist_online2)];
+
+    % plot the mahab distribution 
+    figure;
+    subplot(2,1,1)
+    boxplot([dist_online' dist_online2'])
+    xticks(1:2)
+    xticklabels({'Day 2-3', ['Day ' num2str(j)]})
+    set(gcf,'Color','w')
+    set(gca,'FontSize',14)
+    set(gca,'LineWidth',1)
+    ylabel('Mahalanobis distance')
+
+    %plotting just condition specific data
+    subplot(2,1,2)
+    hold on
+    tid2=find(Zidx2==1);
+    plot3(TrialZ_online2(1,tid2),TrialZ_online2(2,tid2),TrialZ_online2(3,tid2),'.b','MarkerSize',20)
+    tid2=find(Zidx2==5);
+    plot3(TrialZ_online2(1,tid2),TrialZ_online2(2,tid2),TrialZ_online2(3,tid2),'.r','MarkerSize',20)
+    tid2=find(Zidx2==7);
+    plot3(TrialZ_online2(1,tid2),TrialZ_online2(2,tid2),TrialZ_online2(3,tid2),'.g','MarkerSize',20)
+    xlim(xx)
+    ylim(yy)
+    zlim(zz)
+    view(47,31)
+    set(gcf,'Color','w')
+    xlabel('Latent 1')
+    ylabel('Latent 2')
+    zlabel('Latent 3')
+    set(gca,'FontSize',14)
+    tmp=(diag(acc1));
+    %title(['Day ' num2str(j) ' thru AE Day ' num2str(i) ' with acc ' num2str(mean(tmp))])
+    title(['Day ' num2str(j) ' thru AE Day 2-3 with acc ' num2str(mean(tmp))])
+    acc_overall =[acc_overall diag(acc1)];
+    set(gcf,'Position',[680,50,934,946])
+end
+
+acc_overall_compar = [diag(acc) acc_overall];
+figure;
+boxplot(acc_overall_compar)
+
+figure;boxplot(mahab_dist)
+hline(mean(dist_online),'r')
+ylim([0 35])
+xlim([0.5 1.5])
+xticks(1)
+xticklabels('Held out days')
+ylabel('Mahab Distance')
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+
+%80.56% accuracy of day 1 on its own data on top condition 1,5,7
+% 
+% % old code when looking at things from a day to day basis
+% j=4;
+% files=[];
+% files1=[];
+% day_date = session_data(j).Day;
+% for ii=1:length(session_data(j).folders)
+%     if strcmp(session_data(j).folder_type(ii),'I')
+%         folderpath =  fullfile(root_path,day_date,'Robot3DArrow',...
+%             session_data(j).folders{ii},'Imagined');
+%         files = [files;findfiles('',folderpath)'];
+%     else
+%         folderpath1 =  fullfile(root_path,day_date,'Robot3DArrow',...
+%             session_data(j).folders{ii},'BCI_Fixed');
+%         files1 =[files1;findfiles('',folderpath1)'];
+%     end
+% end
+% % now project data from second day onto the manifold from the first
+% % day
+% imag=0;
+% [TrialZ_online2,dist_online2,mean_online2,var_online2,Zidx2,acc1] = get_latent(files1,net,imag);
+% 
+% % plotting the data on the manifold
+% figure;
+% hold on
+% plot3(TrialZ_online(1,:),TrialZ_online(2,:),TrialZ_online(3,:),'.','MarkerSize',20)
+% plot3(TrialZ_online2(1,:),TrialZ_online2(2,:),TrialZ_online2(3,:),'.','MarkerSize',20)
+% figure;boxplot([dist_online' dist_online2'])
+% 
+% %plotting just condition specific data
+% figure;
+% hold on
+% tid=find(Zidx==1);
+% plot3(TrialZ_online(1,tid),TrialZ_online(2,tid),TrialZ_online(3,tid),'.b','MarkerSize',20)
+% tid=find(Zidx==5);
+% plot3(TrialZ_online(1,tid),TrialZ_online(2,tid),TrialZ_online(3,tid),'.r','MarkerSize',20)
+% tid=find(Zidx==7);
+% plot3(TrialZ_online(1,tid),TrialZ_online(2,tid),TrialZ_online(3,tid),'.g','MarkerSize',20)
+% axis tight
+% xx = get(gca,'xlim');
+% yy = get(gca,'ylim');
+% zz = get(gca,'zlim');
+% view(-134,36)
+% set(gcf,'Color','w')
+% xlabel('Latent 1')
+% ylabel('Latent 2')
+% zlabel('Latent 3')
+% set(gca,'FontSize',14)
+% figure;hold on
+% tid2=find(Zidx2==1);
+% plot3(TrialZ_online2(1,tid2),TrialZ_online2(2,tid2),TrialZ_online2(3,tid2),'.b','MarkerSize',20)
+% tid2=find(Zidx2==5);
+% plot3(TrialZ_online2(1,tid2),TrialZ_online2(2,tid2),TrialZ_online2(3,tid2),'.r','MarkerSize',20)
+% tid2=find(Zidx2==7);
+% plot3(TrialZ_online2(1,tid2),TrialZ_online2(2,tid2),TrialZ_online2(3,tid2),'.g','MarkerSize',20)
+% xlim(xx)
+% ylim(yy)
+% zlim(zz)
+% view(-134,36)
+% set(gcf,'Color','w')
+% xlabel('Latent 1')
+% ylabel('Latent 2')
+% zlabel('Latent 3')
+% set(gca,'FontSize',14)
+% tmp=(diag(acc1));
+% title(['Day ' num2str(j) ' thru AE 78 with acc ' num2str(mean(tmp([1 5 7])))])
+% 
+% % plotting
+% 
+
+
+
+
+
+
+
 %% LOOKING AT WHETHER THE PRIN ANGLES OF MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (7DOF)
 
 % a few options
@@ -1346,10 +1588,10 @@ view(56,35)
 axis tight
 cmap=parula(7);
 for i=1:size(Z,2)
-   
+
     subplot(2,1,1)
     plot3(kin(1,i),kin(2,i),kin(3,i),'.k','MarkerSize',30)
-    hold on    
+    hold on
 
     subplot(2,1,2)
     view(56,35)
