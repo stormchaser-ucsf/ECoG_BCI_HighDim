@@ -669,6 +669,7 @@ end
 %     condn_data_new(:,:,i)=tmp;
 % end
 
+% a random split into trainin and testing
 idx = randperm(size(condn_data_new,3),round(0.85*size(condn_data_new,3)));
 I = zeros(size(condn_data_new,3),1);
 I(idx)=1;
@@ -688,6 +689,48 @@ for i=1:size(condn_data_new,3)
     end
 end
 
+% 
+% % splitting training into balanced classes and throwing the rest into
+% % testing
+% indices={};
+% for i=1:length(unique(Y))
+%     idx = find(Y==i);
+%     indices(i).idx=idx;
+%     indices(i).len = length(idx);
+% end
+% %min_length = prop*min([indices.len]);
+% min_length = 5600;
+% idx_train=[];
+% idx_test=[];
+% for i=1:length(unique(Y))
+%     idx = indices(i).idx;
+%     a = randperm(length(idx),min_length);
+%     b = ones(size(idx));
+%     b(a)=0;
+%     b=(find(b==1))';
+%     
+%     idx_train = [idx_train; idx((a))];
+%     idx_test = [idx_test; idx((b))];
+% end
+% length(idx_train)/(length(idx_train)+length(idx_test))
+% 
+% XTrain={};
+% YTrain=[];
+% for i=1:length(idx_train)
+%     tmp = squeeze(condn_data_new(:,:,idx_train(i)));
+%     XTrain = cat(1,XTrain,tmp');
+%     YTrain = [YTrain Y(idx_train(i))];
+% end
+% 
+% XTest={};
+% YTest=[];
+% for i=1:length(idx_test)
+%     tmp = squeeze(condn_data_new(:,:,idx_test(i)));
+%     XTest = cat(1,XTest,tmp');
+%     YTest = [YTest Y(idx_test(i))];
+% end
+
+
 % shuffle
 idx  = randperm(length(YTrain));
 XTrain = XTrain(idx);
@@ -700,6 +743,7 @@ YTest = categorical(YTest');
 % channel for about 50k samples
 aug_idx = randperm(length(XTrain));
 for i=1:length(aug_idx)
+    %disp(i)
     tmp = XTrain{aug_idx(i)}';
     t_id=categorical(YTrain(aug_idx(i)));
 
@@ -707,12 +751,12 @@ for i=1:length(aug_idx)
     tmp1 = tmp(:,1:128);
     % add variable noise 
     %var_noise=randsample(400:1200,size(tmp1,2))/1e3;
-    var_noise=0.8;
+    var_noise=0.7;
     add_noise=randn(size(tmp1)).*std(tmp1).*var_noise;
     tmp1n = tmp1 + add_noise;
     % add variable mean offset between 5 and 25%
     m=mean(tmp1);
-    add_mean =  m*.2;
+    add_mean =  m*.25;
     %add_mean=randsample(0:500,size(tmp1,2))/1e3;
     flip_sign = rand(size(add_mean));
     flip_sign(flip_sign>0.5)=1;
@@ -720,17 +764,18 @@ for i=1:length(aug_idx)
     add_mean=add_mean.*flip_sign+m;
     tmp1m = tmp1n + add_mean;
     tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
+   %  figure;plot(tmp1(:,3));hold on;plot(tmp1m(:,3))
 
     % lmp
     tmp2 = tmp(:,129:256);
     % add variable noise 
-    var_noise=0.8;
+    var_noise=0.7;
     %var_noise=randsample(400:1200,size(tmp2,2))/1e3;
     add_noise=randn(size(tmp2)).*std(tmp2).*var_noise;    
     tmp2n = tmp2 + add_noise;
     % add variable mean offset between 5 and 25%
     m=mean(tmp2);
-    add_mean =  m*.25;
+    add_mean =  m*.5;
     %add_mean=randsample(0:500,size(tmp2,2))/1e3;
     flip_sign = rand(size(add_mean));
     flip_sign(flip_sign>0.5)=1;
@@ -824,8 +869,8 @@ for i=3%1:length(drop1)
         sequenceInputLayer(inputSize)
         bilstmLayer(numHiddenUnits,'OutputMode','sequence','Name','lstm_1')
         dropoutLayer(drop)
-        %layerNormalizationLayer
-        bilstmLayer(numHiddenUnits/2,'OutputMode','last','Name','lstm_2')
+        layerNormalizationLayer
+        gruLayer(numHiddenUnits/2,'OutputMode','last','Name','lstm_2')
         dropoutLayer(drop)
         %layerNormalizationLayer
         fullyConnectedLayer(25)
@@ -853,7 +898,7 @@ for i=3%1:length(drop1)
         'LearnRateSchedule','piecewise',...
         'LearnRateDropFactor',0.1,...
         'OutputNetwork','best-validation-loss',...
-        'LearnRateDropPeriod',30,...
+        'LearnRateDropPeriod',50,...
         'InitialLearnRate',0.001);
 
     % train the model
@@ -871,6 +916,43 @@ end
 
 net_bilstm_20220824B = net;
 save net_bilstm_20220824B net_bilstm_20220824B
+
+net1=net;
+
+% looking at accuracy against the validation data
+ytest=[];
+for i=1:length(YTest)
+    ytest(i)  = str2num(string(YTest(i)));
+end
+
+num_elem=[];
+for i=1:length(unique(ytest))
+    num_elem(i) = sum(ytest==i);
+end
+figure;bar(num_elem)
+min_elem = min(num_elem);
+
+acc=zeros(7);
+for iter = 1:10
+    for i=1:7
+        idx = find(ytest==i);
+        I=randperm(length(idx),min_elem);
+        idx = idx(I);
+        ytest1=ytest(idx);
+        xtest1=XTest(idx);
+        out = predict(net,xtest1);
+        for j=1:size(out,1)
+            [aa bb] = (max(out(j,:)));
+            acc(ytest1(j),bb)=acc(ytest1(j),bb)+1;
+        end
+    end
+end
+
+for i=1:length(acc)
+    acc(i,:)=acc(i,:)./sum(acc(i,:));
+end
+mean(diag(acc))
+
 
 %% TESTING THE DATA ON ONLINE DATA
 

@@ -810,11 +810,13 @@ set(gca,'FontSize',12)
 
 
 %% PUTTING IT ALL TOGETHER IN TERMS OF BUILDING THE AE
+%(MAIN)
 
 clc;clear
 close all
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-addpath(genpath('C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
 cd(root_path)
 load session_data
 dist_online_total=[];
@@ -849,8 +851,8 @@ for i=1:length(session_data)
     condn_data = load_data_for_MLP(files);
 
     % build the AE based on MLP and only for hG
-    %[net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
-    [net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
+    [net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
+    %[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
 
     % get activations in deepest layer but averaged over a trial
     imag=1;
