@@ -74,14 +74,14 @@ condn_data{5}=[D5(idx,:)]'; % lips
 condn_data{6}=[D6(idx,:)]'; % tongue
 condn_data{7}=[D7(idx,:)]'; % both middle fingers
 
-% % 2norm
-% for i=1:length(condn_data)
-%     tmp = condn_data{i};
-%     for j=1:size(tmp,1)
-%         tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
-%     end
-%     condn_data{i}=tmp;
-% end
+% 2norm
+for i=1:length(condn_data)
+    tmp = condn_data{i};
+    for j=1:size(tmp,1)
+        tmp(j,:) = tmp(j,:)./norm(tmp(j,:));
+    end
+    condn_data{i}=tmp;
+end
 
 end
 

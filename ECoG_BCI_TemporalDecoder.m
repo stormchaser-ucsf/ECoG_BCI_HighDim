@@ -763,7 +763,7 @@ for i=1:length(aug_idx)
     flip_sign(flip_sign<=0.5)=-1;
     add_mean=add_mean.*flip_sign+m;
     tmp1m = tmp1n + add_mean;
-    tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
+    %tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
    %  figure;plot(tmp1(:,3));hold on;plot(tmp1m(:,3))
 
     % lmp
@@ -782,7 +782,7 @@ for i=1:length(aug_idx)
     flip_sign(flip_sign<=0.5)=-1;
     add_mean=add_mean.*flip_sign+m;
     tmp2m = tmp2n + add_mean;
-    tmp2m = (tmp2m-min(tmp2m(:)))/(max(tmp2m(:))-min(tmp2m(:)));
+   % tmp2m = (tmp2m-min(tmp2m(:)))/(max(tmp2m(:))-min(tmp2m(:)));
 
 %     %lg
 %     tmp3 = tmp(:,257:384);

@@ -825,6 +825,7 @@ var_imag_total=[];
 mean_imag_total=[];
 var_online_total=[];
 mean_online_total=[];
+res=[];
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
@@ -856,7 +857,7 @@ for i=1:length(session_data)
 
     % get activations in deepest layer but averaged over a trial
     imag=1;
-    [TrialZ_imag,dist_imagined,mean_imagined,var_imagined] = get_latent(files,net,imag);
+    [TrialZ_imag,dist_imagined,mean_imagined,var_imagined,idx_imag] = get_latent_regression(files,net,imag);
     dist_imag_total = [dist_imag_total;dist_imagined];
     mean_imag_total=[mean_imag_total;pdist(mean_imagined)];
     var_imag_total=[var_imag_total;var_imagined'];
@@ -865,8 +866,8 @@ for i=1:length(session_data)
     folders = session_data(i).folders(online_idx);
     day_date = session_data(i).Day;
     files=[];
-    for i=1:length(folders)
-        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{i},'BCI_Fixed');
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
         files = [files;findfiles('',folderpath)'];
     end
 
@@ -876,26 +877,41 @@ for i=1:length(session_data)
 
     % get activations in deepest layer
     imag=0;
-    [TrialZ_online,dist_online,mean_online,var_online] = get_latent(files,net,imag);
+    [TrialZ_online,dist_online,mean_online,var_online,idx_online] = get_latent_regression(files,net,imag);
     dist_online_total = [dist_online_total;dist_online];
     mean_online_total=[mean_online_total;pdist(mean_online)];
     var_online_total=[var_online_total;var_online'];
 
+    % plotting imagined and online in latent space
+%     idxa = find(idx_imag==4);
+%     idxb = find(idx_online==4);
+%     idxa = idxa(randperm(length(idxa),length(idxb)));
+%     figure;hold on
+%     plot3(TrialZ_imag(1,idxa),TrialZ_imag(2,idxa),TrialZ_imag(3,idxa),'.','MarkerSize',20)
+%     plot3(TrialZ_online(1,idxb),TrialZ_online(2,idxb),TrialZ_online(3,idxb),'.','MarkerSize',20)
+%     c1 = TrialZ_imag(:,idxa);
+%     c2 = TrialZ_online(:,idxb);
+%     c1=cov(c1');
+%     c2=cov(c2');
+
     %      plot
     %
-    %     figure;boxplot([dist_imagined' dist_online'])
-    %     box off
-    %     set(gcf,'Color','w')
-    %     xticks(1:2)
-    %     xticklabels({'Imagined Data','Online Data'})
-    %     ylabel('Distance')
-    %     title('Inter-class distances')
-    %     set(gca,'LineWidth',1)
-    %     set(gca,'FontSize',12)
+%     figure;boxplot([dist_imagined' dist_online'])
+%     box off
+%     set(gcf,'Color','w')
+%     xticks(1:2)
+%     xticklabels({'Imagined Data','Online Data'})
+%     ylabel('Distance')
+%     title('Inter-class distances')
+%     set(gca,'LineWidth',1)
+%     set(gca,'FontSize',12)
 
     [h p tb st]=ttest(dist_imagined,dist_online);
     disp([p mean([dist_imagined' dist_online'])]);
+    res=[res;[p mean([dist_imagined' dist_online'])]];
 end
+
+res
 
 figure;
 plot(mean(dist_online_total'))
@@ -914,6 +930,15 @@ xticklabels({'Early Days','Late Days'})
 ylabel('Mahalanobis Dist')
 title('Online Bins proj. thru Imagined Manifold')
 set(gcf,'Color','w')
+
+
+% stats on distances, early days and late days online mahalanobis distances
+early_days_online = dist_online_total(1:4,:);
+early_days_online=early_days_online(:);
+late_days_online = dist_online_total(5:end,:);
+late_days_online=late_days_online(:);
+early_days_online(end+1:length(late_days_online))=NaN;
+figure;boxplot([early_days_online late_days_online ]);
 
 
 tmp = mean(dist_imag_total');
@@ -946,7 +971,7 @@ col=winter(length(ang));
 for i=1:length(ang)
     plot([1 2]+idx(i,:),(ang(i,:)),'Color',[.5 .5 .5 .5],'LineWidth',1)
 end
-ylim([5 65])
+ylim([5 65]) %0 to 40 for regression
 set(gcf,'Color','w')
 xticks(1:2)
 xticklabels({'Imagined Data','Online Data'})
@@ -989,7 +1014,7 @@ tmp=ang(:,2)-ang(:,1);
 figure;boxplot([mean_imag_total(:) mean_online_total(:)])
 xticks(1:2)
 xticklabels({'Imagined Data','Online Data'})
-ylabel('Variance in latent space')
+ylabel('Mean Diff in latent space')
 set(gca,'FontSize',14)
 set(gcf,'Color','w')
 set(gca,'LineWidth',2)
@@ -1613,4 +1638,11 @@ end
 close(v)
 
 %% LOOKING AT WHETHER THE MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (HAND)
+
+
+%% PLASTICITY AND AE FRAMEWORK FOR B2 ARROW DATA
+
+
+
+
 
