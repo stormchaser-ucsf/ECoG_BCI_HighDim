@@ -1640,9 +1640,372 @@ close(v)
 %% LOOKING AT WHETHER THE MANIFOLDS CHANGE FROM IMAGINED TO ONLINE (HAND)
 
 
+
+%% SESSION DATA FOR B2
+
+
+clc;clear
+session_data=[];
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2';
+cd(root_path)
+
+% IMAGINED DATA FOLDER IS CENTER OUT AND ONLINE DATA IS IN DISCRETE ARROW
+
+%day1
+session_data(1).Day = '20210210';
+session_data(1).folders = {'143225','151341','151744','154405','155813'};
+session_data(1).folder_type={'I','O','O','O','O'};
+session_data(1).AM_PM = {'pm','pm','pm','pm'};
+
+%day2
+session_data(2).Day = '20210616';
+session_data(2).folders={'111251','111821','112750','113117','113759','114449',...
+    '134638','135318','135829','140842','141045','141459','143736'};
+session_data(2).folder_type={'I','I','O','O','O','B','I','I','I','O','O','B','B'};
+session_data(2).AM_PM = {'am','am','am','am','am','am','pm','pm','pm','pm','pm','pm','pm'};
+
+
+% day 3
+session_data(3).Day = '20210623';
+session_data(3).folders={'110830','111416','111854','112823','113026',...
+    '133244','133928','134357','135435','135630','135830','140530','142530','142723'};
+session_data(3).folder_type={'I','I','I','O','O','I','I','I','O','O','O','B','B','B'};
+session_data(3).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm','pm','pm','pm',...
+    'pm','pm'};
+
+
+
+% day 4
+session_data(4).Day = '20210625';
+session_data(4).folders={'111134','112108','112805','113645','114239','132902',...
+    '134133','142139'};
+session_data(4).folder_type={'I','I','I','O','B','O','B','B'};
+session_data(4).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
+
+% day 5
+session_data(5).Day = '20210630';
+session_data(5).folders={'101857','102342','102825','103756','110415','133210',...
+    '133905','134420','135813','140408'};
+session_data(5).folder_type={'I','I','I','O','B','O','I','I','O','B'};
+session_data(5).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm','pm'};
+
+% day 6
+session_data(6).Day = '20210702';
+session_data(6).folders={'135108','135915','140426','141920','142120','142320',...
+    '142800','145811'};
+session_data(6).folder_type={'I','I','I','O','O','O','B','B'};
+session_data(6).AM_PM = {'pm','pm','pm','pm','pm','pm','pm','pm'};
+
+% day 7
+session_data(7).Day = '20210707';
+session_data(7).folders={'103731','104916','105644','110518','111026','132803',...
+    '133525','134019','135008'};
+session_data(7).folder_type={'I','I','I','O','B','I','I','I','O'};
+session_data(7).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm'};
+
+% need to get data for 20210709
+% session_data(8).Day = '20210709';
+% session_data(8).folders={'101301','102021','102634'};
+% session_data(8).folder_type={'I','I','I'};
+% session_data(8).AM_PM = {'am','am','am''am','am'};
+
+% day 8
+session_data(8).Day = '20210714';
+session_data(8).folders={'101741','102514','103106','104621','132615','133137','133748',...
+    '140047','140924','141733','142605','143752','145541','150310'};
+session_data(8).folder_type={'I','I','I','O','B','B','B','B','B','I','I','O','O','O'};
+session_data(8).AM_PM = {'am','am','am','am','pm','pm','pm','pm','pm','pm','pm',...
+    'pm','pm','pm'};
+
+% day 9
+session_data(9).Day = '20210716';
+session_data(9).folders={'102008','102726','103214','104134','104745','133339',...
+    '133908','134306','134936'};
+session_data(9).folder_type={'I','I','I','O','B','B','B','I','O'};
+session_data(9).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm'};
+
+% day 10
+session_data(10).Day = '20210728';
+session_data(10).folders={'103034','103745','104244','105354','110143','132842','133727',...
+    '134258'};
+session_data(10).folder_type={'I','I','I','O','B','B','B','B'};
+session_data(10).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
+
+% day 11
+session_data(11).Day = '20210804';
+session_data(11).folders={'102546','103317','103821','104809','105403','133255','134125',...
+    '134652'};
+session_data(11).folder_type={'I','I','I','O','B','B','B','B'};
+session_data(11).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
+
+%day 12
+session_data(11).Day = '20210806';
+session_data(11).folders={'103003','103828','104406','105415','105859','110512','134206',...
+    '134915','140110','140536','141223'};
+session_data(11).folder_type={'I','I','I','O','O','B','B','B','B','B','B'};
+session_data(11).AM_PM = {'am','am','am','am','am','am','pm','pm','pm','pm','pm'};
+
+
+save session_data_B2 session_data -v7.3
+
+
+
 %% PLASTICITY AND AE FRAMEWORK FOR B2 ARROW DATA
+% good days: 20210324
+
+clc;clear
+close all
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd(root_path)
+load session_data_B2
+dist_online_total=[];
+dist_imag_total=[];
+var_imag_total=[];
+mean_imag_total=[];
+var_online_total=[];
+mean_online_total=[];
+res=[];
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+
+    %%%%%%imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'CenterOut',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %load the data
+    load('ECOG_Grid_8596-002131.mat')
+    condn_data = load_data_for_MLP_B2(files,ecog_grid);
+
+    % build the AE based on MLP and only for hG
+    [net,Xtrain,Ytrain] = build_mlp_AE_B2(condn_data);
+    %[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
+
+    % get activations in deepest layer but averaged over a trial
+    imag=1;
+    [TrialZ_imag,dist_imagined,mean_imagined,var_imagined,idx_imag] = ...
+        get_latent_regression_B2(files,net,imag,ecog_grid);
+    dist_imag_total = [dist_imag_total;dist_imagined];
+    mean_imag_total=[mean_imag_total;pdist(mean_imagined)];
+    var_imag_total=[var_imag_total;var_imagined'];
+
+    %%%%%%online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'DiscreteArrow',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
 
 
+    %load the data
+    %condn_data = load_data_for_MLP_B2(files);
+
+    % get activations in deepest layer
+    imag=0;
+    [TrialZ_online,dist_online,mean_online,var_online,idx_online] = ...
+        get_latent_regression_B2(files,net,imag,ecog_grid);
+    dist_online_total = [dist_online_total;dist_online];
+    mean_online_total=[mean_online_total;pdist(mean_online)];
+    var_online_total=[var_online_total;var_online'];
+
+    % plotting imagined and online in latent space
+%     idxa = find(idx_imag==4);
+%     idxb = find(idx_online==4);
+%     idxa = idxa(randperm(length(idxa),length(idxb)));
+%     figure;hold on
+%     plot3(TrialZ_imag(1,idxa),TrialZ_imag(2,idxa),TrialZ_imag(3,idxa),'.','MarkerSize',20)
+%     plot3(TrialZ_online(1,idxb),TrialZ_online(2,idxb),TrialZ_online(3,idxb),'.','MarkerSize',20)
+%     c1 = TrialZ_imag(:,idxa);
+%     c2 = TrialZ_online(:,idxb);
+%     c1=cov(c1');
+%     c2=cov(c2');
+
+    %      plot
+    %
+%     figure;boxplot([dist_imagined' dist_online'])
+%     box off
+%     set(gcf,'Color','w')
+%     xticks(1:2)
+%     xticklabels({'Imagined Data','Online Data'})
+%     ylabel('Distance')
+%     title('Inter-class distances')
+%     set(gca,'LineWidth',1)
+%     set(gca,'FontSize',12)
+
+    [h p tb st]=ttest(dist_imagined,dist_online);
+    disp([p mean([dist_imagined' dist_online'])]);
+    res=[res;[p mean([dist_imagined' dist_online'])]];
+end
+
+res
+
+figure;
+plot(mean(dist_online_total'))
+set(gcf,'Color','w')
+title('Across Day Learning')
+ylabel('Mahalanobis Dist.')
+xlabel('Day')
+xlim([0.5 11.5])
+tmp = mean(dist_online_total');
+figure;
+tmp1 = tmp(1:4);
+tmp2 = tmp(5:end);
+tmp1(end+1:length(tmp2))=NaN;
+boxplot([tmp1' tmp2'])
+xticklabels({'Early Days','Late Days'})
+ylabel('Mahalanobis Dist')
+title('Online Bins proj. thru Imagined Manifold')
+set(gcf,'Color','w')
+
+
+% stats on distances, early days and late days online mahalanobis distances
+early_days_online = dist_online_total(1:4,:);
+early_days_online=early_days_online(:);
+late_days_online = dist_online_total(5:end,:);
+late_days_online=late_days_online(:);
+early_days_online(end+1:length(late_days_online))=NaN;
+figure;boxplot([early_days_online late_days_online ]);
+
+
+tmp = mean(dist_imag_total');
+figure;
+tmp1 = tmp(1:4);
+tmp2 = tmp(5:end);
+tmp1(end+1:length(tmp2))=NaN;
+boxplot([tmp1' tmp2'])
+xticklabels({'Early Days','Late Days'})
+ylabel('Mahalanobis Dist')
+title('Imag Bins proj. thru Imagined Manifold')
+set(gcf,'Color','w')
+
+figure;
+boxplot([dist_imag_total(1,:)' dist_online_total(1,:)' ])
+
+
+%plotting the difference in manifold angles between mvmt and time
+ang = [mean(dist_imag_total,2) mean(dist_online_total,2)];
+%ang=fliplr(ang);
+figure;hold on
+%scatter(ones(length(ang),1)+0.05*randn(length(ang),1),ang(:,1));
+%scatter(2*ones(length(ang),1)+0.05*randn(length(ang),1),ang(:,2));
+idx = 0.05*randn(length(ang),2);
+%idx = zeros(size(idx));
+scatter(ones(length(ang),1)+idx(:,1),ang(:,1),100);
+scatter(2*ones(length(ang),1)+idx(:,2),ang(:,2),100)
+xlim([0.5 2.5])
+col=winter(length(ang));
+for i=1:length(ang)
+    plot([1 2]+idx(i,:),(ang(i,:)),'Color',[.5 .5 .5 .5],'LineWidth',1)
+end
+ylim([5 65]) %0 to 40 for regression
+set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Mahalanobis distance')
+set(gca,'FontSize',14)
+
+%plotting changes in the variance of the latent distributions
+figure;boxplot([var_imag_total(:) var_online_total(:)])
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Variance in latent space')
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+set(gca,'LineWidth',2)
+box off
+
+ang=[mean(var_imag_total,2) mean(var_online_total,2)];
+figure;hold on
+idx = 0.05*randn(length(ang),2);
+scatter(ones(length(ang),1)+idx(:,1),ang(:,1),100);
+scatter(2*ones(length(ang),1)+idx(:,2),ang(:,2),100)
+xlim([0.5 2.5])
+col=parula(length(ang));
+for i=1:length(ang)
+    %plot([1 2]+idx(i,:),(ang(i,:)),'Color',[.5 .5 .5 .5],'LineWidth',1)
+    plot([1 2]+idx(i,:),(ang(i,:)),'Color',col(i,:),'LineWidth',1)
+end
+set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Variance in latent space')
+set(gca,'FontSize',14)
+[h p tb st]=ttest(ang(:,1),ang(:,2))
+
+figure;
+plot(ang(:,2)-ang(:,1),'.k','MarkerSize',20)
+tmp=ang(:,2)-ang(:,1);
+
+% plotting changes in the mean distance between distributions over learning
+figure;boxplot([mean_imag_total(:) mean_online_total(:)])
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Mean Diff in latent space')
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+set(gca,'LineWidth',2)
+box off
+
+ang=[mean(mean_imag_total,2) mean(mean_online_total,2)];
+figure;hold on
+idx = 0.05*randn(length(ang),2);
+scatter(ones(length(ang),1)+idx(:,1),ang(:,1),100);
+scatter(2*ones(length(ang),1)+idx(:,2),ang(:,2),100)
+xlim([0.5 2.5])
+col=parula(length(ang));
+for i=1:length(ang)
+    %plot([1 2]+idx(i,:),(ang(i,:)),'Color',[.5 .5 .5 .5],'LineWidth',1)
+    plot([1 2]+idx(i,:),(ang(i,:)),'Color',col(i,:),'LineWidth',1)
+end
+set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Imagined Data','Online Data'})
+ylabel('Distance b/w means in latent space')
+set(gca,'FontSize',14)
+[h p tb st]=ttest(ang(:,1),ang(:,2))
+
+figure;
+plot(ang(:,2)-ang(:,1),'.k','MarkerSize',20)
+tmp=ang(:,2)-ang(:,1);
+[bhat p wh se ci t_stat]=robust_fit((1:length(tmp))',tmp,1);
+hold on
+plot([ (1:length(tmp))'],...
+    [ ones(size(tmp,1),1) (1:length(tmp))']*bhat,'k','LineWidth',1);
+xlim([0.5 12])
+xlabel('Days')
+ylabel('Delta Online vs. Imagined')
+title('Mean Separation in Latent Space')
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+box off
+
+% boostrapped test
+bhat_boot=[];
+parfor iter=1:500
+    x=1:length(tmp);
+    x=x(randperm(length(x)));
+    [bhat1 p wh se ci t_stat]=robust_fit(x',tmp,1);
+    bhat_boot(iter)=bhat1(2);
+end
+sum(bhat_boot>bhat(2))/length(bhat_boot)
+
+x= [ ones(size(tmp,1),1) (1:length(tmp))'];
+y = tmp;
+[B,BINT,R,RINT,STATS] = regress(y,x);
+STATS(3)
 
 
 

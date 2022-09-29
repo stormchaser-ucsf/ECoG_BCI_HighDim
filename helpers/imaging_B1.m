@@ -2,14 +2,14 @@
 
 
 dirn=pwd;
-addpath('C:\Users\nikic\OneDrive\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
-cd('C:\Users\nikic\OneDrive\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
+addpath('C:\Users\nikic\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
+cd('C:\Users\nikic\Documents\MATLAB\ctmr_gauss_plot_April2016\ctmr_gauss_plot_April2016')
 load('BRAVO1_lh_pial')
 load('BRAVO1_elecs_all')
 
 ch=1:size(anatomy,1);
 figure
-c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh');
+c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'rh');
 % To plot electrodes with numbers, use the following, as example:
 e_h = el_add(elecmatrix([1:length(ch)],:), 'color', 'b', 'numbers', ch);
 % Or you can just plot them without labels with the default color

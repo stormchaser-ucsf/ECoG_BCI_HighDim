@@ -1,7 +1,8 @@
-function out = extract_lstm_features(tmp,Params,lpFilt)
+function out = extract_lstm_features(tmp,Params,lpFilt,chmap)
 
 
-
+% do an optional laplacian ref
+tmp = laplacian_ref(tmp',chmap)';
 
 %get hG through filter bank approach
 filtered_data=zeros(size(tmp,1),size(tmp,2),8);
