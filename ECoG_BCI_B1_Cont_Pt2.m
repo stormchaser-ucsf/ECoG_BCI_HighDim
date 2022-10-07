@@ -179,6 +179,22 @@ genFunction(net_9DoF,'MLP_9DoF_Days1to5')
 % cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 % genFunction(net,'MLP_9DoF_Till_02102022')
 
+%% LOOKING AT BR DATA AND STREAMING IN THE ANIN TO PULL OUT TRIAL STRUCTURE
+
+clc;clear
+cd('C:\Users\nikic\Documents\GitHub\BR_Ecog_Visualization')
+blackrock2mat
+
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220929\BlackRock\20220929-103233')
+load('20220929-103233-001.mat')
+
+anin=-anin(:,2);
+tt=(1/Fs)*(0:length(anin)-1);
+figure;plot(tt,anin)
+xlabel('Time in sec')
+
+
+
 
 
 

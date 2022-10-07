@@ -873,7 +873,7 @@ for i=1:length(session_data)
 
 
     %load the data
-    condn_data = load_data_for_MLP(files);
+    %condn_data = load_data_for_MLP(files);
 
     % get activations in deepest layer
     imag=0;

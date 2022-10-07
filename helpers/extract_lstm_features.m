@@ -2,7 +2,7 @@ function out = extract_lstm_features(tmp,Params,lpFilt,chmap)
 
 
 % do an optional laplacian ref
-tmp = laplacian_ref(tmp',chmap)';
+%tmp = laplacian_ref(tmp',chmap)';
 
 %get hG through filter bank approach
 filtered_data=zeros(size(tmp,1),size(tmp,2),8);
@@ -44,6 +44,10 @@ tmp_lp = filter(lpFilt,tmp);
 %tmp_lg1=resample(tmp_lg,80,size(tmp_lg,1))*5e2;
 tmp_hg1=resample(tmp_hg,size(tmp_hg,1)/10,size(tmp_hg,1))*5e2;
 tmp_lp1=resample(tmp_lp,size(tmp_hg,1)/10,size(tmp_lp,1));
+
+% laplacian referencing 
+%tmp_hg1 = laplacian_ref(tmp_hg1',chmap)';
+%tmp_lp1 = laplacian_ref(tmp_lp1',chmap)';
 
 % make new data structure
 tmp = [tmp_hg1 tmp_lp1 ];

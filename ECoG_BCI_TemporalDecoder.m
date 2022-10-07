@@ -288,7 +288,7 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
     'HalfPowerFrequency1',1,'HalfPowerFrequency2',25, ...
     'SampleRate',1e3);
-lpFilt=bpFilt;
+%lpFilt=bpFilt;
 
 % loading chmap file
 load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210526\Robot3DArrow\112357\Imagined\Data0005.mat')
@@ -591,7 +591,7 @@ for ii=1:size(condn_data7,3)
 end
 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-save decimated_lstm_data_below25Hz_laplacian_raw condn_data_new Y -v7.3
+save decimated_lstm_data_below25Hz condn_data_new Y -v7.3
 %save downsampled_lstm_data_below25Hz condn_data_new Y -v7.3
 %save decimated_lstm_data_below25Hz_WithState2_with_lg condn_data_new Y -v7.3
 %load decimated_lstm_data_below25Hz_WithState2
@@ -717,7 +717,7 @@ for i=1:size(condn_data_new,3)
     end
 end
 
-%
+% 
 % % splitting training into balanced classes and throwing the rest into
 % % testing
 % indices={};
@@ -736,12 +736,12 @@ end
 %     b = ones(size(idx));
 %     b(a)=0;
 %     b=(find(b==1))';
-%
+% 
 %     idx_train = [idx_train; idx((a))];
 %     idx_test = [idx_test; idx((b))];
 % end
 % length(idx_train)/(length(idx_train)+length(idx_test))
-%
+% 
 % XTrain={};
 % YTrain=[];
 % for i=1:length(idx_train)
@@ -749,7 +749,7 @@ end
 %     XTrain = cat(1,XTrain,tmp');
 %     YTrain = [YTrain Y(idx_train(i))];
 % end
-%
+% 
 % XTest={};
 % YTest=[];
 % for i=1:length(idx_test)
@@ -942,8 +942,8 @@ end
 %net_bilstmhg=net; % this has more noise variance in the data augmentation
 %save net_bilstmhg net_bilstmhg
 
-net_bilstm_20220928 = net;
-save net_bilstm_20220928 net_bilstm_20220928
+net_bilstm_20220929 = net;
+save net_bilstm_20220929 net_bilstm_20220929
 
 net1=net;
 
@@ -980,6 +980,8 @@ for i=1:length(acc)
     acc(i,:)=acc(i,:)./sum(acc(i,:));
 end
 mean(diag(acc))
+figure;imagesc(acc)
+figure;stem(diag(acc))
 
 
 %% TESTING THE DATA ON ONLINE DATA
@@ -992,8 +994,8 @@ clear
 %load net_bilstm
 %load net_bilstmhg
 %net_bilstm = net_bilstmhg;
-load net_bilstm_20220824
-net_bilstm = net_bilstm_20220824;
+load net_bilstm_20220929
+net_bilstm = net_bilstm_20220929    ;
 
 %filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
 acc_mlp_days=[];
@@ -1002,7 +1004,7 @@ addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 %foldernames = {'20220803','20220810','20220812'};
-foldernames = {'20220819'};
+foldernames = {'20221006'};
 
 % filter bank hg
 Params=[];
@@ -1097,6 +1099,193 @@ legend('LSTM','MLP')
 set(gcf,'Color','w')
 set(gca,'FontSize',14)
 set(gca,'LineWidth',1)
+
+
+%% FINE TUNING LSTM MODEL FOR A BATCH UPDATE ON ARROW DATA
+
+clc;clear
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+cd(root_path)
+%foldernames = {'20220803','20220810','20220812'};
+foldernames = {'20221006'};
+
+% filter bank hg
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+
+% low pass filters
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+% get all the folders
+filepath = fullfile(root_path,foldernames{1},'Robot3DArrow');
+folders = dir(filepath);
+folders=folders(3:end);
+%folders=folders(3:8);
+
+% load the decoder
+load net_bilstm_20220929
+net_bilstm = net_bilstm_20220929;
+
+
+% within a loop, leave out one folder and then update lstm on all other
+% folders
+acc_batch_samples_overall = [];
+acc_orig_samples_overall = [];
+acc_batch_trial_overall = [];
+acc_orig_trial_overall = [];
+for i=1:length(folders)
+    % i is is the testing folder everything else is the training folder
+    idx = ones(length(folders),1);
+    idx(i)=0;   
+    idx_train = find(idx==1);
+    idx_test = find(idx==0);
+    folders_train = folders(idx_train);
+    folders_test = folders(idx_test);
+
+    % get the files
+    files_train=[];
+    for j=1:length(folders_train)
+        subfolder = fullfile(folders_train(j).folder,folders_train(j).name,'BCI_Fixed');
+        tmp = findfiles('mat',subfolder,1)';
+        files_train =[files_train;tmp];
+    end
+    files_test=[];
+    for j=1:length(folders_test)
+        subfolder = fullfile(folders_test(j).folder,folders_test(j).name,'BCI_Fixed');
+        tmp = findfiles('mat',subfolder,1)';
+        files_test =[files_test;tmp];
+    end
+
+    % get the neural features from the files    
+    [XTrain,XTest,YTrain,YTest] = get_lstm_features(files_train,Params,lpFilt);
+    %[XTrain,XTest,YTrain,YTest] = get_lstm_features_robotBatch(files_train,Params,lpFilt);
+
+    % update the decoder
+    batch_size=128;
+    val_freq = floor(length(XTrain)/batch_size);
+    options = trainingOptions('adam', ...
+        'MaxEpochs',50, ...
+        'MiniBatchSize',batch_size, ...
+        'GradientThreshold',10, ...
+        'Verbose',true, ...
+        'ValidationFrequency',val_freq,...
+        'Shuffle','every-epoch', ...
+        'ValidationData',{XTest,YTest},...
+        'ValidationPatience',6,...
+        'Plots','training-progress',...
+        'LearnRateSchedule','piecewise',...
+        'LearnRateDropFactor',0.1,...
+        'OutputNetwork','best-validation-loss',...
+        'LearnRateDropPeriod',30,...
+        'InitialLearnRate',2e-4);
+
+    % train the model
+    clear net
+    layers = net_bilstm.Layers;
+    net = trainNetwork(XTrain,YTrain,layers,options);
+
+    % test it out on the held out folder and store accuracy, compare it to
+    % the original accuracy     
+    [acc_batchUdpate_sample,acc_orig_sample,acc_batchUpdate_trial,acc_orig_trial]...
+        = get_lstm_performance_afterBatch(files_test,net,Params,lpFilt);
+
+    acc_batch_samples_overall = [acc_batch_samples_overall diag(acc_batchUdpate_sample)];
+    acc_orig_samples_overall = [acc_orig_samples_overall diag(acc_orig_sample)];
+    acc_batch_trial_overall = [acc_batch_trial_overall diag(acc_batchUpdate_trial)];
+    acc_orig_trial_overall = [acc_orig_trial_overall diag(acc_orig_trial)];
+
+end
+
+%
+figure;
+tmp = [acc_batch_samples_overall(:) acc_orig_samples_overall(:)];
+boxplot(tmp)
+hold on
+%cmap=turbo(size(acc_batch_samples_overall,2));
+cmap=[.2 .2 .2];
+cmap=repmat(cmap,size(acc_batch_samples_overall,2),1);
+for i=1:size(acc_batch_samples_overall,2)
+    s=scatter(ones(1,1)+0.05*randn(1,1) , mean(acc_batch_samples_overall(:,i))','MarkerEdgeColor',cmap(i,:),...
+        'LineWidth',1);
+    s.SizeData=100;
+    s=scatter(2*ones(1,1)+0.05*randn(1,1) , mean(acc_orig_samples_overall(:,i))',...
+        'MarkerEdgeColor',cmap(i,:),'LineWidth',1);
+    s.SizeData=100;
+end
+ylim([0.0 1])
+xticks(1:2)
+xticklabels({'Batch Update','Original'})
+title('Arrow Task')
+ylabel('Accuracy of inidiv. samples at 5Hz')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+box off
+
+% plotting the success of individual actions
+figure;
+hold on
+for i=1:7
+    idx = i:7:size(tmp,1);
+    decodes = tmp(idx,:);
+    %disp(decodes);
+    m = mean(decodes);
+    s = std(decodes)/sqrt(length(decodes));
+    h=bar(2*i-0.25,mean(decodes(:,1)));
+    er = errorbar(2*i-0.25,m(1),s(1),s(1));
+    er.Color = [0 0 0];
+    er.LineStyle = 'none';
+    er.LineWidth=1;
+    h1=bar(2*i+0.25,mean(decodes(:,2)));
+    er1 = errorbar(2*i+0.25,m(2),s(2),s(2));
+    er1.Color = [0 0 0];
+    er1.LineStyle = 'none';
+    er1.LineWidth=1;
+    h.BarWidth=0.4;
+    h.FaceColor=[0.2 0.2 0.7];
+    h1.BarWidth=0.4;
+    h1.FaceColor=[0.7 0.2 0.2];
+    h.FaceAlpha=0.85;
+    h1.FaceAlpha=0.85;
+
+    %     s=scatter(ones(3,1)*2*i-0.25+0.05*randn(3,1),decodes(:,1),'LineWidth',2);
+    %     s.CData = [0.2 0.2 0.7];
+    %     s.SizeData=50;
+    %
+    %     s=scatter(ones(3,1)*2*i+0.25+0.05*randn(3,1),decodes(:,2),'LineWidth',2);
+    %     s.CData = [0.7 0.2 0.2];
+    %     s.SizeData=50;
+end
+xticks([2:2:14])
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+ylabel('Decoding Accuracy')
+legend('Batch Update','','Orig')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+
+
 
 
 
@@ -1301,7 +1490,7 @@ save robot_batch_trials_lstm_features robot_batch_trials_lstm_features -v7.3
 
 %% FINE TUNE LSTM ON THE ROBOT BATCH DATA
 
-clear;
+clear;clc
 
 Y=[];
 addpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers')
@@ -1314,6 +1503,17 @@ chmap = TrialData.Params.ChMap;
 lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'PassbandFrequency',25,'PassbandRipple',0.2, ...
     'SampleRate',1e3);
+
+% band pass filter of raw
+bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',1,'HalfPowerFrequency2',25, ...
+    'SampleRate',1e3);
+%lpFilt=bpFilt;
+
+% loading chmap file
+load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210526\Robot3DArrow\112357\Imagined\Data0005.mat')
+chmap = TrialData.Params.ChMap;
+
 
 % log spaced hg filters
 Params=[];
@@ -1533,6 +1733,7 @@ for ii=1:size(condn_data7,3)
     jj=jj+1;
 end
 
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 save decimated_lstm_robot_batchData condn_data_new Y -v7.3
 
 % get rid of artifacts, any channel with activity >15SD, set it to near zero
@@ -1609,6 +1810,62 @@ for i=1:size(condn_data_new,3)
     end
 end
 
+%%%% optional PCA step to see if dim red helps
+% on training data 
+tmp=cell2mat(XTrain');
+tmp_hg = tmp(1:128,:);
+[c,s,l]=pca(tmp_hg','centered','on');
+ll=cumsum(l)./sum(l);
+figure;stem(ll)
+tmp_hg = s(:,1:40);
+
+tmp_lfo = tmp(129:end,:);
+[c1,s1,l1]=pca(tmp_lfo','centered','on');
+l11=cumsum(l1)./sum(l1);
+figure;stem(l11)
+tmp_lfo = s1(:,1:20);
+
+tmp_data={};k=1;
+for i=1:100:size(tmp_lfo,1)
+    tmp_data{k} = [tmp_hg(i:i+99,:) tmp_lfo(i:i+99,:)]';
+    k=k+1;
+end
+tmp_data=tmp_data';
+XTrain = tmp_data;
+
+% normalize each sample to be between 0 and 1
+for i=1:length(XTrain)
+    tmp1=XTrain{i};
+    tmp1 = (tmp1 - min(tmp1(:)))/(max(tmp1(:))-min(tmp1(:)));
+    XTrain{i}=tmp1;
+end
+
+% on testing data 
+tmp=cell2mat(XTest');
+tmp_hg = tmp(1:128,:);
+tmp_hg = tmp_hg-mean(tmp_hg);
+tmp_hg = tmp_hg'*c(:,1:40);
+
+tmp_lfo = tmp(129:end,:);
+tmp_lfo = tmp_lfo-mean(tmp_lfo);
+tmp_lfo = tmp_lfo'*c1(:,1:20);
+
+tmp_data={};k=1;
+for i=1:100:size(tmp_lfo,1)
+    tmp_data{k} = [tmp_hg(i:i+99,:) tmp_lfo(i:i+99,:)]';
+    k=k+1;
+end
+tmp_data=tmp_data';
+XTest = tmp_data;
+
+% normalize each sample to be between 0 and 1
+for i=1:length(XTest)
+    tmp1=XTest{i};
+    tmp1 = (tmp1 - min(tmp1(:)))/(max(tmp1(:))-min(tmp1(:)));
+    XTest{i}=tmp1;
+end
+%%% end PCA step
+
 % shuffle
 idx  = randperm(length(YTrain));
 XTrain = XTrain(idx);
@@ -1628,37 +1885,37 @@ for i=1:length(aug_idx)
     tmp1 = tmp(:,1:128);
     % add variable noise
     %var_noise=randsample(400:1200,size(tmp1,2))/1e3;
-    var_noise=0.8;
+    var_noise=0.7;
     add_noise=randn(size(tmp1)).*std(tmp1).*var_noise;
     tmp1n = tmp1 + add_noise;
     % add variable mean offset between 5 and 25%
     m=mean(tmp1);
-    add_mean =  m*.2;
+    add_mean =  m*.25;
     %add_mean=randsample(0:500,size(tmp1,2))/1e3;
     flip_sign = rand(size(add_mean));
     flip_sign(flip_sign>0.5)=1;
     flip_sign(flip_sign<=0.5)=-1;
     add_mean=add_mean.*flip_sign+m;
     tmp1m = tmp1n + add_mean;
-    tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
+    %tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
 
     % lmp
     tmp2 = tmp(:,129:256);
     % add variable noise
-    var_noise=0.8;
+    var_noise=0.7;
     %var_noise=randsample(400:1200,size(tmp2,2))/1e3;
     add_noise=randn(size(tmp2)).*std(tmp2).*var_noise;
     tmp2n = tmp2 + add_noise;
     % add variable mean offset between 5 and 25%
     m=mean(tmp2);
-    add_mean =  m*.25;
+    add_mean =  m*.35;
     %add_mean=randsample(0:500,size(tmp2,2))/1e3;
     flip_sign = rand(size(add_mean));
     flip_sign(flip_sign>0.5)=1;
     flip_sign(flip_sign<=0.5)=-1;
     add_mean=add_mean.*flip_sign+m;
     tmp2m = tmp2n + add_mean;
-    tmp2m = (tmp2m-min(tmp2m(:)))/(max(tmp2m(:))-min(tmp2m(:)));
+    %tmp2m = (tmp2m-min(tmp2m(:)))/(max(tmp2m(:))-min(tmp2m(:)));
 
     %     %lg
     %     tmp3 = tmp(:,257:384);
@@ -1683,6 +1940,36 @@ for i=1:length(aug_idx)
 end
 
 
+% data augmentation for PCA
+aug_idx = randperm(length(XTrain));
+for i=1:length(aug_idx)
+    tmp = XTrain{aug_idx(i)}';
+    t_id=categorical(YTrain(aug_idx(i)));
+
+    % hG and lmp
+    tmp1 = tmp(:,1:end);
+    % add variable noise
+    %var_noise=randsample(400:1200,size(tmp1,2))/1e3;
+    var_noise=0.7;
+    add_noise=randn(size(tmp1)).*std(tmp1).*var_noise;
+    tmp1n = tmp1 + add_noise;
+    % add variable mean offset between 5 and 25%
+    m=mean(tmp1);
+    add_mean =  m*.25;
+    %add_mean=randsample(0:500,size(tmp1,2))/1e3;
+    flip_sign = rand(size(add_mean));
+    flip_sign(flip_sign>0.5)=1;
+    flip_sign(flip_sign<=0.5)=-1;
+    add_mean=add_mean.*flip_sign+m;
+    tmp1m = tmp1n + add_mean;
+    %tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
+    
+    tmp=[tmp1m]';
+
+    XTrain=cat(1,XTrain,tmp);
+    YTrain = cat(1,YTrain,t_id);
+end
+
 % implement label smoothing to see how that does
 %
 % tmp=str2num(cell2mat(tmp));
@@ -1696,8 +1983,8 @@ end
 
 % load pretrained LSTM structure
 %load net_bilstm
-load net_bilstm_20220824
-net_bilstm=net_bilstm_20220824;
+load net_bilstm_20220929
+net_bilstm=net_bilstm_20220929;
 layers = net_bilstm.Layers;
 
 % define training options
@@ -1716,16 +2003,16 @@ options = trainingOptions('adam', ...
     'LearnRateSchedule','piecewise',...
     'LearnRateDropFactor',0.1,...
     'OutputNetwork','best-validation-loss',...
-    'LearnRateDropPeriod',20,...
-    'InitialLearnRate',0.0005);
+    'LearnRateDropPeriod',25,...
+    'InitialLearnRate',5e-4);
 
 % train the model
 clear net
 net = trainNetwork(XTrain,YTrain,layers,options);
 
 % save the network
-net_bilstm_robot_20220824C = net;
-save net_bilstm_robot_20220824C net_bilstm_robot_20220824C
+net_bilstm_robot_20220929 = net;
+save net_bilstm_robot_20220929 net_bilstm_robot_20220929
 
 
 net_bilstm_robot_20220824_early_stop = net_bilstm_robot_20220824C
@@ -1735,20 +2022,22 @@ save net_bilstm_robot_20220824_early_stop net_bilstm_robot_20220824_early_stop
 %%% TRAINING LSTM FROM SCRATCH
 % specify lstm structure
 inputSize = 256;
-numHiddenUnits1 = [  90 120 150 128 325];
-drop1 = [ 0.2 0.2 0.3  0.3 0.4];
+numHiddenUnits1 = [  90 120 128 128 325 64];
+drop1 = [ 0.2 0.2 0.3  0.3 0.4 0.3];
 numClasses = 7;
 for i=3%1:length(drop1)
     numHiddenUnits=numHiddenUnits1(i);
     drop=drop1(i);
     layers = [ ...
-        sequenceInputLayer(inputSize)
+        sequenceInputLayer(inputSize)  
+        fullyConnectedLayer(150)
+        leakyReluLayer
+        dropoutLayer(drop)
         bilstmLayer(numHiddenUnits,'OutputMode','sequence')
         dropoutLayer(drop)
         layerNormalizationLayer
         gruLayer(numHiddenUnits/2,'OutputMode','last')
-        dropoutLayer(drop)
-        layerNormalizationLayer
+        dropoutLayer(drop)        
         fullyConnectedLayer(25)
         leakyReluLayer
         batchNormalizationLayer
@@ -1759,7 +2048,7 @@ for i=3%1:length(drop1)
 
 
     % options
-    batch_size=128;
+    batch_size=256;
     val_freq = floor(length(XTrain)/batch_size);
     options = trainingOptions('adam', ...
         'MaxEpochs',120, ...
@@ -1780,6 +2069,13 @@ for i=3%1:length(drop1)
     % train the model
     net = trainNetwork(XTrain,YTrain,layers,options);
 end
+
+
+% save the network
+net_bilstm_robotOnly_20220929 = net;
+save net_bilstm_robotOnly_20220929 net_bilstm_robotOnly_20220929
+
+
 %
 % net_800 =net;
 % save net_800 net_800
@@ -1788,7 +2084,7 @@ end
 %save net_bilstm_lg net_bilstm_lg
 
 
-%% TEST OUT FINE TUNED LSTM ON HELD OUT ROBOT BATCH DATA
+%% TEST OUT FINE TUNED LSTM ON HELD OUT ROBOT BATCH/ARROW DATA
 
 clear
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
@@ -1799,14 +2095,17 @@ cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %load net_bilstm
 load net_bilstm_robot_20220824
 net_bilstm = net_bilstm_robot_20220824;
+%load net_bilstm_20220824B
+%net_bilstm = net_bilstm_20220824B;
 
+addpath('C:\Users\nikic\Documents\MATLAB')
 %filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
 acc_mlp_days=[];
 acc_days=[];
-addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
-foldernames = {'20220819'};
+foldernames = {'20220930'};
 
 % filter bank hg
 Params=[];
@@ -1836,7 +2135,7 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 
 for i=1:length(foldernames)
     disp(i)
-    filepath = fullfile(root_path,foldernames{i},'RealRobotBatch');
+    filepath = fullfile(root_path,foldernames{i},'RealRobot3D');
     [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
         = get_lstm_performance(filepath,net_bilstm,Params,lpFilt);
 
@@ -1844,6 +2143,49 @@ for i=1:length(foldernames)
     acc_mlp_days = [acc_mlp_days diag(acc_mlp_sample)];
 end
 
+
+% plotting confusion matrix
+figure;
+subplot(1,2,1)
+imagesc(acc_mlp_sample)
+caxis([0 1])
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+yticks(1:7)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+set(gca,'FontSize',14)
+subplot(1,2,2)
+stem(diag(acc_mlp_sample),'LineWidth',2)
+xlim([0.5 7.5])
+ylabel('Accuracy')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+sgtitle('20220930 Arrow Experiment Sample Accuracy')
+
+figure;
+subplot(1,2,1)
+imagesc(acc_mlp_trial)
+caxis([0 1])
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+yticks(1:7)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+set(gca,'FontSize',14)
+subplot(1,2,2)
+stem(diag(acc_mlp_trial),'LineWidth',2)
+xlim([0.5 7.5])
+ylabel('Accuracy')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+sgtitle('20220930 Arrow Experiment Trial Accuracy')
 
 %
 figure;
@@ -1904,6 +2246,167 @@ set(gca,'LineWidth',1)
 
 
 
+%% TEST OUT FINE TUNED LSTM ON HELD OUT REAL ROBOT 3D DATA
+
+clear;clc
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+%load net_bilstm_stacked
+%net_bilstm = net_bilstm_stacked;
+%load net_bilstm_lg
+%net_bilstm = net_bilstm_lg;
+%load net_bilstm
+%load net_bilstm_robot_20220824B
+%net_bilstm = net_bilstm_robot_20220824B;
+%load net_bilstm_20220824B
+%net_bilstm = net_bilstm_20220824B;
+load net_bilstm_robotOnly_20220929
+net_bilstm = net_bilstm_robotOnly_20220929;
+
+addpath('C:\Users\nikic\Documents\MATLAB')
+%filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
+acc_mlp_days=[];
+acc_days=[];
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+foldernames = {'20220930'};
+
+% filter bank hg
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+
+% low pass filters
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+for i=1:length(foldernames)
+    disp(i)
+    filepath = fullfile(root_path,foldernames{i},'RealRobot3D');
+    [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
+        = get_lstm_performance_real_robot(filepath,net_bilstm,Params,lpFilt);
+
+    acc_days = [acc_days diag(acc_lstm_sample)];
+    acc_mlp_days = [acc_mlp_days diag(acc_mlp_sample)];
+end
+
+
+% plotting confusion matrix
+figure;
+subplot(1,2,1)
+imagesc(acc_mlp_sample)
+caxis([0 1])
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+yticks(1:7)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+set(gca,'FontSize',14)
+subplot(1,2,2)
+stem(diag(acc_mlp_sample),'LineWidth',2)
+xlim([0.5 7.5])
+ylabel('Accuracy')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+sgtitle('20220930 Arrow Experiment Sample Accuracy')
+
+figure;
+subplot(1,2,1)
+imagesc(acc_mlp_trial)
+caxis([0 1])
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+yticks(1:7)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+set(gca,'FontSize',14)
+subplot(1,2,2)
+stem(diag(acc_mlp_trial),'LineWidth',2)
+xlim([0.5 7.5])
+ylabel('Accuracy')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:7)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+sgtitle('20220930 Arrow Experiment Trial Accuracy')
+
+%
+figure;
+tmp = [acc_days(:) acc_mlp_days(:)];
+boxplot(tmp)
+hold on
+cmap=turbo(size(acc_days,2));
+for i=1:size(acc_days,2)
+    s=scatter(ones(1,1)+0.05*randn(1,1) , mean(acc_days(:,i))','MarkerEdgeColor',cmap(i,:),...
+        'LineWidth',2);
+    s.SizeData=100;
+    s=scatter(2*ones(1,1)+0.05*randn(1,1) , mean(acc_mlp_days(:,i))',...
+        'MarkerEdgeColor',cmap(i,:),'LineWidth',2);
+    s.SizeData=100;
+end
+ylim([0.3 1])
+xticks(1:2)
+xticklabels({'stack biLSTM','MLP'})
+legend({'0803','','0810','','0812'})
+title('Center Out Robot')
+ylabel('Accuracy of inidiv. samples at 5Hz')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+box off
+
+% plotting the success of individual actions
+figure;
+hold on
+for i=1:7
+    %idx = i:7:21;
+    idx=i;
+    decodes = tmp(idx,:);
+    h=bar(2*i-0.25,mean(decodes(:,1)));
+    h1=bar(2*i+0.25,mean(decodes(:,2)));
+    h.BarWidth=0.4;
+    h.FaceColor=[0.2 0.2 0.7];
+    h1.BarWidth=0.4;
+    h1.FaceColor=[0.7 0.2 0.2];
+    h.FaceAlpha=0.85;
+    h1.FaceAlpha=0.85;
+
+    %     s=scatter(ones(3,1)*2*i-0.25+0.05*randn(3,1),decodes(:,1),'LineWidth',2);
+    %     s.CData = [0.2 0.2 0.7];
+    %     s.SizeData=50;
+    %
+    %     s=scatter(ones(3,1)*2*i+0.25+0.05*randn(3,1),decodes(:,2),'LineWidth',2);
+    %     s.CData = [0.7 0.2 0.2];
+    %     s.SizeData=50;
+end
+xticks([2:2:14])
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Head','Lips','Tongue','Both Middle'})
+ylabel('Decoding Accuracy')
+legend('LSTM','MLP')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
 
 
 %% BUILDING THE DEOCDER usng only online data
@@ -2258,6 +2761,7 @@ hg7 = designfilt('bandpassiir','FilterOrder',4, ...
 hg8 = designfilt('bandpassiir','FilterOrder',4, ...
     'HalfPowerFrequency1',136,'HalfPowerFrequency2',150, ...
     'SampleRate',1e3);
+
 
 
 %% laplacian referencing code
