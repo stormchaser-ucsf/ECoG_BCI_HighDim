@@ -1,56 +1,13 @@
-function [TrialZ,dist_val,mean_latent,var_latent,idx,acc] = get_latent_regression(files,net,imag)
+function [TrialZ,dist_val,mean_latent,var_latent,idx,acc] = get_latent_regression_procrustes(condn_data,net,imag)
 %function [TrialZ,dist_val] = get_latent(files,net,imag)
 
 idx=[];
 TrialZ=[];
-decodes=[];
-acc=zeros(7);
-for i=1:length(files)
-    disp(i)
-    file_loaded=1;
-    try
-        load(files{i});
-    catch
-        file_loaded=0;
-    end
-    if file_loaded
-        features  = TrialData.SmoothedNeuralFeatures;
-        kinax = TrialData.TaskState;
-        kinax = [find(kinax==3)];
-        if imag==0
-            counter=TrialData.Params.ClickCounter;
-            kinax=kinax(end-counter+1:end);
-        end
-        temp = cell2mat(features(kinax));
-        chmap = TrialData.Params.ChMap;
-        X = bci_pooling(temp,chmap);
-
-        %2-norm the data
-        for j=1:size(X,2)
-            X(:,j)=X(:,j)./norm(X(:,j));
-        end
-
-        % feed it through the AE
-        X = X(1:96,:);
-        Z = activations(net,X','autoencoder');
-
-        %         TrialZ = [TrialZ Z];
-        %         idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
-
-        if imag==0
-            %if TrialData.SelectedTargetID == TrialData.TargetID
-                %Z = Z(:,end-4:end);
-                TrialZ = [TrialZ Z];
-                idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
-                %Z = mean(Z,2);
-                %TrialZ = [TrialZ Z];
-                %idx=[idx TrialData.TargetID];
-            %end
-        else
-            TrialZ = [TrialZ Z];
-            idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
-        end
-    end
+for i=1:length(condn_data)
+    tmp=condn_data{i};
+    Z = activations(net,tmp,'autoencoder');
+    TrialZ = [TrialZ Z];
+    idx=[idx repmat(i,1,size(Z,2))];
 end
 
 % plot the trial averaged activity in the latent space
@@ -90,14 +47,14 @@ if imag==1
     for i=1:len
         idxx = find(idx==i);
         A=Z(:,idxx);
-        kk = randperm(size(A,2),round(size(A,2)/3));
+        kk = randperm(size(A,2),round(size(A,2)/4));
         A = A(:,kk);
         mean_latent=[mean_latent;mean(A,2)'];
         var_latent = [var_latent;det(cov(A'))];
         for j=i+1:len
             idxx = find(idx==j);
             B=Z(:,idxx);
-            kk = randperm(size(B,2),round(size(B,2)/3));
+            kk = randperm(size(B,2),round(size(B,2)/4));
             B = B(:,kk);
             D(i,j) = mahal2(A',B',2);
             D(j,i) = D(i,j);

@@ -821,17 +821,13 @@ cd(root_path)
 load session_data
 dist_online_total=[];
 dist_imag_total=[];
-dist_batch_total=[];
 var_imag_total=[];
 mean_imag_total=[];
 var_online_total=[];
 mean_online_total=[];
-var_batch_total=[];
-mean_batch_total=[];
 res=[];
 mahab_full_online=[];
 mahab_full_imagined=[];
-mahab_full_batch=[];
 session_data = session_data([1:9 11]); % removing bad days
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -859,7 +855,6 @@ for i=1:length(session_data)
 
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
-    batch_idx = find(folders_batch==1);
 
     %%%%%%imagined data
     folders = session_data(i).folders(imag_idx);
@@ -925,38 +920,6 @@ for i=1:length(session_data)
     mean_online_total=[mean_online_total;pdist(mean_online)];
     var_online_total=[var_online_total;var_online'];
 
-
-
-    %%%%%%batch data
-    folders = session_data(i).folders(batch_idx);
-    day_date = session_data(i).Day;
-    files=[];
-    for ii=1:length(folders)
-        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
-        files = [files;findfiles('',folderpath)'];
-    end
-
-
-    %load the data
-    condn_data = load_data_for_MLP(files);
-
-    % save the data
-    filename = ['condn_data_Batch_Day' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
-
-    % get the mahab distance in the full dataset
-    Donline = mahal2_full(condn_data);
-    Donline = triu(Donline);
-    Donline = Donline(Donline>0);
-    mahab_full_batch = [mahab_full_batch Donline];
-
-    % get activations in deepest layer
-    imag=0;
-    [TrialZ_batch,dist_batch,mean_batch,var_batch,idx_batch] = get_latent_regression(files,net,imag);
-    dist_batch_total = [dist_batch_total;dist_batch];
-    mean_batch_total=[mean_batch_total;pdist(mean_batch)];
-    var_batch_total=[var_batch_total;var_online'];
-
     % plotting imagined and online in latent space
     %     idxa = find(idx_imag==4);
     %     idxb = find(idx_online==4);
@@ -986,12 +949,11 @@ for i=1:length(session_data)
     res=[res;[p mean([dist_imagined' dist_online'])]];
 end
 
-close all
+
 figure;
 hold on
-plot(smooth(mean(mahab_full_imagined(:,1:end)),3))
-plot(smooth(mean(mahab_full_online(:,1:end)),3))
-plot(smooth(mean(mahab_full_batch(:,1:end)),3))
+plot(smooth(median(mahab_full_imagined(:,1:end)),3))
+plot(smooth(median(mahab_full_online(:,1:end)),3))
 
 
 res
