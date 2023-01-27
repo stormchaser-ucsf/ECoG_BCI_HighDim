@@ -1091,7 +1091,7 @@ set(gca,'FontSize',14)
 %% discriminating hand open/close with palm open/close
 
 clc;clear
-filepath='E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210212\Hand\';
+filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210212\Hand\';
 cd(filepath)
 
 % palm open close folders
@@ -1156,7 +1156,7 @@ data_open = neural_data;
 data_close = neural_data1;
 
 res=[];
-for iter=7:10
+for iter=1:10
     disp(iter)
 
     % take 2 random trials for testing
@@ -1204,7 +1204,7 @@ end
 mean(res)
 
 clc;clear
-filepath='E:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210212\Hand\';
+filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210212\Hand\';
 cd(filepath)
 
 % palm open close folders
@@ -1269,7 +1269,7 @@ data_open = neural_data;
 data_close = neural_data1;
 
 res=[];
-for iter=7:10
+for iter=1:3
     disp(iter)
 
     % take 2 random trials for testing
@@ -3798,31 +3798,31 @@ for i=1:length(foldernames)
 
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
-    %     if i==1
-    %         idx = [1 2 3 4];
-    %         D = D(idx);
-    %     elseif i==2
-    %         idx = [1 2 3 4 6 7];
-    %         D = D(idx);
-    %     elseif i==3
-    %         idx = [1 2 5 6];
-    %         D = D(idx);
-    %     elseif i==6
-    %         idx = [1 2 3 4 5 6];
-    %         D = D(idx);
-    %     elseif i==8
-    %         idx = [1 2 3 4 5 6 7];
-    %         D = D(idx);
-    %     elseif i==9
-    %         idx = [1 2 5 6 7 9 10];
-    %         D = D(idx);
-    %     elseif i==11
-    %         idx = [1 2 3  5 6 9 10 11];
-    %         D = D(idx);
-    %     elseif i == 10
-    %         idx = [1 2 3 4 5  7 8];
-    %         D = D(idx);
-    %     end
+    if i==1
+        idx = [1 2 3 4];
+        D = D(idx);
+    elseif i==2
+        idx = [1 2 3 4 6 7];
+        D = D(idx);
+    elseif i==3
+        idx = [1 2 5 6];
+        D = D(idx);
+    elseif i==6
+        idx = [1 2 3 4 5 6];
+        D = D(idx);
+    elseif i==8
+        idx = [1 2 3 4 5 6 7];
+        D = D(idx);
+    elseif i==9
+        idx = [1 2 5 6 7 9 10];
+        D = D(idx);
+    elseif i==11
+        idx = [1 2 3  5 6 9 10 11];
+        D = D(idx);
+    elseif i == 10
+        idx = [1 2 3 4 5  7 8];
+        D = D(idx);
+    end
     br=[];acc=[];time2target=[];
     for j=3:length(D)
         files=[];
@@ -3849,21 +3849,21 @@ for i=1:length(foldernames)
 end
 
 %plot results as a scatter plot
-addpath('C:\Users\Nikhlesh\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
 figure;hold on
 br=[];
 %cmap = brewermap(11,'blues');
 %cmap=flipud(cmap);
 %cmap=cmap(1:length(br_across_days),:);
 %cmap=flipud(cmap);
-cmap = turbo(length(br_across_days));
-for i=1:length(br_across_days)
+cmap = turbo(7);%turbo(length(br_across_days));
+for i=1:7%length(br_across_days)
     tmp = br_across_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
     br(i) = mean(tmp);
 end
-plot(br(1:7),'k','LineWidth',2)
+plot(br(1:end),'k','LineWidth',2)
 days={'1','5','12','14','19','21','28','32','35','40','42'};
 xticks(1:length(br))
 set(gca,'XTickLabel',days)
@@ -3879,7 +3879,7 @@ xlim([0 7.5])
 figure;hold on
 acc=[];
 acch=[];
-for i=1:length(acc_days)
+for i=1:7%length(acc_days)
     tmp  = acc_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
@@ -3902,7 +3902,7 @@ set(h,'LineWidth',2)
 figure;hold on
 t2t=[];
 t2th=[];
-for i=1:length(time2target_days)
+for i=1:7%length(time2target_days)
     tmp  = time2target_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
@@ -3971,6 +3971,7 @@ root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 foldernames = {'20211013','20211015','20211020','20211022','20211027','20211029',...
     '20211103','20211105','20211117','20211119'};
 
+% days -> 1 3 8 10 15 17 22 24 36 38
 
 cd(root_path)
 folders={};
@@ -4031,30 +4032,21 @@ for i=1:length(foldernames)
     %acc_days = [acc_days ;acc(:)];
 end
 
-%plot results as a scatter plot
-addpath('C:\Users\Nikhlesh\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
+% plotting as scatter plot
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
 figure;hold on
 br=[];
-%cmap = brewermap(11,'blues');
-%cmap=flipud(cmap);
-%cmap=cmap(1:length(br_across_days),:);
-%cmap=flipud(cmap);
-cmap = turbo(length(br_across_days));
-%cmap = turbo(7);
-br_overall=[];
-idxx=[];
-for i=1:length(br_across_days)
+cmap = turbo(10);%turbo(length(br_across_days));
+for i=1:10%length(br_across_days)
     tmp = br_across_days{i};
-    tmp=tmp(tmp<=4);
-    br(i) = mean(tmp);
+    tmp=tmp(tmp>0.5);
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    br_overall=[br_overall tmp];
-    idxx=[idxx idx];
-    
+    br(i) = mean(tmp);
 end
-%plot(br(1:7),'k','LineWidth',2)
-days={'1','5','12','14','19','21','28','32','35','40','42'};
+plot(br(1:end),'k','LineWidth',2)
+days={'1', '3', '8' ,'10' ,'15', '17', '22', '24', '36', '38'};
+%days={'1','5','12','14','19','21','28','32','35','40','42'};
 xticks(1:length(br))
 set(gca,'XTickLabel',days)
 set(gcf,'Color','w')
@@ -4063,22 +4055,17 @@ xlabel('Days - PnP')
 ylabel('BitRate')
 set(gca,'LineWidth',1)
 %set(gca,'Color',[.85 .85 .85])
-xlim([0 7.5])
-% plotting regression line
-aa=find(idxx<=7);
-idxx=idxx(aa);
-br_overall = br_overall(aa);
-figure;plot(idxx,br_overall,'.')
-[bhat p wh se ci t_stat]=robust_fit(idxx',br_overall',1);
-hold on
-plot(idxx,bhat(1)+bhat(2).*br_overall,'k')
+xlim([0 10.5])
+ylim([0 3.5])
 
+% accuracy
 figure;hold on
 acc=[];
 acch=[];
 idxx=[];
-for i=1:length(acc_days)
+for i=1:7%length(acc_days)
     tmp  = acc_days{i};
+    tmp=tmp(tmp>0.6);
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
     acc(i) = mean(tmp);
@@ -4102,8 +4089,9 @@ figure;hold on
 t2t=[];
 t2th=[];
 idxx=[];
-for i=1:length(time2target_days)
+for i=1:7%length(time2target_days)
     tmp  = time2target_days{i};
+    tmp=tmp(tmp<1.2);
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
     t2t(i) = mean(tmp);
@@ -8400,3 +8388,105 @@ set(gca,'FontSize',14)
 %vline([60 120 180 240])
 %xlim([0 3])
 legend('Clean signal','Noisy signal')
+
+%% MULTI STATE DECODING, WINTER 2022 
+% pass the collected data through a lstm and see decoding outputs
+
+
+clear;clc
+
+
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+cd(root_path)
+%foldernames = {'20220803','20220810','20220812'};
+foldernames = {'20221129'};
+
+% load the lstm 
+load net_bilstm_20220824
+net_bilstm = net_bilstm_20220824;
+
+% filter bank hg
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+
+% low pass filters
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+for i=1:length(foldernames)
+    disp(i)
+    filepath = fullfile(root_path,foldernames{i},'Robot3DArrow');
+    folders_idx = [3:5];
+    [acc_lstm_sample,lstm_output]...
+        = get_lstm_performance_multistate(filepath,net_bilstm,Params,lpFilt,...
+        folders_idx);
+% 
+%     acc_days = [acc_days diag(acc_lstm_sample)];
+%     acc_mlp_days = [acc_mlp_days diag(acc_mlp_sample)];
+end
+
+figure;hold on
+actions={'Rt thumb and head','Rt thumb and Lt Leg','Lt Thumb and Lt leg','Lt thumb and Head'};
+for i=1:size(acc_lstm_sample,1)
+    subplot(4,1,i)
+    bar(acc_lstm_sample(i,:)*100,'FaceColor',[.6 .6 .6 ])
+    title(actions{i})
+    set(gca,'LineWidth',1)
+    set(gca,'FontSize',14)
+    xlim([.5 7.5])
+    ylim([0 .7*100])
+    ylabel('Accuracy')
+    if i<4
+        xticks ''
+    else
+        xticks = 1:7;
+        xticklabels({'Rt Thumb','Lt Leg','Lt Thumb','Head','Tongue','Lips','Both Middle'})
+    end
+end
+set(gcf,'Color','w')
+
+
+
+% plot the decodes overall Runfeng method
+figure;hold on
+actions={'Rt thumb and head','Rt thumb and Lt Leg','Lt Thumb and Lt leg','Lt thumb and Head'};
+for i=1:size(acc_lstm_sample,1)
+    subplot(4,1,i)
+    tmp = lstm_output{i};
+    plot(tmp,'Color',[.5 .5 .5 .5]);
+    hold on
+    plot(mean(tmp,2),'b','LineWidth',1)
+    title(actions{i})
+    set(gca,'LineWidth',1)
+    set(gca,'FontSize',14)
+    xlim([.5 7.5])    
+    ylabel('LSTM O/P')
+    if i<4
+        xticks ''
+    else
+        xticks = 1:7;
+        xticklabels({'Rt Thumb','Lt Leg','Lt Thumb','Head','Tongue','Lips','Both Middle'})
+    end
+end
+set(gcf,'Color','w')
+
+

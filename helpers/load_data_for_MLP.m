@@ -30,13 +30,18 @@ for ii=1:length(files)
             tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
             tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
             tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-            pooled_data=[];
+            tmp3_smoothed=zeros(size(tmp3));
+            tmp3_pooled=[];
+            ix=1;
+            iy=1;
+            pooled_data=[];            
             for i=1:2:xx
                 for j=1:2:yy
                     delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
                     beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
                     hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
                     pooled_data = [pooled_data; delta; beta ;hg];
+                    tmp3_smoothed(i:i+1,j:j+1) = hg;
                 end
             end
             new_temp= [new_temp pooled_data];

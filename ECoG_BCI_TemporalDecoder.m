@@ -986,16 +986,7 @@ figure;stem(diag(acc))
 
 %% TESTING THE DATA ON ONLINE DATA
 
-clear
-%load net_bilstm_stacked
-%net_bilstm = net_bilstm_stacked;
-%load net_bilstm_lg
-%net_bilstm = net_bilstm_lg;
-%load net_bilstm
-%load net_bilstmhg
-%net_bilstm = net_bilstmhg;
-load net_bilstm_20220929
-net_bilstm = net_bilstm_20220929    ;
+clear;clc
 
 %filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
 acc_mlp_days=[];
@@ -1003,8 +994,16 @@ acc_days=[];
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+cd(root_path)
 %foldernames = {'20220803','20220810','20220812'};
-foldernames = {'20221006'};
+foldernames = {'20221129'};
+
+
+% load the lstm 
+load net_bilstm_20220824
+net_bilstm = net_bilstm_20220824;
+
+
 
 % filter bank hg
 Params=[];

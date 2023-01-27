@@ -9,13 +9,39 @@ load('BRAVO1_elecs_all')
 
 ch=1:size(anatomy,1);
 figure
-c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'rh');
+c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh');
 % To plot electrodes with numbers, use the following, as example:
 e_h = el_add(elecmatrix([1:length(ch)],:), 'color', 'b', 'numbers', ch);
 % Or you can just plot them without labels with the default color
+%e_h = el_add(elecmatrix([1:length(ch)],:), 'color', 'w', 'msize',2);
 %e_h = el_add(elecmatrix(1:64,:)); % only loading 48 electrode data
 set(gcf,'Color','w')
 cd(dirn)
+
+
+
+% plotting by ROI
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+figure
+c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh',1,1,1);
+set(gcf,'Color','w')
+rois = unique(anatomy(:,4));
+colmap = parula(length(rois));
+%colmap = brewermap(length(rois),'Set1');
+for j=1:size(anatomy,1)
+    ch_roi = anatomy{j,4};
+    for i=1:length(rois)
+        if strcmp(ch_roi,rois{i})
+            col = colmap(i,:);
+            e_h = el_add(elecmatrix(j,:), ...
+                'color', col, 'msize',8);
+        end
+    end 
+end
+
+
+
+
 
 % plotting with a color bar denoting the phase values and the radius
 % denoting the amplitude values.

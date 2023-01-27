@@ -1,6 +1,6 @@
-function [acc] = accuracy_online_data(files)
+function [acc] = accuracy_online_data_B2(files)
 
-acc=zeros(7);
+acc=zeros(4);
 for i=1:length(files)
     file_loaded=1;
     try
@@ -13,7 +13,7 @@ for i=1:length(files)
         out = TrialData.ClickerState;
         tid = TrialData.TargetID;
         decodes=[];
-        for ii=1:7
+        for ii=1:4
             decodes(ii) = sum(out==ii);
         end
         [aa bb]=max(decodes);
@@ -21,7 +21,7 @@ for i=1:length(files)
     end
 end
 
-for i=1:7
+for i=1:4
     acc(i,:) = acc(i,:)/sum(acc(i,:));
 end
 

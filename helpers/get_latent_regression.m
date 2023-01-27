@@ -1,10 +1,17 @@
-function [TrialZ,dist_val,mean_latent,var_latent,idx,acc] = get_latent_regression(files,net,imag)
+function [TrialZ,dist_val,mean_latent,var_latent,idx,acc,condn_data_recon] = get_latent_regression(files,net,imag)
 %function [TrialZ,dist_val] = get_latent(files,net,imag)
 
 idx=[];
 TrialZ=[];
 decodes=[];
 acc=zeros(7);
+D1=[];
+D2=[];
+D3=[];
+D4=[];
+D5=[];
+D6=[];
+D7=[];
 for i=1:length(files)
     disp(i)
     file_loaded=1;
@@ -31,27 +38,62 @@ for i=1:length(files)
         end
 
         % feed it through the AE
-        X = X(1:96,:);
+        %X = X(1:96,:);
+        X = X(3:3:96,:); % only hg
+        %2-norm the data
+        for j=1:size(X,2)
+            X(:,j)=X(:,j)./norm(X(:,j));
+        end
         Z = activations(net,X','autoencoder');
+        out = predict(net,X');
 
         %         TrialZ = [TrialZ Z];
         %         idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
 
         if imag==0
             %if TrialData.SelectedTargetID == TrialData.TargetID
-                %Z = Z(:,end-4:end);
-                TrialZ = [TrialZ Z];
-                idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
-                %Z = mean(Z,2);
-                %TrialZ = [TrialZ Z];
-                %idx=[idx TrialData.TargetID];
+            %Z = Z(:,end-4:end);
+            TrialZ = [TrialZ Z];
+            idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
+            %Z = mean(Z,2);
+            %TrialZ = [TrialZ Z];
+            %idx=[idx TrialData.TargetID];
             %end
         else
             TrialZ = [TrialZ Z];
             idx=[idx repmat(TrialData.TargetID,1,size(Z,2))];
         end
+
+        if TrialData.TargetID == 1
+            D1=[D1;out];
+        elseif TrialData.TargetID == 2
+            D2=[D2;out];
+        elseif TrialData.TargetID == 3
+            D3=[D3;out];
+        elseif TrialData.TargetID == 4
+            D4=[D4;out];
+        elseif TrialData.TargetID == 5
+            D5=[D5;out];
+        elseif TrialData.TargetID == 6
+            D6=[D6;out];
+        elseif TrialData.TargetID == 7
+            D7=[D7;out];
+        end
+
+
+
     end
+
 end
+
+
+condn_data_recon{1} = D1;
+condn_data_recon{2} = D2;
+condn_data_recon{3} = D3;
+condn_data_recon{4} = D4;
+condn_data_recon{5} = D5;
+condn_data_recon{6} = D6;
+condn_data_recon{7} = D7;
 
 % plot the trial averaged activity in the latent space
 Z=TrialZ;

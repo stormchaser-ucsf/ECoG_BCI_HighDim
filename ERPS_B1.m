@@ -34,7 +34,7 @@ D7=[];
 for i=1:length(files)
     disp(i)
     load(files{i});
-data=[];
+    data=[];
     features  = TrialData.SmoothedNeuralFeatures;
     features = cell2mat(features);
     features = features(769:896,:);
@@ -49,21 +49,21 @@ data=[];
     idx2= 2*ones(length(state2),1);
     idx3= 3*ones(length(state3),1);
     idx4= 4*ones(length(state4),1);
-    
+
     % interpolate
     tb = (1/fs)*[1:size(tmp_data,2)];
     t=(1/fs)*[1:10];
     tb = tb*t(end)/tb(end);
     tmp_data1 = interp1(tb,tmp_data',t,'spline')';
     idx3 = interp1(tb,idx3,t,'spline');
-    
+
     % now stick all the data together
     data = [features(:,[state1 state2]) tmp_data1 features(:,[state4])];
 
     % now get the ERPs
     if TrialData.TargetID == TrialData.SelectedTargetID
         if TrialData.TargetID == 1
-            D1 = cat(3,D1,data);            
+            D1 = cat(3,D1,data);
         elseif TrialData.TargetID == 2
             D2 = cat(3,D2,data);
         elseif TrialData.TargetID == 3
@@ -74,8 +74,8 @@ data=[];
             D5 = cat(3,D5,data);
         elseif TrialData.TargetID == 6
             D6 = cat(3,D6,data);
-        end        
-    end    
+        end
+    end
 end
 
 % plot the ERPs now
@@ -103,12 +103,12 @@ for i = 1:size(D1,1)
     ylim([-2 2])
     plot(mean(erps,2),'r','LineWidth',1.5)
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim);
     %set(h,'LineWidth',1)
     set(h,'Color','b')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=102
         yticklabels ''
         xticklabels ''
@@ -167,23 +167,23 @@ for i=1:length(files)
     idx2= 2*ones(length(state2),1);
     idx3= 3*ones(length(state3),1);
     idx4= 4*ones(length(state4),1);
-    
+
     % interpolate
     tb = (1/fs)*[1:size(tmp_data,2)];
     t=(1/fs)*[1:10];
     tb = tb*t(end)/tb(end);
     tmp_data1 = interp1(tb,tmp_data',t,'spline')';
     idx3 = interp1(tb,idx3,t,'spline');
-    
+
     % now stick all the data together
     trial_dur = (length(state3)-TrialData.Params.ClickCounter)*(1/fs);
     data = [features(:,[state1 state2]) tmp_data1 features(:,[state4])];
-    
-    % correction if there is an error thrown somewhere 
+
+    % correction if there is an error thrown somewhere
     if length(state1)<8
         data  =[data(:,1) data];
     end
-%     
+    %
     % store the time to target data
     time_to_target(2,TrialData.TargetID) = time_to_target(2,TrialData.TargetID)+1;
     if trial_dur<=4
@@ -193,7 +193,7 @@ for i=1:length(files)
     % now get the ERPs
     if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=4
         if TrialData.TargetID == 1
-            D1 = cat(3,D1,data);            
+            D1 = cat(3,D1,data);
         elseif TrialData.TargetID == 2
             D2 = cat(3,D2,data);
         elseif TrialData.TargetID == 3
@@ -204,8 +204,8 @@ for i=1:length(files)
             D5 = cat(3,D5,data);
         elseif TrialData.TargetID == 6
             D6 = cat(3,D6,data);
-        end        
-    end    
+        end
+    end
 end
 
 
@@ -236,12 +236,12 @@ for i = 1:size(D1,1)
     ylim([-2 2])
     plot(mean(erps,2),'r','LineWidth',1.5)
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim);
     %set(h,'LineWidth',1)
     set(h,'Color','b')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=102
         yticklabels ''
         xticklabels ''
@@ -251,18 +251,18 @@ for i = 1:size(D1,1)
     end
     d = d+1;
 end
-% 
-% 
+%
+%
 % bootstrapped confidnce intervals for a particular channel
 % chdata = ch100;
-% 
+%
 % zscore the data to the first 8 time-bins
 % tmp_data=chdata(1:8,:);
 % m = mean(tmp_data(:));
 % s = std(tmp_data(:));
 % chdata = (chdata -m)./s;
-%  
-% 
+%
+%
 % m = mean(chdata,2);
 % mb = sort(bootstrp(1000,@mean,chdata'));
 % figure;
@@ -271,7 +271,7 @@ end
 % plot(mb(25,:),'--b')
 % plot(mb(975,:),'--b')
 % hline(0)
-% 
+%
 % % shuffle the data and see the results
 % tmp_mean=[];
 % for i=1:1000
@@ -284,7 +284,7 @@ end
 %     tmp = (tmp -m)./s;
 %     tmp_mean(i,:) = mean(tmp,2);
 % end
-% 
+%
 % tmp_mean = sort(tmp_mean);
 % plot(tmp_mean(25,:),'--r')
 % plot(tmp_mean(975,:),'--r')
@@ -310,14 +310,14 @@ for i = 1:size(D5,1)
     end
     hold on
     erps =  squeeze(D5(i,:,:));
-    
+
     chdata = erps;
     % zscore the data to the first 8 time-bins
     tmp_data=chdata(1:8,:);
     m = mean(tmp_data(:));
     s = std(tmp_data(:));
     chdata = (chdata -m)./s;
-    
+
     % get the confidence intervals
     m = mean(chdata,2);
     mb = sort(bootstrp(1000,@mean,chdata'));
@@ -329,7 +329,7 @@ for i = 1:size(D5,1)
     %plot(mb(25,:),'--b')
     %plot(mb(975,:),'--b')
     %hline(0)
-    
+
     % shuffle the data for null confidence intervals
     tmp_mean=[];
     for j=1:1000
@@ -342,14 +342,14 @@ for i = 1:size(D5,1)
         tmp = (tmp -m)./s;
         tmp_mean(j,:) = mean(tmp,2);
     end
-    
+
     tmp_mean = sort(tmp_mean);
     %plot(tmp_mean(25,:),'--r')
     %plot(tmp_mean(975,:),'--r')
     [fillhandle,msg]=jbfill(tt,tmp_mean(25,:),tmp_mean(975,:)...
         ,[0.7 0.3 0.3],[0.7 0.3 0.3],1,.2);
-    
-    
+
+
     % statistical test
     % if the mean is outside confidence intervals in state 3
     m = mean(chdata,2);
@@ -359,25 +359,25 @@ for i = 1:size(D5,1)
     for j=1:length(idx)
         pval(j) = (sum(abs(mstat(j)) >= abs(tmp_mean(:,idx(j)))))./(size(tmp_mean,1));
     end
-    
+
     res=sum((1-pval)<=0.05);
     if res>=floor(length(idx)/2)
         suc=1;
     else
         suc=0;
     end
-    
+
     % beautify
     ylabel (num2str(i))
     axis tight
-    ylim([-2 5])     
+    ylim([-2 5])
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim);
     %set(h,'LineWidth',1)
     set(h,'Color','k')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=102
         yticklabels ''
         xticklabels ''
@@ -385,7 +385,7 @@ for i = 1:size(D5,1)
         %xticks([tim])
         %xticklabels({'S1','S2','S3','S4'})
     end
-    
+
     if suc==1
         box on
         set(gca,'LineWidth',2)
@@ -412,7 +412,7 @@ T6=[];
 time_to_target_overall=[];
 for i=length(foldernames)
     disp(['processing folder ' num2str(i) ' of ' num2str(length(foldernames))])
-    
+
     % get all the files
     files=[];
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
@@ -421,7 +421,7 @@ for i=length(foldernames)
         filepath=fullfile(folderpath,D(j).name,'BCI_Fixed');
         files = [files;findfiles('',filepath)'];
     end
-    
+
     % now load all the data
     [D1,D2,D3,D4,D5,D6,time_to_target] = load_erp_data(files);
     time_to_target = time_to_target(1,:)./time_to_target(2,:);
@@ -429,7 +429,7 @@ for i=length(foldernames)
     % chmap file
     load(files{1})
     chMap=TrialData.Params.ChMap;
-    
+
     % get the mask of sig. channels for each movement type  and save ERPs
     clear res1 res2 res3 res res5 res6
     res1 = erp_stats(D1,chMap,foldernames{i},'T1',0);
@@ -438,7 +438,7 @@ for i=length(foldernames)
     res4 = erp_stats(D4,chMap,foldernames{i},'T4',0);
     res5 = erp_stats(D5,chMap,foldernames{i},'T5',0);
     res6 = erp_stats(D6,chMap,foldernames{i},'T6',0);
-    
+
     % collate across days
     T1(i,:,:) = res1;
     T2(i,:,:) = res2;
@@ -446,7 +446,7 @@ for i=length(foldernames)
     T4(i,:,:) = res4;
     T5(i,:,:) = res5;
     T6(i,:,:) = res6;
-    
+
 end
 
 % save the results
@@ -484,7 +484,7 @@ for i=1:10
     xticks ''
     yticks ''
     box on
-    
+
 end
 set(gcf,'Color','w')
 
@@ -581,47 +581,47 @@ for i=1:length(files)
     idx2= 2*ones(length(state2),1);
     idx3= 3*ones(length(state3),1);
     idx4= 4*ones(length(state4),1);
-    
+
     % interpolate
     tb = (1/fs)*[1:size(tmp_data,2)];
     t=(1/fs)*[1:10];
     tb = tb*t(end)/tb(end);
     tmp_data1 = interp1(tb,tmp_data',t,'spline')';
     idx3 = interp1(tb,idx3,t,'spline');
-    
+
     % now stick all the data together
     trial_dur = (length(state3)-TrialData.Params.ClickCounter)*(1/fs);
     data = [features(:,[state1 state2]) tmp_data1 features(:,[state4])];
-    
+
     % correction
     if length(state1)<8
         data  =[data(:,1) data];
     end
-    
+
     % store the time to target data
     time_to_target(2,TrialData.TargetID) = time_to_target(2,TrialData.TargetID)+1;
     if trial_dur<=3
         time_to_target(1,TrialData.TargetID) = time_to_target(1,TrialData.TargetID)+1;
     end
-    
+
     % now get the ERPs
-   % if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=3
-        if TrialData.TargetID == 1
-            D1 = cat(3,D1,data);
-        elseif TrialData.TargetID == 2
-            D2 = cat(3,D2,data);
-        elseif TrialData.TargetID == 3
-            D3 = cat(3,D3,data);
-        elseif TrialData.TargetID == 4
-            D4 = cat(3,D4,data);
-        elseif TrialData.TargetID == 5
-            D5 = cat(3,D5,data);
-        elseif TrialData.TargetID == 6
-            D6 = cat(3,D6,data);
-        elseif TrialData.TargetID == 7
-            D7 = cat(3,D7,data);
-        end
-  %  end
+    % if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=3
+    if TrialData.TargetID == 1
+        D1 = cat(3,D1,data);
+    elseif TrialData.TargetID == 2
+        D2 = cat(3,D2,data);
+    elseif TrialData.TargetID == 3
+        D3 = cat(3,D3,data);
+    elseif TrialData.TargetID == 4
+        D4 = cat(3,D4,data);
+    elseif TrialData.TargetID == 5
+        D5 = cat(3,D5,data);
+    elseif TrialData.TargetID == 6
+        D6 = cat(3,D6,data);
+    elseif TrialData.TargetID == 7
+        D7 = cat(3,D7,data);
+    end
+    %  end
 end
 
 
@@ -647,14 +647,14 @@ for i = 1:size(D2,1)
     end
     hold on
     erps =  squeeze(D7(i,:,:));
-    
+
     chdata = erps;
     % zscore the data to the first 8 time-bins
     tmp_data=chdata(1:8,:);
     m = mean(tmp_data(:));
     s = std(tmp_data(:));
     chdata = (chdata -m)./s;
-    
+
     % get the confidence intervals
     m = mean(chdata,2);
     mb = sort(bootstrp(1000,@mean,chdata'));
@@ -666,7 +666,7 @@ for i = 1:size(D2,1)
     %plot(mb(25,:),'--b')
     %plot(mb(975,:),'--b')
     %hline(0)
-    
+
     % shuffle the data for null confidence intervals
     tmp_mean=[];
     for j=1:1000
@@ -679,14 +679,14 @@ for i = 1:size(D2,1)
         tmp = (tmp -m)./s;
         tmp_mean(j,:) = mean(tmp,2);
     end
-    
+
     tmp_mean = sort(tmp_mean);
     %plot(tmp_mean(25,:),'--r')
     %plot(tmp_mean(975,:),'--r')
     [fillhandle,msg]=jbfill(tt,tmp_mean(25,:),tmp_mean(975,:)...
         ,[0.7 0.3 0.3],[0.7 0.3 0.3],1,.2);
-    
-    
+
+
     % statistical test
     % if the mean is outside confidence intervals in state 3
     m = mean(chdata,2);
@@ -696,25 +696,25 @@ for i = 1:size(D2,1)
     for j=1:length(idx)
         pval(j) = (sum(abs(mstat(j)) >= abs(tmp_mean(:,idx(j)))))./(size(tmp_mean,1));
     end
-    
+
     res=sum((1-pval)<=0.05);
     if res>=7
         suc=1;
     else
         suc=0;
     end
-    
+
     % beautify
     ylabel (num2str(i))
     axis tight
-    ylim([-2 4])    
+    ylim([-2 4])
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim);
     %set(h,'LineWidth',1)
     set(h,'Color','k')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=102
         yticklabels ''
         xticklabels ''
@@ -722,7 +722,7 @@ for i = 1:size(D2,1)
         %xticks([tim])
         %xticklabels({'S1','S2','S3','S4'})
     end
-    
+
     if suc==1
         box on
         set(gca,'LineWidth',2)
@@ -749,7 +749,7 @@ T6=[];
 time_to_target_overall=[];
 for i=length(foldernames)
     disp(['processing folder ' num2str(i) ' of ' num2str(length(foldernames))])
-    
+
     % get all the files
     files=[];
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
@@ -758,7 +758,7 @@ for i=length(foldernames)
         filepath=fullfile(folderpath,D(j).name,'BCI_Fixed');
         files = [files;findfiles('',filepath)'];
     end
-    
+
     % now load all the data
     [D1,D2,D3,D4,D5,D6,time_to_target] = load_erp_data(files);
     time_to_target = time_to_target(1,:)./time_to_target(2,:);
@@ -766,7 +766,7 @@ for i=length(foldernames)
     % chmap file
     load(files{1})
     chMap=TrialData.Params.ChMap;
-    
+
     % get the mask of sig. channels for each movement type  and save ERPs
     clear res1 res2 res3 res res5 res6
     res1 = erp_stats(D1,chMap,foldernames{i},'T1',0);
@@ -775,7 +775,7 @@ for i=length(foldernames)
     res4 = erp_stats(D4,chMap,foldernames{i},'T4',0);
     res5 = erp_stats(D5,chMap,foldernames{i},'T5',0);
     res6 = erp_stats(D6,chMap,foldernames{i},'T6',0);
-    
+
     % collate across days
     T1(i,:,:) = res1;
     T2(i,:,:) = res2;
@@ -783,7 +783,7 @@ for i=length(foldernames)
     T4(i,:,:) = res4;
     T5(i,:,:) = res5;
     T6(i,:,:) = res6;
-    
+
 end
 
 % save the results
@@ -821,7 +821,7 @@ for i=1:10
     xticks ''
     yticks ''
     box on
-    
+
 end
 set(gcf,'Color','w')
 
@@ -869,11 +869,7 @@ figure;imagesc(squeeze(sum(T6,1)));colormap bone
 caxis([0 13])
 
 
-%% PLOTTING ERPS ON SINGLE CHANNEL AS COMPARED TO POOLED DATA 
-
-
-
-
+%% PLOTTING ERPS ON SINGLE CHANNEL AS COMPARED TO POOLED DATA
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
@@ -929,7 +925,7 @@ for i=1:length(files)
     idx2= 2*ones(length(state2),1);
     idx3= 3*ones(length(state3),1);
     idx4= 4*ones(length(state4),1);
-    
+
     % interpolate
     tb = (1/fs)*[1:size(tmp_data,2)];
     t=(1/fs)*[1:10];
@@ -937,12 +933,12 @@ for i=1:length(files)
     tmp_data1 = interp1(tb,tmp_data',t,'spline')';
     tmp_data_p = interp1(tb,tmp_data_p',t,'spline')';
     idx3 = interp1(tb,idx3,t,'spline');
-    
+
     % now stick all the data together
     trial_dur = (length(state3)-TrialData.Params.ClickCounter)*(1/fs);
     data = [features(:,[state1 state2]) tmp_data1 features(:,[state4])];
     data_p = [features1(:,[state1 state2]) tmp_data_p features1(:,[state4])];
-    
+
     % correction
     if size(data,2)<40
         len = size(data,2);
@@ -956,7 +952,7 @@ for i=1:length(files)
     %     if trial_dur<=2
     %         time_to_target(1,TrialData.TargetID) = time_to_target(1,TrialData.TargetID)+1;
     %     end
-    
+
     % now get the ERPs
     if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=10
         if TrialData.TargetID == 1
@@ -970,14 +966,14 @@ for i=1:length(files)
         elseif TrialData.TargetID == 5
             D5 = cat(3,D5,data);
         elseif TrialData.TargetID == 6
-            D6 = cat(3,D6,data);            
+            D6 = cat(3,D6,data);
         elseif TrialData.TargetID == 7
             D7 = cat(3,D7,data);
         end
     end
-    
-    
-    
+
+
+
     % do it now for pooled data
     temp=data_p;
     new_temp=[];
@@ -1000,19 +996,19 @@ for i=1:length(files)
     end
     temp_data=new_temp;
     data = temp_data;
-    
+
     if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=10
         if TrialData.TargetID == 1
             D1pool = cat(3,D1pool,data);
         end
     end
-    
+
     if TrialData.TargetID == TrialData.SelectedTargetID && trial_dur<=10
         if TrialData.TargetID == 7
             D7pool = cat(3,D7pool,data);
         end
     end
-    
+
 end
 
 tmp = squeeze(D1pool(29,:,:));
@@ -1026,7 +1022,7 @@ hold on
 plot(mean(tmp,2),'b','LineWidth',1)
 
 
-% plotting a comparison of pooled and unpooled data 
+% plotting a comparison of pooled and unpooled data
 tmp = D1;
 % first smooth each trial
 for i=1:size(tmp,3)
@@ -1081,7 +1077,7 @@ title('Ch pooled Data')
 %xlabel ''
 
 
-% plot the variances across channels for single trials 
+% plot the variances across channels for single trials
 var_raw=[];
 var_pool=[];
 for i=1:size(D1,3)
@@ -1124,12 +1120,12 @@ for i = 1:size(D1,1)
     ylim([-2 2])
     plot(mean(erps,2),'r','LineWidth',1.5)
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim);
     %set(h,'LineWidth',1)
     set(h,'Color','b')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=102
         yticklabels ''
         xticklabels ''
@@ -1162,38 +1158,38 @@ for i = 1:size(D1,1)
     end
     hold on
     erps =  squeeze(D1(i,:,:));
-    
+
     chdata = erps;
-    % zscore the data to the first 5 time-bins 
+    % zscore the data to the first 5 time-bins
     tmp_data=chdata(1:length(idx1),:);
     m = mean(tmp_data(:));
     s = std(tmp_data(:));
     chdata = (chdata -m)./s;
-    
- 
-    
-    
+
+
+
+
     % get the confidence intervals and plot
     m = mean(chdata,2);
     mb = sort(bootstrp(1000,@mean,chdata'));
     tt=1:size(D1,2);
-    
+
     % plotting confidence intervals
     %[fillhandle,msg]=jbfill(tt,mb(25,:),mb(975,:)...
     %    ,[0.3 0.3 0.7],[0.3 0.3 0.7],1,.2);
-    
+
     % plotting the raw ERPs
-    plot(chdata,'Color',[.5 .5 .5 .5],'LineWidth',1)    
+    plot(chdata,'Color',[.5 .5 .5 .5],'LineWidth',1)
     hold on
     plot(m,'b','LineWidth',1)
     %plot(mb(25,:),'--b')
     %plot(mb(975,:),'--b')
     %hline(0)
-    
-    
-    
-    
-    
+
+
+
+
+
     % shuffle the data for null confidence intervals
     tmp_mean=[];
     for j=1:1000
@@ -1206,15 +1202,15 @@ for i = 1:size(D1,1)
         tmp = (tmp -m)./s;
         tmp_mean(j,:) = mean(tmp,2);
     end
-    
+
     % plot null interval
     tmp_mean = sort(tmp_mean);
     %plot(tmp_mean(25,:),'--r')
     %plot(tmp_mean(975,:),'--r')
     [fillhandle,msg]=jbfill(tt,tmp_mean(25,:),tmp_mean(975,:)...
         ,[0.7 0.3 0.3],[0.7 0.3 0.3],1,.2);
-    
-        
+
+
     % statistical test
     % if the mean is outside confidence intervals in state 3
     m = mean(chdata,2);
@@ -1224,28 +1220,28 @@ for i = 1:size(D1,1)
     for j=1:length(idx)
         pval(j) = (sum(abs(mstat(j)) >= abs(tmp_mean(:,idx(j)))))./(size(tmp_mean,1));
     end
-    
+
     res=sum((1-pval)<=0.01);
     if res>=9
         suc=1;
     else
         suc=0;
     end
-    
+
     % beautify
     ylabel (num2str(i))
     axis tight
-    ylim([-3 6])    
-%     if max(chdata(:))>2
-%         ylim([-2 max(chdata(:))]);
-%     end
+    ylim([-3 6])
+    %     if max(chdata(:))>2
+    %         ylim([-2 max(chdata(:))]);
+    %     end
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim(1:2));
     %set(h,'LineWidth',1)
     set(h,'Color','k')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=102
         yticklabels ''
         xticklabels ''
@@ -1253,7 +1249,7 @@ for i = 1:size(D1,1)
         %xticks([tim])
         %xticklabels({'S1','S2','S3','S4'})
     end
-    
+
     if suc==1
         box on
         set(gca,'LineWidth',2)
@@ -1292,12 +1288,12 @@ ylabel('z-score')
 title('Channel 25 Day 2')
 xticks ''
 xlabel ''
-    
+
 
 %% FOR grant ERPs
 % plot single trial ERPs at an example channel, for right hand and then
 % also for left hand. Plot both erps with CI as well as ERPs single trial
-% denoised. Do it on the spatial avergaed grid 
+% denoised. Do it on the spatial avergaed grid
 
 
 clc;clear

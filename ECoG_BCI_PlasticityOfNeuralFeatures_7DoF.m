@@ -813,7 +813,6 @@ set(gca,'FontSize',12)
 %(MAIN MAIN)
 
 clc;clear
-close all
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 addpath('C:\Users\nikic\Documents\MATLAB')
@@ -874,9 +873,9 @@ for i=1:length(session_data)
     %load the data
     condn_data = load_data_for_MLP(files);
 
-    % save the data
-    filename = ['condn_data_Imagined_Day' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %     % save the data
+    %     filename = ['condn_data_Imagined_Day' num2str(i)];
+    %     save(filename, 'condn_data', '-v7.3')
 
     % get the mahab distance in the full dataset
     Dimagined = mahal2_full(condn_data);
@@ -884,16 +883,17 @@ for i=1:length(session_data)
     Dimagined = Dimagined(Dimagined>0);
     mahab_full_imagined = [mahab_full_imagined Dimagined];
 
-%     % build the AE based on MLP and only for hG
-     [net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
-%     %[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
-% 
+    %     % build the AE based on MLP and only for hG
+    %    [net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
+    %     %[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
+    %
     % get activations in deepest layer but averaged over a trial
-    imag=1;
-    [TrialZ_imag,dist_imagined,mean_imagined,var_imagined,idx_imag] = get_latent_regression(files,net,imag);
-    dist_imag_total = [dist_imag_total;dist_imagined];
-    mean_imag_total=[mean_imag_total;pdist(mean_imagined)];
-    var_imag_total=[var_imag_total;var_imagined'];
+    %     imag=1;
+    %     [TrialZ_imag,dist_imagined,mean_imagined,var_imagined,idx_imag,~,condn_data_recon] = ...
+    %         get_latent_regression(files,net,imag);
+    %     dist_imag_total = [dist_imag_total;dist_imagined];
+    %     mean_imag_total=[mean_imag_total;pdist(mean_imagined)];
+    %     var_imag_total=[var_imag_total;var_imagined'];
 
     %%%%%%online data
     folders = session_data(i).folders(online_idx);
@@ -908,9 +908,9 @@ for i=1:length(session_data)
     %load the data
     condn_data = load_data_for_MLP(files);
 
-    % save the data
-    filename = ['condn_data_Online_Day' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %     % save the data
+    %     filename = ['condn_data_Online_Day' num2str(i)];
+    %     save(filename, 'condn_data', '-v7.3')
 
     % get the mahab distance in the full dataset
     Donline = mahal2_full(condn_data);
@@ -918,12 +918,13 @@ for i=1:length(session_data)
     Donline = Donline(Donline>0);
     mahab_full_online = [mahab_full_online Donline];
 
-    % get activations in deepest layer
-    imag=0;
-    [TrialZ_online,dist_online,mean_online,var_online,idx_online] = get_latent_regression(files,net,imag);
-    dist_online_total = [dist_online_total;dist_online];
-    mean_online_total=[mean_online_total;pdist(mean_online)];
-    var_online_total=[var_online_total;var_online'];
+    %     % get activations in deepest layer
+    %     imag=0;
+    %     [TrialZ_online,dist_online,mean_online,var_online,idx_online,~,condn_data_recon_online]...
+    %         = get_latent_regression(files,net,imag);
+    %     dist_online_total = [dist_online_total;dist_online];
+    %     mean_online_total=[mean_online_total;pdist(mean_online)];
+    %     var_online_total=[var_online_total;var_online'];
 
 
 
@@ -940,9 +941,9 @@ for i=1:length(session_data)
     %load the data
     condn_data = load_data_for_MLP(files);
 
-    % save the data
-    filename = ['condn_data_Batch_Day' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %     % save the data
+    %     filename = ['condn_data_Batch_Day' num2str(i)];
+    %     save(filename, 'condn_data', '-v7.3')
 
     % get the mahab distance in the full dataset
     Donline = mahal2_full(condn_data);
@@ -951,11 +952,11 @@ for i=1:length(session_data)
     mahab_full_batch = [mahab_full_batch Donline];
 
     % get activations in deepest layer
-    imag=0;
-    [TrialZ_batch,dist_batch,mean_batch,var_batch,idx_batch] = get_latent_regression(files,net,imag);
-    dist_batch_total = [dist_batch_total;dist_batch];
-    mean_batch_total=[mean_batch_total;pdist(mean_batch)];
-    var_batch_total=[var_batch_total;var_online'];
+    %     imag=0;
+    %     [TrialZ_batch,dist_batch,mean_batch,var_batch,idx_batch] = get_latent_regression(files,net,imag);
+    %     dist_batch_total = [dist_batch_total;dist_batch];
+    %     mean_batch_total=[mean_batch_total;pdist(mean_batch)];
+    %     var_batch_total=[var_batch_total;var_batch'];
 
     % plotting imagined and online in latent space
     %     idxa = find(idx_imag==4);
@@ -981,17 +982,129 @@ for i=1:length(session_data)
     %     set(gca,'LineWidth',1)
     %     set(gca,'FontSize',12)
 
-    [h p tb st]=ttest(dist_imagined,dist_online);
-    disp([p mean([dist_imagined' dist_online'])]);
-    res=[res;[p mean([dist_imagined' dist_online'])]];
+    %     [h p tb st]=ttest(dist_imagined,dist_online);
+    %     disp([p mean([dist_imagined' dist_online'])]);
+    %     res=[res;[p mean([dist_imagined' dist_online'])]];
 end
+
+close all
+
+save mahab_distances_Full_B1 -v7.3
+
+% compare and contrast the reconstruction with the original on an average
+% basis
+% to reconstruct data back
+for i=1:7
+    pooled_data = condn_data{i};
+    pooled_data = pooled_data(:,3:3:end);
+    tmp = mean(pooled_data,1);
+    pooled_data_orig=reshape(tmp,8,4)';
+
+    pooled_data_ae = condn_data_recon_online{i};
+    tmp = mean(pooled_data_ae,1);
+    pooled_data_recon=reshape(tmp,8,4)';
+
+    clims_min = min([pooled_data_recon(:); pooled_data_orig(:)]);
+    clims_max = max([pooled_data_recon(:); pooled_data_orig(:)]);
+
+    figure;
+    subplot(2,1,1)
+    imagesc(pooled_data_orig)
+    clim([clims_min clims_max])
+    subplot(2,1,2)
+    imagesc(pooled_data_recon)
+    clim([clims_min clims_max])
+    sgtitle(num2str(i))
+end
+
+% getting data from python, reconstructing back to full channel space and
+% then plotting on B1 brain
+% TRANSOFORMATION FRROM POOLED TO ORIGINAL
+% x- > 2x-1,2x. y -> 2y-1,2y.
+imaging_B1
+figure;
+imagesc(tmp3)
+recon_data = zeros(size(chmap));
+for i=1:size(tmp3,1) % going down the rows
+    for j=1:size(tmp3,2) % going across the cols
+        a=tmp3(i,j);
+        i_idx = [2*i-1,2*i];
+        j_idx = [2*j-1,2*j];
+        recon_data(i_idx(1), j_idx(1))=a;
+        recon_data(i_idx(1), j_idx(2))=a;
+        recon_data(i_idx(2), j_idx(1))=a;
+        recon_data(i_idx(2), j_idx(2))=a;
+    end
+end
+figure;imagesc(recon_data)
+recon_data = flipud(recon_data)';
+recon_data = recon_data(:);
+% plotting on brain as heat map
+c_h = ctmr_gauss_plot(cortex,elecmatrix(1:128,:),recon_data(:),'lh',1,1,1);
+e_h = el_add(elecmatrix([1:length(ch)],:), 'color', 'w', 'msize',2);
+% plotting electrode sizes
+val = linspace(min(recon_data),max(recon_data),128);
+sz = linspace(1,10,128);
+figure;
+c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh');
+for j=1:length(recon_data)
+    [aa,bb] = min(abs(val-recon_data(j)));
+    ms = sz(bb)+1;
+    e_h = el_add(elecmatrix(j,:), 'color', 'b','msize',ms);
+end
+
+
 
 close all
 figure;
 hold on
-plot(smooth(mean(mahab_full_imagined(:,1:end)),3))
-plot(smooth(mean(mahab_full_online(:,1:end)),3))
-plot(smooth(mean(mahab_full_batch(:,1:end)),3))
+plot(smooth(median(mahab_full_imagined(:,1:end)),2))
+plot(smooth(median(mahab_full_online(:,1:end)),2))
+plot(smooth(median(mahab_full_batch(:,1:end)),2))
+
+
+figure;
+hold on
+plot((mean(mahab_full_imagined(:,1:end))))
+plot((mean(mahab_full_online(:,1:end))))
+plot((mean(mahab_full_batch(:,1:end))))
+
+clear tmp
+w = [1/2 1/2];
+tmp(:,1) = mean(mahab_full_imagined(:,1:end));
+tmp(:,2) = mean(mahab_full_online(:,1:end));
+tmp(:,3) = mean(mahab_full_batch(:,1:end));
+
+for i=1:size(tmp,2)
+    %xx = filter(w,1,[tmp(1,i) ;tmp(:,i)]);
+    xx = filter(w,1,[tmp(:,i) ;tmp(end,i)]);
+    tmp(:,i) = xx(2:end);
+end
+
+% plotting with regression lines
+figure;
+hold on
+x=1:10;
+x1=[ones(length(x),1) x'];
+% imagined
+y=smooth(median(mahab_full_imagined(:,1:end)),2);
+plot(x,y,'.','MarkerSize',20,'Color','b')
+[B,BINT,R,RINT,STATS1] = regress(y,x1);
+yhat=x1*B;
+plot(x,yhat,'b','LineWidth',1)
+% online
+y=smooth(median(mahab_full_online(:,1:end)),2);
+plot(x,y,'.','MarkerSize',20,'Color','k')
+[B,BINT,R,RINT,STATS2] = regress(y,x1);
+yhat=x1*B;
+plot(x,yhat,'k','LineWidth',1)
+% batch
+y=smooth(median(mahab_full_batch(:,1:end)),2);
+plot(x,y,'.','MarkerSize',20,'Color','r')
+[B,BINT,R,RINT,STATS3] = regress(y,x1);
+yhat=x1*B;
+plot(x,yhat,'r','LineWidth',1)
+
 
 
 res
@@ -1040,7 +1153,7 @@ boxplot([dist_imag_total(1,:)' dist_online_total(1,:)' ])
 
 
 %plotting the difference in manifold angles between mvmt and time
-ang = [mean(dist_imag_total,2) mean(dist_online_total,2)];
+ang = [mean(dist_imag_total,2) mean(dist_online_total,2) ];
 %ang=fliplr(ang);
 figure;hold on
 %scatter(ones(length(ang),1)+0.05*randn(length(ang),1),ang(:,1));
@@ -1062,7 +1175,7 @@ ylabel('Mahalanobis distance')
 set(gca,'FontSize',14)
 
 %plotting changes in the variance of the latent distributions
-figure;boxplot(log([var_imag_total(:) var_online_total(:)]))
+figure;boxplot(log([var_imag_total(:) var_online_total(:) var_batch_total(:)]))
 xticks(1:2)
 xticklabels({'Imagined Data','Online Data'})
 ylabel('Variance in latent space')
@@ -1071,7 +1184,7 @@ set(gcf,'Color','w')
 set(gca,'LineWidth',2)
 box off
 
-ang=log([mean(var_imag_total,2) mean(var_online_total,2)]);
+ang=log([mean(var_imag_total,2) mean(var_batch_total,2)]);
 figure;hold on
 idx = 0.05*randn(length(ang),2);
 scatter(ones(length(ang),1)+idx(:,1),ang(:,1),100);
@@ -1094,7 +1207,7 @@ plot(ang(:,2)-ang(:,1),'.k','MarkerSize',20)
 tmp=ang(:,2)-ang(:,1);
 
 % plotting changes in the mean distance between distributions over learning
-figure;boxplot([mean_imag_total(:) mean_online_total(:)])
+figure;boxplot([mean_imag_total(:) mean_batch_total(:)])
 xticks(1:2)
 xticklabels({'Imagined Data','Online Data'})
 ylabel('Mean Diff in latent space')
@@ -1147,13 +1260,303 @@ end
 sum(bhat_boot>bhat(2))/length(bhat_boot)
 
 x= [ ones(size(tmp,1),1) (1:length(tmp))'];
-y = tmp;
+y = tmp(:,2);
 [B,BINT,R,RINT,STATS] = regress(y,x);
 STATS(3)
 
 
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+y = tmp(:,2);
+[B,BINT,R,RINT,STATS] = regress(y,x);
+STATS(3)
+
+
+figure;plot(tmp(:,2),'.','MarkerSize',20)
+
+%%%% REGRESSION LINES AS FUNCITON OF DAY %%%%%
+clear tmp
+w = [1/2 1/2 ];
+tmp(:,1) = mean(mahab_full_imagined(:,1:end));
+tmp(:,2) = mean(mahab_full_online(:,1:end));
+tmp(:,3) = mean(mahab_full_batch(:,1:end));
+
+for i=1:size(tmp,2)
+    xx = filter(w,1,[tmp(1,i);tmp(:,i)]);
+    %xx = filter(w,1,[tmp(:,i) ;tmp(end,i)]);
+    tmp(:,i) = xx(2:end);
+end
+
+
+%save res_python_2D_B1 -v7.3
+
+% stats on the Mahab distances 
+%organize it as experiment, day, mahab dist
+data=[];
+for i=1:length(tmp)
+    exp_type = [1 2 3]';
+    day_name = [i i i]';
+    latent_mahab_dist = tmp(i,:)';
+    data = [data ; [exp_type day_name latent_mahab_dist]];
+end
+data_latent_dist_B1 = data;
+save data_latent_dist_B1 data_latent_dist_B1 -v7.3
+anova1(tmp)
+% getting mean separation
+mean(tmp)
+std(tmp)/sqrt(10)
+
+% doing paired t-tests
+[h p tb st]=ttest(tmp(:,3),tmp(:,2))
+[h p tb st]=ttest(tmp(:,3),tmp(:,1))
+[h p tb st]=ttest(tmp(:,2),tmp(:,1))
+
+% plotting the regression for Mahab distance increases as a function of day
+figure;
+xlim([0 11])
+hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:10,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+[B,BINT,R,RINT,STATS1] = regress(y,x);
+yhat = x*B;
+plot(1:10,yhat,'b','LineWidth',1)
+% online
+plot(1:10,tmp(:,2),'.k','MarkerSize',20)
+y = tmp(:,2);
+[B,BINT,R,RINT,STATS2] = regress(y,x);
+yhat = x*B;
+plot(1:10,yhat,'k','LineWidth',1)
+% batch
+plot(1:10,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+[B,BINT,R,RINT,STATS3] = regress(y,x);
+yhat = x*B;
+plot(1:10,yhat,'r','LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xticks([1:10])
+% yticks([5:5:35])
+% ylim([5 35])
+
+% using robust regression in matlab
+figure;
+xlim([0 11])
+hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:10,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+lm=fitlm(x(:,2:end),y,'Robust','on')
+B=lm.Coefficients.Estimate;
+yhat = x*B;
+plot(1:10,yhat,'b','LineWidth',1)
+% online
+plot(1:10,tmp(:,2),'.k','MarkerSize',20)
+y = tmp(:,2);
+lm=fitlm(x(:,2:end),y,'Robust','on')
+B=lm.Coefficients.Estimate;
+yhat = x*B;
+plot(1:10,yhat,'k','LineWidth',1)
+% batch
+plot(1:10,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+lm=fitlm(x(:,2:end),y,'Robust','on')
+B=lm.Coefficients.Estimate;
+yhat = x*B;
+plot(1:10,yhat,'r','LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xticks([1:10])
+% yticks([5:5:35])
+% ylim([5 35])
+
+
+
+
+% plotting the robust regression for Mahab distance increases as a function of day
+figure;
+xlim([0 11])
+hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:10,tmp(:,1),'.b','MarkerSize',20)
+[bhat p1 wh se ci t_stat]=robust_fit((1:length(tmp))',tmp(:,1),2);
+yhat = x*bhat;
+plot(1:10,yhat,'b','LineWidth',1)
+% online
+plot(1:10,tmp(:,2),'.k','MarkerSize',20)
+[bhat p2 wh se ci t_stat]=robust_fit((1:length(tmp))',tmp(:,2),2);
+yhat = x*bhat;
+plot(1:10,yhat,'k','LineWidth',1)
+% batch
+plot(1:10,tmp(:,3),'.r','MarkerSize',20)
+[bhat p3 wh se ci t_stat]=robust_fit((1:length(tmp))',tmp(:,3),2);
+yhat = x*bhat;
+plot(1:10,yhat,'r','LineWidth',1)
+
+
+% bootstrapped test for regression coefficient
+y = tmp(:,3);
+[B2,BINT,R,RINT,STATS2] = regress(y,x);
+bhat_boot=[];
+for i=1:2000
+    ytmp = y(randperm(numel(y)));
+    [B_tmp,~,Rtmp,~,STATS_tmp] = regress(ytmp,x);
+    bhat_boot(i) = B_tmp(2);
+end
+figure;hist(bhat_boot)
+vline(B2(2),'r')
+sum(bhat_boot>B2(2))/length(bhat_boot)
+
+% mixed effect model for batch and Init seed slopes
+day_name=[];
+mahab_dist=[];
+for i=1:size(tmp,1)
+    day_name = [day_name;i;i];
+    %day_name = [day_name;i];
+    mahab_dist = [mahab_dist;tmp(i,2:3)'];
+    %mahab_dist = [mahab_dist;tmp(i,1)'];
+end
+data = table(day_name,mahab_dist);
+glm = fitglme(data,'mahab_dist ~ 1+ day_name');
+stat = glm.Coefficients.tStat(2);
+stat_boot=[];
+for i=1:500
+    disp(i)
+    day_name_tmp = day_name(randperm(numel(day_name)));
+    data_tmp = table(day_name_tmp,mahab_dist);
+    glm_tmp = fitglme(data_tmp,'mahab_dist ~ 1 + day_name_tmp');
+    stat_boot(i) = glm_tmp.Coefficients.tStat(2);
+end
+figure;hist(stat_boot)
+vline(stat)
+sum(stat_boot>stat)/length(stat_boot)
+
+
+% plotting the stats for the variance in latent-space for B1. Load the data
+% from python where each sampel represents the matrix determinant for each
+% movement, and collated across days
+
+% scatter
+m1 = tmp(:,1);
+m1b = sort(bootstrp(1000,@mean,m1));
+m11 = mean(tmp(:,1));
+m2 = tmp(:,2);
+m2b = sort(bootstrp(1000,@mean,m2));
+m22 = mean(tmp(:,2));
+m3 = tmp(:,3);
+m3b = sort(bootstrp(1000,@mean,m3));
+m33 = mean(tmp(:,3));
+x=1:3;
+y=[mean(m1) mean(m2) mean(m3)];
+neg = [y(1)-m1b(25) y(2)-m2b(25) y(3)-m3b(25)];
+pos = [m1b(975)-y(1) m2b(975)-y(2) m3b(975)-y(3)];
+figure;
+hold on
+cmap = brewermap(10,'Blues');
+%cmap = (turbo(7));
+x1=1+0.1*randn(size(m1));
+scatter(x1,m1)
+x1=2+0.1*randn(size(m2));
+scatter(x1,m2)
+x1=3+0.1*randn(size(m3));
+scatter(x1,m3)
+for i=1:3
+    errorbar(x(i),y(i),neg(i),pos(i),'Color','k','LineWidth',1)
+    plot(x(i),y(i),'o','MarkerSize',5,'Color','k','LineWidth',2,'MarkerFaceColor',[.25 .25 .25])
+end
+xlim([.5 3.5])
+xticks(1:3)
+xticklabels({'Imagined','Online','Batch'})
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+% ylim([0.5 1])
+% yticks(0:.1:1)
+set(gca,'FontSize',12)
+
+
+% getting the mixed effect model stats for latent variance in  B1
+%save latent_variance_B1 -v7.3
+% fitting the data into a RM anova format
+tmp=[tmp];
+Data_RM_B2_latentVar=[];
+for i=1:length(tmp)
+    exp_type = [1 2 3]';
+    subject = [i i i]';
+    lat_var = tmp(i,:)';
+    Data_RM_B2_latentVar = [Data_RM_B2_latentVar;[exp_type subject lat_dist]];
+end
+save Data_RM_B2_latentVar Data_RM_B2_latentVar -v7.3
+
+% putting into a mixed effect model format
+day_name=[];
+latent_var=[];
+exp_type=[];
+subject=[];
+I = 1:7:length(tmp);
+for i=1:length(I)
+    tmp1 = tmp(I(i):I(i)+6,:);
+    for j=1:length(tmp1)
+        exp_type = [exp_type;[1 2 3]'];
+        latent_var = [latent_var;(tmp1(j,:))'];
+        day_name = [day_name;[i i i]'];
+        subject = [subject;[1 1 1]'];
+    end
+end
+data=table(exp_type,latent_var,day_name,subject);
+glme = fitglme(data,'latent_var ~ 1 + exp_type +(1|day_name)+(1|subject)')
+
+% doing paired t-tests
+I = sort([find(data.exp_type==3);find(data.exp_type==2)]);
+data1=data(I,:);
+glme = fitglme(data1,'latent_var ~ 1 + exp_type +(1|day_name)+(1|subject)')
+
+
+
 
 %save bci_manifold_results_learning -v7.3
+
+
+%% (MAIN) combining stats across B1 and B2 for Mahab distances
+
+clear;clc
+%b2=load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2\res_python_B2_latent.mat');
+b2=load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\res_python_B2_latent_pt2.mat');
+b1=load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\res_python_2D_B1.mat');
+
+tmp1=b1.tmp;
+tmp2=b2.tmp;
+
+mean(tmp2)
+std(tmp2)/sqrt(length(tmp2))
+
+subject=[];
+exp_type=[];
+mah_dist=[];
+for i=1:length(tmp1)
+    subject=[subject;[1 1 1]'];
+    exp_type=[exp_type;[1 2 3]'];
+    mah_dist=[mah_dist ;tmp1(i,:)'];
+end
+for i=1:length(tmp2)
+    subject=[subject;[2 2 2]'];
+    exp_type=[exp_type;[1 2 3]'];
+    mah_dist=[mah_dist ;tmp1(i,:)'];
+end
+data = table(mah_dist,exp_type,subject);
+glm = fitglme(data,'mah_dist ~ 1+ exp_type + (1|subject)')
+
+% fitting the data into a RM anova format
+tmp=[tmp2];
+Data_RM_B1B2=[];
+for i=1:length(tmp)
+    exp_type = [1 2 3]';
+    subject = [i i i]';
+    lat_dist = tmp(i,:)';
+    Data_RM_B1B2 = [Data_RM_B1B2;[exp_type subject lat_dist]];
+end
+save Data_RM_B1B2 Data_RM_B1B2 -v7.3
 
 
 %% (MAIN) loading individual trial data for trainign autoencoders
@@ -1207,10 +1610,10 @@ for i=1:length(session_data)
     Dimagined = Dimagined(Dimagined>0);
     mahab_full_imagined = [mahab_full_imagined Dimagined];
 
-%     % build the AE based on MLP and only for hG
-     [net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
-%     %[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
-% 
+    %     % build the AE based on MLP and only for hG
+    [net,Xtrain,Ytrain] = build_mlp_AE(condn_data);
+    %     %[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
+    %
     % get activations in deepest layer but averaged over a trial
     imag=1;
     [TrialZ_imag,dist_imagined,mean_imagined,var_imagined,idx_imag] = get_latent_regression(files,net,imag);
@@ -1793,22 +2196,23 @@ acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
 iterations=50;
+plot_true=false;
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
-    folders_batch = strcmp(session_data(i).folder_type,'B');    
+    folders_batch = strcmp(session_data(i).folder_type,'B');
     if i~=6
         folders_am = strcmp(session_data(i).AM_PM,'am');
         folders_imag(folders_am==0)=0;
-        folders_online(folders_am==0)=0;        
-    end    
+        folders_online(folders_am==0)=0;
+    end
 
     if i==3 || i==6 || i==8
         folders_pm = strcmp(session_data(i).AM_PM,'pm');
         folders_batch(folders_pm==0)=0;
         if i==8
             idx = find(folders_batch==1);
-            folders_batch(idx(3:end))=0;            
+            folders_batch(idx(3:end))=0;
         end
     else
         folders_am = strcmp(session_data(i).AM_PM,'am');
@@ -1832,10 +2236,19 @@ for i=1:length(session_data)
 
     %load the data
     condn_data = load_data_for_MLP_TrialLevel(files);
+    % save the data
+    filename = ['condn_data_ImaginedTrials_Day' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
 
     % get cross-val classification accuracy
     [acc_imagined,train_permutations] = accuracy_imagined_data(condn_data, iterations);
     acc_imagined=squeeze(nanmean(acc_imagined,1));
+    if plot_true
+        figure;imagesc(acc_imagined)
+        colormap bone
+        clim([0 1])
+        set(gcf,'color','w')
+    end
     acc_imagined_days(:,i) = diag(acc_imagined);
 
 
@@ -1851,8 +2264,14 @@ for i=1:length(session_data)
 
     % get the classification accuracy
     acc_online = accuracy_online_data(files);
+    if plot_true
+        figure;imagesc(acc_online)
+        colormap bone
+        clim([0 1])
+        set(gcf,'color','w')
+    end
     acc_online_days(:,i) = diag(acc_online);
-    
+
 
     %%%%%% cross_val classification accuracy for batch data
     folders = session_data(i).folders(batch_idx);
@@ -1866,10 +2285,17 @@ for i=1:length(session_data)
 
     % get the classification accuracy
     acc_batch = accuracy_online_data(files);
+    if plot_true
+        figure;imagesc(acc_batch)
+        colormap bone
+        clim([0 1])
+        set(gcf,'color','w')
+    end
     acc_batch_days(:,i) = diag(acc_batch);
 end
 
-save hDOF_10days_accuracy_results -v7.3
+save hDOF_10days_accuracy_results_New -v7.3
+%save hDOF_10days_accuracy_results -v7.3
 
 
 %acc_online_days = (acc_online_days + acc_batch_days)/2;
@@ -1878,8 +2304,36 @@ ylim([0.2 1])
 xlim([0.5 10.5])
 hold on
 plot(mean(acc_imagined_days,1))
-plot(mean(acc_online_days,1))
-plot(mean(acc_batch_days,1),'k')
+plot(median(acc_online_days,1))
+plot(median(acc_batch_days,1),'k')
+
+% linear model for time to see if improvement in decoding accuracy
+days=1:10;
+y=mean(acc_imagined_days,1)';
+figure;hold on
+plot(days,y,'.k','MarkerSize',20)
+x = [ones(length(days),1) days'];
+[B,BINT,R,RINT,STATS] = regress(y,x);
+yhat = x*B;
+plot(days,yhat,'k','LineWidth',1)
+% [bhat p wh se ci t_stat]=robust_fit((1:length(tmp))',tmp',1);
+% yhat1 = x*bhat;
+% plot(days,yhat1,'k','LineWidth',1)
+xlim([.5 10.5])
+xticks([1:10])
+set(gcf,'Color','w')
+yticks(0:.2:1)
+ylim([0 1])
+STATS(3)
+lm = fitlm(x(:,2),y)
+
+
+% as regression lines
+figure;plot(mean(acc_imagined_days,1),'.','MarkerSize',20)
+
+% stats
+tmp = [median(acc_imagined_days,1)' median(acc_online_days,1)' ...
+    median(acc_batch_days,1)'];
 
 figure;boxplot(acc_imagined_days)
 ylim([0.2 1])
@@ -1893,13 +2347,13 @@ boxplot([acc_imagined_days(:) acc_online_days(:) acc_batch_days(:)])
 
 m1 = (acc_imagined_days(:));
 m1b = sort(bootstrp(1000,@mean,m1));
-m11 = mean(acc_imagined_days,2);
+m11 = mean(acc_imagined_days,1);
 m2 = (acc_online_days(:));
 m2b = sort(bootstrp(1000,@mean,m2));
-m22 = mean(acc_online_days,2);
+m22 = mean(acc_online_days,1);
 m3 = (acc_batch_days(:));
 m3b = sort(bootstrp(1000,@mean,m3));
-m33 = mean(acc_batch_days,2);
+m33 = mean(acc_batch_days,1);
 x=1:3;
 y=[mean(m1) mean(m2) mean(m3)];
 neg = [y(1)-m1b(25) y(2)-m2b(25) y(3)-m3b(25)];
@@ -1907,11 +2361,11 @@ pos = [m1b(975)-y(1) m2b(975)-y(2) m3b(975)-y(3)];
 figure;
 hold on
 cmap = brewermap(10,'Blues');
-cmap = (turbo(7));
-for i=1:7
-    plot(1+0.1*randn(1),m11(i),'o','MarkerFaceColor',cmap(i,:),'MarkerSize',5,'Color',[cmap(i,:) .5])
-    plot(2+0.1*randn(1),m22(i),'o','MarkerFaceColor',cmap(i,:),'MarkerSize',5,'Color',[cmap(i,:) .5])
-    plot(3+0.1*randn(1),m33(i),'o','MarkerFaceColor',cmap(i,:),'MarkerSize',5,'Color',[cmap(i,:) .5])
+%cmap = (turbo(7));
+for i=1:10
+    plot(1+0.1*randn(1),m11(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',3,'Color',[cmap(end,:) .5])
+    plot(2+0.1*randn(1),m22(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',3,'Color',[cmap(end,:) .5])
+    plot(3+0.1*randn(1),m33(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',3,'Color',[cmap(end,:) .5])
 end
 for i=1:3
     errorbar(x(i),y(i),neg(i),pos(i),'Color','k','LineWidth',1)
@@ -1926,9 +2380,443 @@ set(gca,'LineWidth',1)
 yticks(0:.1:1)
 set(gca,'FontSize',12)
 
+tmp = [ m11' m22' m33'];
+figure;boxplot(tmp)
+
+% fit a general linear regression model across days 
+acc=[];
+days_acc=[];
+experiment=[];
+tmp = mean(acc_imagined_days,1);
+acc = [acc;tmp'];
+experiment =[experiment;ones(length(tmp),1)];
+tmp1 = mean(acc_online_days,1);
+acc = [acc;tmp1'];
+experiment =[experiment;2*ones(length(tmp),1)];
+tmp2 = mean(acc_batch_days,1);
+acc = [acc;tmp2'];
+experiment =[experiment;3*ones(length(tmp),1)];
+
+data = table(experiment,acc);
+glm = fitglm(data,'acc ~ 1 + experiment');
+
+% stats
+[h p tb st] = ttest(tmp,tmp1)
+[h p tb st] = ttest(tmp,tmp2)
+[h p tb st] = ttest(tmp1,tmp2)
+
+% using a GLM for each action across days 
+acc=[];
+days_acc=[];
+experiment=[];
+for i=1:size(acc_imagined_days,2)
+    a = acc_imagined_days(:,i);
+    acc = [acc;a];
+    days_acc = [days_acc;i*ones(size(a))];
+    experiment = [experiment;1*ones(size(a))];
+end
+for i=1:size(acc_online_days,2)
+    a = acc_online_days(:,i);
+    acc = [acc;a];
+    days_acc = [days_acc;i*ones(size(a))];
+    experiment = [experiment;2*ones(size(a))];
+end
+for i=1:size(acc_batch_days,2)
+    a = acc_batch_days(:,i);
+    acc = [acc;a];
+    days_acc = [days_acc;i*ones(size(a))];
+    experiment = [experiment;3*ones(size(a))];
+end
+
+data = table(days_acc,experiment,acc);
+glme = fitglme(data,'acc ~ 1 + experiment +(1|days_acc)')
+
+%test of medians between cl1 and cl2
+a0=data.acc(data.experiment==1);
+a1=data.acc(data.experiment==2);
+a2=data.acc(data.experiment==3);
+
+a1 = (median(acc_online_days,1))';
+a2 = (median(acc_batch_days,1))';
+stat = median(a2)-median(a1);
+boot=[];
+a=[a1;a2];
+for i=1:1000
+    idx = randperm(length(a));
+    a11 = a(idx(1:10));
+    a22 = a(idx(11:end));
+    boot(i) = median(a11) - median(a22);
+end
+figure;hist((boot))
+vline(stat)
+sum((boot) > stat)/length(boot)
+
 % X = [ones(10,1) (1:10)'];
 % Y =  mean(acc_batch_days,1)';
 % [B,BINT,R,RINT,STATS] = regress(Y,X)
+
+figure;
+boxplot([a0 a1 a2])
+
+% get the accuracies relative to imagined movement within that day
+a0 = mean(acc_imagined_days,1);
+a1 = mean(acc_online_days,1);
+a2 = mean(acc_batch_days,1);
+figure;
+plot(a0);
+hold on
+plot(a1);
+plot(a2)
+ylim([0 1])
+
+a1 = (a1-a0)./a0;
+a2 = (a2-a0)./a0;
+figure;boxplot([a1' a2'])
+hline(0)
+
+b1_acc_rel_imagined_prop = [a1' a2'];
+save b1_acc_rel_imagined_prop b1_acc_rel_imagined_prop
+
+%% (MAIN) saving trial level data for later use with represenational drift
+
+clc;clear;
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data
+addpath 'C:\Users\nikic\Documents\MATLAB'
+session_data = session_data([1:9 11]); % removing bad days
+acc_imagined_days=[];
+acc_online_days=[];
+acc_batch_days=[];
+iterations=50;
+plot_true=false;
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+    if i~=6
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_imag(folders_am==0)=0;
+        folders_online(folders_am==0)=0;
+    end
+
+    if i==3 || i==6 || i==8
+        folders_pm = strcmp(session_data(i).AM_PM,'pm');
+        folders_batch(folders_pm==0)=0;
+        if i==8
+            idx = find(folders_batch==1);
+            folders_batch(idx(3:end))=0;
+        end
+    else
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_batch(folders_am==0) = 0;
+    end
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+    %disp([session_data(i).Day '  ' num2str(length(batch_idx))]);
+
+    %%%%%% cross_val classification accuracy for imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %load the data
+    condn_data = load_data_for_MLP_TrialLevel(files);
+    % save the data
+    filename = ['condn_data_ImaginedTrials_Day' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
+
+    %%%%% online data %%%%%%%
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %load the data
+    condn_data = load_data_for_MLP_TrialLevel(files);
+    % save the data
+    filename = ['condn_data_OnlineTrials_Day' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
+
+
+    %%%%%% batch data %%%%%%%
+    folders = session_data(i).folders(batch_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+
+    %load the data
+    condn_data = load_data_for_MLP_TrialLevel(files);
+    % save the data
+    filename = ['condn_data_BatchTrials_Day' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
+
+end
+
+
+%% (MAIN PART 1) CONTINUING PNP REPRESENTANTIONAL STUFF
+% goal here is to look at generalizability as consecutive days are added to
+% a MLP classifier, all combinations of consecutive days
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+acc_days={};
+for days = 1:9 % how many consecutive days
+    disp(['processing ' num2str(days) ' day'])
+    acc_tmp=[];
+    for i=1:10-days+1
+        train_days = i:i+days-1;
+        I =  ones(10,1);
+        I(train_days)=0;
+        test_days = find(I==1);
+
+        % load the training data
+        train_data=[];
+        for j=1:length(train_days)
+            imag_filename = ['condn_data_ImaginedTrials_Day' num2str(train_days(j))];
+            load(imag_filename)
+            train_data=[train_data condn_data];
+            online_filename = ['condn_data_OnlineTrials_Day' num2str(train_days(j))];
+            load(online_filename)
+            train_data=[train_data condn_data];
+            batch_filename = ['condn_data_BatchTrials_Day' num2str(train_days(j))];
+            load(batch_filename)
+            train_data=[train_data condn_data];
+        end
+
+        % load the testing
+        test_data=[];
+        for j=1:length(test_days)
+            %             imag_filename = ['condn_data_ImaginedTrials_Day' num2str(test_days(j))];
+            %             load(imag_filename)
+            %             test_data=[test_data condn_data];
+            online_filename = ['condn_data_OnlineTrials_Day' num2str(test_days(j))];
+            load(online_filename)
+            test_data=[test_data condn_data];
+            batch_filename = ['condn_data_BatchTrials_Day' num2str(test_days(j))];
+            load(batch_filename)
+            test_data=[test_data condn_data];
+        end
+
+        % build a classifier and get the accuracy
+        acc = accuracy_repdrift_days(train_data,test_data,1);
+        acc = squeeze(mean(acc,1));
+        acc_tmp = [acc_tmp mean(diag(acc))];
+    end
+    acc_days{days} = acc_tmp;
+end
+
+acc=[];
+for i=1:length(acc_days)
+    tmp = acc_days{i};
+    acc(i) = nanmean(tmp);
+end
+figure;stem(acc)
+
+
+%% (MAIN  PART 2) CONTINUING PNP REPRESENTANTIONAL STUFF
+% goal here is to look at generalizability as consecutive days are added to
+% a MLP classifier, increasing order of conseuctive days
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+acc_days={};
+for days = 1:9 % how many consecutive days
+
+    acc_tmp=[];
+    train_days = 1:days;
+    test_days = days+1:10;
+    disp(['processing day ' num2str(train_days)])
+
+
+    % load the training data
+    train_data=[];
+    for j=1:length(train_days)
+        imag_filename = ['condn_data_ImaginedTrials_Day' num2str(train_days(j))];
+        load(imag_filename)
+        train_data=[train_data condn_data];
+        online_filename = ['condn_data_OnlineTrials_Day' num2str(train_days(j))];
+        load(online_filename)
+        train_data=[train_data condn_data];
+        batch_filename = ['condn_data_BatchTrials_Day' num2str(train_days(j))];
+        load(batch_filename)
+        train_data=[train_data condn_data];
+    end
+
+    % load the testing
+    test_data=[];
+    for j=1:length(test_days)
+        %             imag_filename = ['condn_data_ImaginedTrials_Day' num2str(test_days(j))];
+        %             load(imag_filename)
+        %             test_data=[test_data condn_data];
+        online_filename = ['condn_data_OnlineTrials_Day' num2str(test_days(j))];
+        load(online_filename)
+        test_data=[test_data condn_data];
+        batch_filename = ['condn_data_BatchTrials_Day' num2str(test_days(j))];
+        load(batch_filename)
+        test_data=[test_data condn_data];
+    end
+
+    % build a classifier and get the accuracy
+    acc = accuracy_repdrift_days(train_data,test_data,1);
+    acc = squeeze(mean(acc,1));
+    acc_tmp = [acc_tmp mean(diag(acc))];
+
+    % store results
+    acc_days{days} = acc_tmp;
+end
+
+
+
+acc=[];
+for i=1:length(acc_days)
+    tmp = acc_days{i};
+    acc(i) = nanmean(tmp);
+end
+figure;plot(acc)
+
+%% (MAIN) LOOKING AT SPATIAL POPS B/W IMAGINED, ONLINE AND BATCH
+
+clc;clear;
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data
+addpath 'C:\Users\nikic\Documents\MATLAB'
+session_data = session_data([1:9 11]); % removing bad days
+acc_imagined_days=[];
+acc_online_days=[];
+acc_batch_days=[];
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+    if i~=6
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_imag(folders_am==0)=0;
+        folders_online(folders_am==0)=0;
+    end
+
+    if i==3 || i==6 || i==8
+        folders_pm = strcmp(session_data(i).AM_PM,'pm');
+        folders_batch(folders_pm==0)=0;
+        if i==8
+            idx = find(folders_batch==1);
+            folders_batch(idx(3:end))=0;
+        end
+    else
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_batch(folders_am==0) = 0;
+    end
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+    %disp([session_data(i).Day '  ' num2str(length(batch_idx))]);
+
+    %%%%%% hG spatial map, ERPs for indicated target direction
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    % get ERPs and sig. channels
+    [hg_erps_imag,sig_ch_imag] = get_erps_imag(files); % first 5 bins is state 1
+
+
+
+    %%%%%% get erps from online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    [hg_erps_online,sig_ch_online] = get_erps_online(files); % first 5 bins is state 1
+end
+
+% plotting a single channel
+ch = 114;
+imag_data = hg_erps_imag{5};
+imag_data = squeeze(imag_data(ch,:,:));
+online_data = hg_erps_online{5};
+online_data = squeeze(online_data(ch,:,:));
+figure;
+hold on
+%plot(imag_data,'Color',[.8 .2 .2 .5])
+plot(mean(imag_data,2),'r')
+%plot(online_data,'Color',[.2 .2 .8 .5])
+plot(mean(online_data,2),'b')
+vline([5 10],'k')
+legend({'Imag','Online'})
+
+tmp = (online_data(11:35,:));
+tmp1 = (imag_data(11:35,:));
+[var(tmp(:)) var(tmp1(:))]
+
+% plotting comaprisons
+ch = 97;
+figure;
+subplot(2,1,1)
+imag_data1 = hg_erps_imag{3};
+imag_data1 = squeeze(imag_data1(ch,:,:));
+imag_data2 = hg_erps_imag{1};
+imag_data2 = squeeze(imag_data2(ch,:,:));
+hold on
+%plot(imag_data,'Color',[.8 .2 .2 .5])
+plot(mean(imag_data1,2),'r')
+%plot(online_data,'Color',[.2 .2 .8 .5])
+plot(mean(imag_data2,2),'b')
+vline([5 10],'k')
+legend({'LT','RT'})
+title('Imagined')
+subplot(2,1,2)
+imag_data1 = hg_erps_online{3};
+imag_data1 = squeeze(imag_data1(ch,:,:));
+imag_data2 = hg_erps_online{1};
+imag_data2 = squeeze(imag_data2(ch,:,:));
+hold on
+%plot(imag_data,'Color',[.8 .2 .2 .5])
+plot(mean(imag_data1,2),'r')
+%plot(online_data,'Color',[.2 .2 .8 .5])
+plot(mean(imag_data2,2),'b')
+vline([5 10],'k')
+legend({'LT','RT'})
+title('Online')
 
 
 %% HOW DOES MANIFOLD CHANGE ACROSS DAYS...REPRESENTATIONAL DRIFT
@@ -2165,6 +3053,73 @@ set(gcf,'Color','w')
 %
 
 
+% regression lines for accuracy over days
+days=1:9;
+figure;hold on
+plot(days,tmp,'.k','MarkerSize',20)
+x = [ones(length(days),1) days'];
+y = tmp';
+[B,BINT,R,RINT,STATS] = regress(y,x);
+yhat = x*B;
+plot(days,yhat,'k','LineWidth',1)
+% [bhat p wh se ci t_stat]=robust_fit((1:length(tmp))',tmp',1);
+% yhat1 = x*bhat;
+% plot(days,yhat1,'k','LineWidth',1)
+xlim([.5 9.5])
+xticks([1:9])
+xticklabels({'1','1-2','1-3','1-4','1-5','1-6','1-7','1-8','1-9'})
+%ylim([4 10])
+set(gcf,'Color','w')
+yticks(4:2:12)
+ylim([4 12])
+
+
+% robust regression lines for accuracy over days
+days=1:9;
+figure;hold on
+plot(days,tmp,'.k','MarkerSize',20)
+x = [ones(length(days),1) days'];
+y = tmp';
+[B,BINT,R,RINT,STATS] = regress(y,x);
+yhat = x*B;
+plot(days,yhat,'k','LineWidth',1)
+[bhat p wh se ci t_stat]=robust_fit((1:length(tmp))',tmp',1);
+yhat1 = x*bhat;
+plot(days,yhat1,'b','LineWidth',1)
+xlim([.5 9.5])
+xticks([1:9])
+xticklabels({'1','1-2','1-3','1-4','1-5','1-6','1-7','1-8','1-9'})
+%ylim([4 10])
+set(gcf,'Color','w')
+yticks(4:2:12)
+ylim([4 12])
+
+
+
+% regression lines for accuracy over days excluding the last day
+days=1:8;
+tmp=tmp(1:8);
+figure;hold on
+plot(days,tmp,'.k','MarkerSize',20)
+x = [ones(length(days),1) days'];
+y = tmp';
+[B,BINT,R,RINT,STATS] = regress(y,x);
+yhat = x*B;
+plot(days,yhat,'k','LineWidth',1)
+% [bhat p wh se ci t_stat]=robust_fit((1:length(tmp))',tmp',1);
+% yhat1 = x*bhat;
+% plot(days,yhat1,'k','LineWidth',1)
+xlim([.5 8.5])
+xticks([1:8])
+xticklabels({'1','1-2','1-3','1-4','1-5','1-6','1-7','1-8'})
+%ylim([4 10])
+set(gcf,'Color','w')
+yticks(35:5:60)
+ylim([35 60])
+title('Accuracy in latent space')
+xlabel('Days used to build latent space')
+ylabel('Accuracy of day 10 data')
+
 
 
 
@@ -2369,7 +3324,7 @@ for i=1:size(Z,2)
 end
 
 % plot video together
-v = VideoWriter('PathTrial2.avi');
+v = VideoWriter('PathTrial3.avi');
 v.FrameRate=12;
 open(v);
 figure;
@@ -2426,109 +3381,51 @@ cd(root_path)
 % IMAGINED DATA FOLDER IS CENTER OUT AND ONLINE DATA IS IN DISCRETE ARROW
 
 %day1
-session_data(1).Day = '20210210';
-session_data(1).folders = {'143225','151341','151744','154405','155813'};
-session_data(1).folder_type={'I','O','O','O','O'};
-session_data(1).AM_PM = {'pm','pm','pm','pm'};
+session_data(1).Day = '20210203';
+session_data(1).folders = {'145654','150544','154256'};
+session_data(1).folder_type={'I','I','O'};
+session_data(1).AM_PM = {'pm','pm','pm'};
 
 %day2
-session_data(2).Day = '20210616';
-session_data(2).folders={'111251','111821','112750','113117','113759','114449',...
-    '134638','135318','135829','140842','141045','141459','143736'};
-session_data(2).folder_type={'I','I','O','O','O','B','I','I','I','O','O','B','B'};
-session_data(2).AM_PM = {'am','am','am','am','am','am','pm','pm','pm','pm','pm','pm','pm'};
+session_data(2).Day = '20210210';
+session_data(2).folders = {'143225','151341','151744','154405','155813'};%,'155813'154405
+session_data(2).folder_type={'I','O','O','B','B'};%,'B'
+session_data(2).AM_PM = {'pm','pm','pm','pm'};
 
+session_data(3).Day = '20210217';
+session_data(3).folders = {'142905','144942','145755','150256','150450','150848','151056'};
+session_data(3).folder_type={'I','O','O','O','O','B','B'};
+session_data(3).AM_PM = {'pm','pm','pm','pm','pm','pm','pm'};
 
-% day 3
-session_data(3).Day = '20210623';
-session_data(3).folders={'110830','111416','111854','112823','113026',...
-    '133244','133928','134357','135435','135630','135830','140530','142530','142723'};
-session_data(3).folder_type={'I','I','I','O','O','I','I','I','O','O','O','B','B','B'};
-session_data(3).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm','pm','pm','pm',...
-    'pm','pm'};
+session_data(4).Day = '20210224';
+session_data(4).folders = {'143622','161431','163333','163522','163826','164805','164958'};%'165313'
+session_data(4).folder_type={'I','I','O','O','O','B','B'};%'B'
+session_data(4).AM_PM = {'pm','pm'};
 
+session_data(5).Day = '20210324';
+session_data(5).folders = {'140739','142834','143514','144108'};
+session_data(5).folder_type={'I','O','O','B'};%'B'
+session_data(5).AM_PM = {'pm','pm','pm','pm'};
 
+% session_data(6).Day = '20210324';
+% session_data(6).folders = {'144837','152426','153046'};
+% session_data(6).folder_type={'I','O','O'};%'B'
+% session_data(6).AM_PM = {'pm','pm','pm'};
 
-% day 4
-session_data(4).Day = '20210625';
-session_data(4).folders={'111134','112108','112805','113645','114239','132902',...
-    '134133','142139'};
-session_data(4).folder_type={'I','I','I','O','B','O','B','B'};
-session_data(4).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
-
-% day 5
-session_data(5).Day = '20210630';
-session_data(5).folders={'101857','102342','102825','103756','110415','133210',...
-    '133905','134420','135813','140408'};
-session_data(5).folder_type={'I','I','I','O','B','O','I','I','O','B'};
-session_data(5).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm','pm'};
-
-% day 6
-session_data(6).Day = '20210702';
-session_data(6).folders={'135108','135915','140426','141920','142120','142320',...
-    '142800','145811'};
-session_data(6).folder_type={'I','I','I','O','O','O','B','B'};
-session_data(6).AM_PM = {'pm','pm','pm','pm','pm','pm','pm','pm'};
-
-% day 7
-session_data(7).Day = '20210707';
-session_data(7).folders={'103731','104916','105644','110518','111026','132803',...
-    '133525','134019','135008'};
-session_data(7).folder_type={'I','I','I','O','B','I','I','I','O'};
-session_data(7).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm'};
-
-% need to get data for 20210709
-% session_data(8).Day = '20210709';
-% session_data(8).folders={'101301','102021','102634'};
-% session_data(8).folder_type={'I','I','I'};
-% session_data(8).AM_PM = {'am','am','am''am','am'};
-
-% day 8
-session_data(8).Day = '20210714';
-session_data(8).folders={'101741','102514','103106','104621','132615','133137','133748',...
-    '140047','140924','141733','142605','143752','145541','150310'};
-session_data(8).folder_type={'I','I','I','O','B','B','B','B','B','I','I','O','O','O'};
-session_data(8).AM_PM = {'am','am','am','am','pm','pm','pm','pm','pm','pm','pm',...
-    'pm','pm','pm'};
-
-% day 9
-session_data(9).Day = '20210716';
-session_data(9).folders={'102008','102726','103214','104134','104745','133339',...
-    '133908','134306','134936'};
-session_data(9).folder_type={'I','I','I','O','B','B','B','I','O'};
-session_data(9).AM_PM = {'am','am','am','am','am','pm','pm','pm','pm'};
-
-% day 10
-session_data(10).Day = '20210728';
-session_data(10).folders={'103034','103745','104244','105354','110143','132842','133727',...
-    '134258'};
-session_data(10).folder_type={'I','I','I','O','B','B','B','B'};
-session_data(10).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
-
-% day 11
-session_data(11).Day = '20210804';
-session_data(11).folders={'102546','103317','103821','104809','105403','133255','134125',...
-    '134652'};
-session_data(11).folder_type={'I','I','I','O','B','B','B','B'};
-session_data(11).AM_PM = {'am','am','am','am','am','pm','pm','pm'};
-
-%day 12
-session_data(11).Day = '20210806';
-session_data(11).folders={'103003','103828','104406','105415','105859','110512','134206',...
-    '134915','140110','140536','141223'};
-session_data(11).folder_type={'I','I','I','O','O','B','B','B','B','B','B'};
-session_data(11).AM_PM = {'am','am','am','am','am','am','pm','pm','pm','pm','pm'};
+session_data(6).Day = '20210407';
+session_data(6).folders = {'153243','155425'};
+session_data(6).folder_type={'I','O'};%'B'
+session_data(6).AM_PM = {'pm','pm'};
 
 
 save session_data_B2 session_data -v7.3
 
 
 
-%% PLASTICITY AND AE FRAMEWORK FOR B2 ARROW DATA
+%% PLASTICITY AND AE FRAMEWORK FOR B2 ARROW DATA (MAIN)
 % good days: 20210324
 
 clc;clear
-close all
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 addpath('C:\Users\nikic\Documents\MATLAB')
@@ -2541,12 +3438,17 @@ mean_imag_total=[];
 var_online_total=[];
 mean_online_total=[];
 res=[];
+mahab_full_online=[];
+mahab_full_imagined=[];
+mahab_full_batch=[];
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
 
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
 
     %%%%%%imagined data
     folders = session_data(i).folders(imag_idx);
@@ -2562,17 +3464,27 @@ for i=1:length(session_data)
     load('ECOG_Grid_8596-002131.mat')
     condn_data = load_data_for_MLP_B2(files,ecog_grid);
 
+    %save the data
+    filename = ['B2_condn_data_Imagined_Day' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
+
     % build the AE based on MLP and only for hG
-    [net,Xtrain,Ytrain] = build_mlp_AE_B2(condn_data);
+    %[net,Xtrain,Ytrain] = build_mlp_AE_B2(condn_data);
     %[net,Xtrain,Ytrain] = build_mlp_AE_supervised(condn_data);
 
+    % get the mahab distance in the full dataset
+    Dimagined = mahal2_full(condn_data);
+    Dimagined = triu(Dimagined);
+    Dimagined = Dimagined(Dimagined>0);
+    mahab_full_imagined = [mahab_full_imagined Dimagined];
+
     % get activations in deepest layer but averaged over a trial
-    imag=1;
-    [TrialZ_imag,dist_imagined,mean_imagined,var_imagined,idx_imag] = ...
-        get_latent_regression_B2(files,net,imag,ecog_grid);
-    dist_imag_total = [dist_imag_total;dist_imagined];
-    mean_imag_total=[mean_imag_total;pdist(mean_imagined)];
-    var_imag_total=[var_imag_total;var_imagined'];
+    %     imag=1;
+    %     [TrialZ_imag,dist_imagined,mean_imagined,var_imagined,idx_imag] = ...
+    %         get_latent_regression_B2(files,net,imag,ecog_grid);
+    %     dist_imag_total = [dist_imag_total;dist_imagined];
+    %     mean_imag_total=[mean_imag_total;pdist(mean_imagined)];
+    %     var_imag_total=[var_imag_total;var_imagined'];
 
     %%%%%%online data
     folders = session_data(i).folders(online_idx);
@@ -2583,17 +3495,65 @@ for i=1:length(session_data)
         files = [files;findfiles('',folderpath)'];
     end
 
-
     %load the data
-    %condn_data = load_data_for_MLP_B2(files);
+    condn_data = load_data_for_MLP_B2(files,ecog_grid);
+
+    % save the data
+    filename = ['B2_condn_data_Online_Day' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
+
+    % get the mahab distance in the full dataset
+    Donline = mahal2_full(condn_data);
+    Donline = triu(Donline);
+    Donline = Donline(Donline>0);
+    mahab_full_online = [mahab_full_online Donline];
+
 
     % get activations in deepest layer
-    imag=0;
-    [TrialZ_online,dist_online,mean_online,var_online,idx_online] = ...
-        get_latent_regression_B2(files,net,imag,ecog_grid);
-    dist_online_total = [dist_online_total;dist_online];
-    mean_online_total=[mean_online_total;pdist(mean_online)];
-    var_online_total=[var_online_total;var_online'];
+    %     imag=0;
+    %     [TrialZ_online,dist_online,mean_online,var_online,idx_online] = ...
+    %         get_latent_regression_B2(files,net,imag,ecog_grid);
+    %     dist_online_total = [dist_online_total;dist_online];
+    %     mean_online_total=[mean_online_total;pdist(mean_online)];
+    %     var_online_total=[var_online_total;var_online'];
+
+    %%%%%%batch data
+    if ~isempty(batch_idx)
+        folders = session_data(i).folders(batch_idx);
+        day_date = session_data(i).Day;
+        files=[];
+        for ii=1:length(folders)
+            folderpath = fullfile(root_path, day_date,'DiscreteArrow',folders{ii},'BCI_Fixed');
+            files = [files;findfiles('',folderpath)'];
+        end
+
+
+        %load the data
+        condn_data = load_data_for_MLP_B2(files,ecog_grid);
+
+        % save the data
+        filename = ['B2_condn_data_Batch_Day' num2str(i)];
+        save(filename, 'condn_data', '-v7.3')
+
+        % get the mahab distance in the full dataset
+        Donline = mahal2_full(condn_data);
+        Donline = triu(Donline);
+        Donline = Donline(Donline>0);
+        mahab_full_batch = [mahab_full_batch Donline];
+    else
+        mahab_full_batch = [mahab_full_batch zeros(6,1)];
+    end
+
+    % get activations in deepest layer
+    %     imag=0;
+    %     [TrialZ_batch,dist_batch,mean_batch,var_batch,idx_batch] = get_latent_regression(files,net,imag);
+    %     dist_batch_total = [dist_batch_total;dist_batch];
+    %     mean_batch_total=[mean_batch_total;pdist(mean_batch)];
+    %     var_batch_total=[var_batch_total;var_batch'];
+
+
+
+
 
     % plotting imagined and online in latent space
     %     idxa = find(idx_imag==4);
@@ -2619,12 +3579,19 @@ for i=1:length(session_data)
     %     set(gca,'LineWidth',1)
     %     set(gca,'FontSize',12)
 
-    [h p tb st]=ttest(dist_imagined,dist_online);
-    disp([p mean([dist_imagined' dist_online'])]);
-    res=[res;[p mean([dist_imagined' dist_online'])]];
+    %     [h p tb st]=ttest(dist_imagined,dist_online);
+    %     disp([p mean([dist_imagined' dist_online'])]);
+    %     res=[res;[p mean([dist_imagined' dist_online'])]];
 end
 
-res
+save mahab_dist_full_B2 -v7.3
+
+figure;boxplot([mahab_full_imagined mahab_full_online mahab_full_batch])
+
+figure;plot(1:6,mean(mahab_full_imagined));
+hold on
+plot(1:6,mean(mahab_full_online))
+plot(2:5,mean(mahab_full_batch(:,2:5)))
 
 figure;
 plot(mean(dist_online_total'))
@@ -2780,6 +3747,1017 @@ x= [ ones(size(tmp,1),1) (1:length(tmp))'];
 y = tmp;
 [B,BINT,R,RINT,STATS] = regress(y,x);
 STATS(3)
+
+
+a=randn(3)
+idx = randi(3,[3,3])
+a(idx)
+
+
+
+% save res_python_B2_latent -v7.3
+
+%%%% regressions for mahab on full as a function of day
+clear tmp
+tmp(:,1) = (median(mahab_full_imagined,1));
+tmp(:,2) = (median(mahab_full_online,1));
+tmp(:,3) = (median(mahab_full_batch,1));
+tmp = tmp(2:5,:);
+% for i=1:size(tmp,2)
+%     tmp(:,i) = smooth(tmp(:,i));
+% end
+
+% plotting the regression for Mahab distance increases as a function of day
+figure;
+xlim([0 5])
+hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:4,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+[B,BINT,R,RINT,STATS1] = regress(y,x);
+yhat = x*B;
+plot(1:4,yhat,'b','LineWidth',1)
+% online
+plot(1:4,tmp(:,2),'.k','MarkerSize',20)
+y = tmp(:,2);
+[B,BINT,R,RINT,STATS2] = regress(y,x);
+yhat = x*B;
+plot(1:4,yhat,'k','LineWidth',1)
+% batch
+plot(1:4,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+[B,BINT,R,RINT,STATS3] = regress(y,x);
+yhat = x*B;
+plot(1:4,yhat,'r','LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xlim([0.5  4.5])
+xticks([1:4])
+%yticks([5:5:35])
+%ylim([5 35])
+
+
+
+% plotting the robust regression for Mahab distance increases as a function of day
+figure;
+xlim([0 5])
+hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:4,tmp(:,1),'.b','MarkerSize',20)
+[bhat p1 wh se ci t_stat]=robust_fit((1:length(tmp))',tmp(:,1),2);
+yhat = x*bhat;
+plot(1:4,yhat,'b','LineWidth',1)
+% online
+plot(1:4,tmp(:,2),'.k','MarkerSize',20)
+[bhat p2 wh se ci t_stat]=robust_fit((1:length(tmp))',tmp(:,2),2);
+yhat = x*bhat;
+plot(1:4,yhat,'k','LineWidth',1)
+% batch
+plot(1:4,tmp(:,3),'.r','MarkerSize',20)
+[bhat p3 wh se ci t_stat]=robust_fit((1:length(tmp))',tmp(:,3),2);
+yhat = x*bhat;
+plot(1:4,yhat,'r','LineWidth',1)
+
+
+% bootstrapped test for regression coefficient
+y = tmp(:,3);
+[B2,BINT,R,RINT,STATS2] = regress(y,x);
+bhat_boot=[];
+for i=1:2000
+    ytmp = y(randperm(numel(y)));
+    [B_tmp,~,Rtmp,~,STATS_tmp] = regress(ytmp,x);
+    bhat_boot(i) = B_tmp(2);
+end
+figure;hist(bhat_boot)
+vline(B2(2),'r')
+sum(bhat_boot>B2(2))/length(bhat_boot)
+
+% mixed effect model for batch and Init seed slopes
+day_name=[];
+mahab_dist=[];
+for i=1:size(tmp,1)
+    day_name = [day_name;i;i];
+    mahab_dist = [mahab_dist;tmp(i,2:3)'];
+end
+data = table(day_name,mahab_dist);
+glm = fitglme(data,'mahab_dist ~ 1 + day_name');
+stat = glm.Coefficients.tStat(2);
+stat_boot=[];
+for i=1:1000
+    day_name_tmp = day_name(randperm(numel(day_name)));
+    data_tmp = table(day_name_tmp,mahab_dist);
+    glm_tmp = fitglm(data_tmp,'mahab_dist ~ 1 + day_name_tmp');
+    stat_boot(i) = glm_tmp.Coefficients.tStat(2);
+end
+figure;hist(stat_boot)
+vline(stat)
+sum(stat_boot>stat)/length(stat_boot)
+
+% getting the mixed effect model stats for latent variance in  B2
+%save latent_variance_B2 -v7.3
+% fitting the data into a RM anova format
+tmp=[tmp];
+Data_RM_B2_latentVar=[];
+for i=1:length(tmp)
+    exp_type = [1 2 3]';
+    subject = [i i i]';
+    lat_var = tmp(i,:)';
+    Data_RM_B2_latentVar = [Data_RM_B2_latentVar;[exp_type subject lat_dist]];
+end
+save Data_RM_B2_latentVar Data_RM_B2_latentVar -v7.3
+
+% putting into a mixed effct model format
+day_name=[];
+latent_var=[];
+exp_type=[];
+subject=[];
+I = 1:4:length(tmp);
+for i=1:length(I)
+    tmp1 = tmp(I(i):I(i)+3,:);
+    for j=1:length(tmp1)
+        exp_type = [exp_type;[1 2 3]'];
+        latent_var = [latent_var;tmp1(j,:)'];
+        day_name = [day_name;[i i i]'];
+        subject = [subject;[1 1 1]'];
+    end
+end
+data=table(exp_type,latent_var,day_name,subject);
+glme = fitglme(data,'latent_var ~ 1 + exp_type +(1|day_name)+(1|subject)')
+
+% doing paired t-tests
+I = sort([find(data.exp_type==2);find(data.exp_type==3)]);
+data1=data(I,:);
+glme = fitglme(data1,'latent_var ~ 1 + exp_type +(1|day_name)+(1|subject)')
+
+%% B2: looking at decoding performance from imagined -> online -> batch (MAIN)
+% across days
+
+clc;clear;
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data_B2
+addpath 'C:\Users\nikic\Documents\MATLAB'
+acc_imagined_days=[];
+acc_online_days=[];
+acc_batch_days=[];
+iterations=5;
+plot_true=false;
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+    %disp([session_data(i).Day '  ' num2str(length(batch_idx))]);
+
+    %%%%%% cross_val classification accuracy for imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'CenterOut',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %load the data
+    load('ECOG_Grid_8596-002131.mat')
+    condn_data = load_data_for_MLP_TrialLevel_B2(files,ecog_grid);
+
+    % get cross-val classification accuracy
+    [acc_imagined,train_permutations] = accuracy_imagined_data_B2(condn_data, iterations);
+    acc_imagined=squeeze(nanmean(acc_imagined,1));
+    if plot_true
+        figure;imagesc(acc_imagined)
+        colormap bone
+        clim([0 1])
+        set(gcf,'color','w')
+    end
+    acc_imagined_days(:,i) = diag(acc_imagined);
+
+
+    %%%%%% get classification accuracy for online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'DiscreteArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    % get the classification accuracy
+    acc_online = accuracy_online_data_B2(files);
+    if plot_true
+        figure;imagesc(acc_online)
+        colormap bone
+        clim([0 1])
+        set(gcf,'color','w')
+    end
+    acc_online_days(:,i) = diag(acc_online);
+
+
+    %%%%%% cross_val classification accuracy for batch data
+    if ~isempty(batch_idx)
+        folders = session_data(i).folders(batch_idx);
+        day_date = session_data(i).Day;
+        files=[];
+        for ii=1:length(folders)
+            folderpath = fullfile(root_path, day_date,'DiscreteArrow',folders{ii},'BCI_Fixed');
+            %cd(folderpath)
+            files = [files;findfiles('',folderpath)'];
+        end
+
+        % get the classification accuracy
+        acc_batch = accuracy_online_data_B2(files);
+        if plot_true
+            figure;imagesc(acc_batch)
+            colormap bone
+            clim([0 1])
+            set(gcf,'color','w')
+        end
+        acc_batch_days(:,i) = diag(acc_batch);
+    else
+        acc_batch_days(:,i) = NaN*ones(4,1);
+    end
+end
+
+load ('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\b1_acc_rel_imagined_prop.mat')
+save hDOF_6days_accuracy_results_New_B2 -v7.3
+%save hDOF_10days_accuracy_results -v7.3
+
+
+%acc_online_days = (acc_online_days + acc_batch_days)/2;
+figure;
+ylim([0.0 0.65])
+xlim([0.5 6.5])
+hold on
+plot(nanmean(acc_imagined_days,1))
+plot(nanmean(acc_online_days,1))
+plot(nanmean(acc_batch_days,1),'k')
+
+% as regression lines
+figure;plot(mean(acc_imagined_days,1),'.','MarkerSize',20)
+
+% stats
+tmp = [median(acc_imagined_days,1)' median(acc_online_days,1)' ...
+    median(acc_batch_days,1)'];
+
+figure;boxplot(acc_imagined_days)
+ylim([0.2 1])
+xlim([0.5 10.5])
+hold on
+boxplot(acc_batch_days,'Colors','k')
+a = get(get(gca,'children'),'children');
+
+figure;
+boxplot([acc_imagined_days(:) acc_online_days(:) acc_batch_days(:)])
+
+m1 = (acc_imagined_days(:));
+m1b = sort(bootstrp(1000,@mean,m1));
+m11 = mean(acc_imagined_days,1);
+m2 = (acc_online_days(:));
+m2b = sort(bootstrp(1000,@mean,m2));
+m22 = mean(acc_online_days,1);
+m3 = (acc_batch_days(:));
+m3b = sort(bootstrp(1000,@nanmean,m3));
+m33 = nanmean(acc_batch_days,1);
+x=1:3;
+y=[mean(m1) mean(m2) nanmean(m3)];
+s1=std(m1)/sqrt(length(m1));
+s2=std(m2)/sqrt(length(m2));
+s3=nanstd(m3)/sqrt(sum(~isnan(m3)));
+neg = [s1 s2 s3];
+pos= [s1 s2 s3];
+%neg = [y(1)-m1b(25) y(2)-m2b(25) y(3)-m3b(25)];
+%pos = [m1b(975)-y(1) m2b(975)-y(2) m3b(975)-y(3)];
+figure;
+hold on
+cmap = brewermap(6,'Blues');
+%cmap = (turbo(7));
+for i=1:3
+    errorbar(x(i),y(i),neg(i),pos(i),'Color','k','LineWidth',1)
+    plot(x(i),y(i),'o','MarkerSize',20,'Color','k','LineWidth',1,'MarkerFaceColor',[.5 .5 .5])
+end
+for i=1:size(acc_batch_days,2)
+    plot(1+0.1*randn(1),m11(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',5,'Color',[cmap(end,:) .5])
+    plot(2+0.1*randn(1),m22(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',5,'Color',[cmap(end,:) .5])
+    plot(3+0.1*randn(1),m33(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',5,'Color',[cmap(end,:) .5])
+end
+xlim([.5 3.5])
+ylim([0.10 0.55])
+xticks(1:3)
+xticklabels({'Imagined','Online','Batch'})
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+yticks(0:.1:1)
+set(gca,'FontSize',12)
+h=hline(.25,'--');
+h.LineWidth=1;
+xlabel('Decoder Type')
+ylabel('Accuracy')
+
+tmp = [ m11' m22' m33'];
+figure;boxplot(tmp)
+
+tmp = [ m1 m2 m3];
+figure;boxplot(tmp)
+
+% regression lines for mahab distances in latent space
+imag = [0.732087
+    0.471915
+    0.526922
+    0.187374
+    0.611636
+    0.501813
+    ];
+online=[4.09371
+    1.46306
+    0.93976
+    2.13517
+    1.05116
+    1.34932
+    ];
+batch=[1.58127
+    2.48264
+    3.26464
+    3.10718
+    ]; % days 12 thru 5
+
+% PLOT REGRESSION LINES
+imag = tmp(:,1);
+online = tmp(:,2);
+batch = tmp(1:4,3);
+figure;
+hold on
+days=1:4;
+x=[ones(length(days),1) days'];
+%imag
+plot(days,imag(2:5),'.','MarkerSize',20)
+y=imag(2:5);
+[B,BINT,R,RINT,STATS1] = regress(y,x);
+yhat=x*B;
+plot(days,yhat,'b','LineWidth',1)
+%online
+plot(days,online(2:5),'.k','MarkerSize',20)
+y=online(2:5);
+[B,BINT,R,RINT,STATS2] = regress(y,x);
+yhat=x*B;
+plot(days,yhat,'k','LineWidth',1)
+%batch
+plot(days,batch,'.r','MarkerSize',20)
+y=batch;
+[B,BINT,R,RINT,STATS3] = regress(y,x);
+yhat=x*B;
+plot(days,yhat,'r','LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlim([.5 4.5])
+xticks(1:4)
+xticklabels(1:4)
+ylim([0 3.5])
+yticks([0:3])
+
+
+% PLOT REGRESSION LINES equal size in tmp
+imag = tmp(:,1);
+online = tmp(:,2);
+batch = tmp(:,3);
+figure;
+hold on
+days=1:4;
+x=[ones(length(days),1) days'];
+%imag
+plot(days,imag,'.','MarkerSize',20)
+y=imag;
+[B,BINT,R,RINT,STATS1] = regress(y,x);
+yhat=x*B;
+plot(days,yhat,'b','LineWidth',1)
+%online
+plot(days,online,'.k','MarkerSize',20)
+y=online;
+[B,BINT,R,RINT,STATS2] = regress(y,x);
+yhat=x*B;
+plot(days,yhat,'k','LineWidth',1)
+%batch
+plot(days,batch,'.r','MarkerSize',20)
+y=batch;
+[B,BINT,R,RINT,STATS3] = regress(y,x);
+yhat=x*B;
+plot(days,yhat,'r','LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlim([.5 4.5])
+xticks(1:4)
+xticklabels(1:4)
+
+
+
+% using robust regression in matlab equal size
+figure;
+hold on
+% imag
+plot(days,imag,'.b','MarkerSize',20)
+y=imag;
+lm=fitlm(x(:,2:end),y,'Robust','on');
+B=lm.Coefficients.Estimate;
+yhat = x*B;
+plot(days,yhat,'b','LineWidth',1)
+% online
+plot(days,online,'.k','MarkerSize',20)
+y=online;
+lm=fitlm(x(:,2:end),y,'Robust','on');
+B=lm.Coefficients.Estimate;
+yhat = x*B;
+plot(days,yhat,'k','LineWidth',1)
+% batch
+plot(days,batch,'.r','MarkerSize',20)
+y=batch;
+lm=fitlm(x(:,2:end),y,'Robust','on');
+B=lm.Coefficients.Estimate;
+yhat=x*B;
+plot(days,yhat,'r','LineWidth',1)
+% beautify
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xticks([1:4])
+
+
+
+% using robust regression in matlab
+figure;
+hold on
+% imag
+plot(days,imag(2:5),'.b','MarkerSize',20)
+y=imag(2:5);
+lm=fitlm(x(:,2:end),y,'Robust','on');
+B=lm.Coefficients.Estimate;
+yhat = x*B;
+plot(days,yhat,'b','LineWidth',1)
+% online
+plot(days,online(2:5),'.k','MarkerSize',20)
+y=online(2:5);
+lm=fitlm(x(:,2:end),y,'Robust','on');
+B=lm.Coefficients.Estimate;
+yhat = x*B;
+plot(days,yhat,'k','LineWidth',1)
+% batch
+plot(days,batch,'.r','MarkerSize',20)
+y=batch;
+lm=fitlm(x(:,2:end),y,'Robust','on');
+B=lm.Coefficients.Estimate;
+yhat=x*B;
+plot(days,yhat,'r','LineWidth',1)
+% beautify
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xticks([1:4])
+yticks([5:5:35])
+ylim([0 1])
+
+
+
+
+
+% stats on the latent space variance
+tmp=[0.000937406	0.0985546	0.0289443
+    0.00154575	0.0315809	0.0753841
+    0.00141096	0.0103554	0.20185
+    0.00043903	0.0643351	0.150029
+    0.00125143	0.00337939	0.112707
+    0.00113499	0.00377055	0.112707
+    ];
+[P,ANOVATAB,STATS] = anova1(tmp);
+
+[h p tb st] = ttest(tmp(:,1),tmp(:,2));p
+[h p tb st] = ttest(tmp(:,1),tmp(:,3));p
+[h p tb st] = ttest(tmp(:,2),tmp(:,3));p
+
+% how about bootstrapped difference of means?
+stat  =  mean(tmp(:,2)) - mean(tmp(:,1));
+c= [tmp(:,2);tmp(:,1)];
+l=size(tmp,1);
+boot=[];
+c=c-mean(c);
+for i=1:5000
+    idx=randperm(numel(c));
+    a1 = c(idx(1:l));
+    b1 = c(idx(l+1:end));
+    boot(i) = mean(a1)-mean(b1);
+end
+figure;hist((boot))
+vline((stat),'r')
+sum(boot>stat)/length(boot)
+
+
+% get the accuracies relative to imagined movement within that day
+a0 = mean(acc_imagined_days(:,2:5),1);
+a1 = mean(acc_online_days(:,2:5),1);
+a2 = mean(acc_batch_days(:,2:5),1);
+figure;
+plot(a0);
+hold on
+plot(a1);
+plot(a2)
+ylim([0 1])
+
+a1 = (a1-a0)./a0;
+a2 = (a2-a0)./a0;
+figure;boxplot([a1' a2'])
+hline(0)
+
+b2_acc_rel_imagined = [a1' a2'];
+
+acc_rel_imagined = [b1_acc_rel_imagined_prop ;b2_acc_rel_imagined];
+figure;
+boxplot(acc_rel_imagined);
+a = get(get(gca,'children'),'children');   % Get the handles of all the objects
+t = get(a,'tag');   % List the names of all the objects 
+box1 = a(5);   % The 7th object is the first box
+set(box1, 'Color', 'k');   % Set the color of the first box to green
+box1 = a(6);   % The 7th object is the first box
+set(box1, 'Color', 'k');   % Set the color of the first box to green
+line1 = a(3);   % The 7th object is the first box
+set(line1, 'Color', 'm');   % Set the color of the first box to green
+line1 = a(4);   % The 7th object is the first box
+set(line1, 'Color', 'm');   % Set the color of the first box to green
+
+
+
+% plotting scatter plot with mean and SE
+m1 = acc_rel_imagined(:,1);
+m1b = sort(bootstrp(1000,@mean,m1));
+m2 = acc_rel_imagined(:,2);
+m2b = sort(bootstrp(1000,@mean,m2));
+y=[mean(acc_rel_imagined)];
+s1=std(m1)/sqrt(length(m1));
+s2=std(m2)/sqrt(length(m2));
+neg = [s1 s2 ];
+pos= [s1 s2 ];
+neg = [y(1)-m1b(25) y(2)-m2b(25) ];
+pos = [m1b(975)-y(1) m2b(975)-y(2) ];
+figure;
+hold on
+% now the scatter part
+%B1
+hold on
+scatter(ones(10,1)+0.07*randn(10,1),b1_acc_rel_imagined_prop(:,1),'or')
+scatter(2*ones(10,1)+0.07*randn(10,1),b1_acc_rel_imagined_prop(:,2),'r')
+%B2
+scatter(ones(4,1)+0.07*randn(4,1),b2_acc_rel_imagined(:,1),'ob')
+scatter(2*ones(4,1)+0.07*randn(4,1),b2_acc_rel_imagined(:,2),'ob')
+
+cmap = brewermap(6,'Blues');
+x=1:2;
+for i=1:length(y)
+    errorbar(x(i),y(i),neg(i),pos(i),'Color','k','LineWidth',1)
+    plot(x(i),y(i),'o','MarkerSize',10,'Color','k','LineWidth',1,'MarkerFaceColor',[.5 .5 .5])
+end
+xlim([0.5 2.5])
+hline(0,'--k')
+xticks([1 2])
+xticklabels({'CL1','CL2'})
+ylim([-0.2 0.6])
+yticks([-.2:.2:.6])
+set(gcf,'Color','w')
+
+
+[h p tb st] = ttest(acc_rel_imagined(:,1),acc_rel_imagined(:,2))
+
+% saving all data 
+save acc_relative_imagined_prop_B1B2 -v7.3
+
+% using a mixed effect model
+acc_improv=[];
+subject=[];
+exp_type=[];
+%b1
+for i=1:size(b1_acc_rel_imagined_prop,2)
+    tmp=b1_acc_rel_imagined_prop(:,i);
+    acc_improv =[acc_improv;tmp];
+    exp_type = [exp_type;i*ones(size(tmp))];
+    subject=[subject;1*ones(size(tmp))];
+end
+%b2
+for i=1:size(b2_acc_rel_imagined,2)
+    tmp=b2_acc_rel_imagined(:,i);
+%     if i==1
+%         tmp=tmp([1 3 4]);
+%     end
+    acc_improv =[acc_improv;tmp];
+    exp_type = [exp_type;i*ones(size(tmp))];
+    subject=[subject;2*ones(size(tmp))];
+end
+
+data=table(acc_improv,exp_type,subject);
+glme = fitglme(data,'acc_improv ~ 1+ exp_type + (1|subject)')
+
+
+%% ANALYSIS OF THE 3D PATH TASK AND ITS PERFORMANCE ETC.
+
+% get all the trials that had the 3D path task with some measure of task
+% performance
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+
+task_name = 'Robot3DPath';
+folders = dir(root_path);
+
+field1 = 'name'; value1 = '';
+field2 = 'folder'; value2 = '';
+field3 = 'date'; value3='';
+field4 = 'bytes'; value4 = [];
+field5 = 'isdir';value5 =[];
+field6 = 'datenum';value6=[];
+
+folders1=struct(field1,value1,field2,value2,field3,value3,field4,value4,field5,value5,field6,value6);
+k=1;
+for i=1:length(folders)
+    if ~isempty(str2num(folders(i).name))
+        folders1(k) = folders(i);
+        k=k+1;
+    end
+end
+
+folders=folders1;
+
+files=[];
+for i=1:length(folders)
+    folder_path = fullfile(root_path,folders(i).name,task_name);
+    if exist(folder_path)
+        tmp_files=findfiles('.mat',folder_path,1)';
+        for j=1:length(tmp_files)
+            if length(regexp(tmp_files{j},'Data'))>0
+                files=[files;tmp_files(j)];
+            end
+        end
+    end
+end
+
+figure;
+plot3(TrialData.CursorState(1,:),TrialData.CursorState(2,:),TrialData.CursorState(3,:),'.')
+
+%% plotting robot trajectories for center out (MAIN)
+ 
+clc;clear
+foldername = '20210326';
+task_name = 'Robot';
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+addpath(genpath('C:\Users\nikic\Documents\MATLAB\svg_plot'))
+
+fullpath = fullfile(root_path,foldername,task_name);
+files = findfiles('.mat',fullpath,1);
+files1=[];
+for i=1:length(files)
+    if length(regexp(files{i},'Data'))>0
+        files1=[files1;files(i)'];
+    end
+end
+files=files1;
+
+% get all the good robot 3D trial data and plot them
+col = {'r','g','b','c','m','y'};
+col=turbo(6);
+files_suc=[];
+figure;
+hold on
+xlim([-250,250])
+ylim([-250,250])
+zlim([-250,250])
+for i=1:length(files)
+    load(files{i})
+    if TrialData.TargetID == TrialData.SelectedTargetID        
+        kin = TrialData.CursorState;
+        task_state = TrialData.TaskState;
+        kinidx = find(task_state==3);
+        kin = kin(:,kinidx);
+        target = TrialData.TargetPosition;
+        targetID = TrialData.TargetID;
+        fs = TrialData.Params.UpdateRate;
+        if size(kin,2)*(1/fs) < 12
+            files_suc = [files_suc;files(i)];
+            %plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col{targetID});
+            plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col(targetID,:));
+        end
+    end
+end
+
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+plot2svg('3DTraj-grid.svg');
+
+
+%% plotting diagonal robot trajectories (MAIN)
+
+
+
+clc;clear
+foldername = '20210115';
+task_name = 'Robot';
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+addpath(genpath('C:\Users\nikic\Documents\MATLAB\svg_plot'))
+
+files={'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210115\Robot\114418\BCI_Fixed\Data0002.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210115/Robot\114613\BCI_Fixed\Data0001.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210115\Robot\114613\BCI_Fixed\Data0002.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210115\Robot\114613\BCI_Fixed\Data0004.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210115\Robot\114740\BCI_Fixed\Data0001.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0001.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0002.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0003.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0005.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0006.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0007.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0008.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0009.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0010.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0011.mat',
+    'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210122\Robot\111630\BCI_Fixed\Data0012.mat'};
+
+% get all the good robot 3D trial data and plot them
+col = {'r','g','b','c','m','y'};
+col=turbo(4);
+files_suc=[];
+figure;
+hold on
+xlim([-250,250])
+ylim([-250,250])
+zlim([-250,250])
+tid=[];
+% also get the velocities in the x and y directions
+vel=[];
+for i=1:length(files)
+    load(files{i})
+    tid = [tid TrialData.TargetID];
+    if TrialData.TargetID == TrialData.SelectedTargetID        
+        kin = TrialData.CursorState;
+        task_state = TrialData.TaskState;
+        kinidx = find(task_state==3);
+        kin = kin(:,kinidx);        
+        target = TrialData.TargetPosition;
+        targetID = TrialData.TargetID-6;
+        fs = TrialData.Params.UpdateRate;
+        if size(kin,2)*(1/fs) < 12
+            files_suc = [files_suc;files(i)];
+            %plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col{targetID});
+            plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col(targetID,:));
+            vel = [vel kin(4:6,:)];
+        end
+    end
+end
+
+%grid off 
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+plot2svg('3DTraj_diag1.svg');
+
+% pca on the velocity data
+[c,s,l] = pca(vel');
+figure;
+stem(cumsum(l)./sum(l))
+figure;stem(c(:,1))
+xlim([0 4])
+figure;stem(c(:,2))
+xlim([0 4])
+figure;stem(c(:,3))
+xlim([0 4])
+figure;
+
+
+
+% pca on null velocity data, 2dim
+vel_null=[];
+for i=1:100
+    if rand(1)>0.5
+        tmp = [randn(1,10)*20;zeros(1,10)];
+    else
+        tmp = [zeros(1,10);randn(1,10)*20];
+    end
+    vel_null = [vel_null tmp];
+end
+[c,s,l] = pca(vel_null');
+figure;stem(c(:,1),'k')
+xlim([0.5 2.5])
+xticks([1:2])
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+box off
+figure;stem(c(:,2),'k')
+xlim([0.5 2.5])
+xticks([1:2])
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+box off
+
+% pca on the first x and y velocity alone 
+C = cov((vel(1:2,:))');
+figure;imagesc(C)
+[c,s,l] = pca(vel(1:2,:)');
+figure;stem(c(:,1),'k')
+xlim([0.5 2.5])
+xticks([1:2])
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+box off
+figure;stem(c(:,2),'k')
+xlim([0.5 2.5])
+xticks([1:2])
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+box off
+% nullhypothesis via MP test
+kindata1=vel(1:2,:)';
+kindata1=kindata1-mean(kindata1);
+q = size(kindata1,1)/size(kindata1,2);
+q = sqrt(q);
+sigma2 = var(kindata1(:)-mean(kindata1(:)));
+lambda_thresh = sigma2*((1+1/q)^2);
+figure;stem(l);
+hline(lambda_thresh)
+
+
+
+
+% get histogram of angles relative to the x and y axes
+velxy = vel(1:2,:);
+angles = [];
+for i=1:size(velxy,2)    
+    velxy(:,i) = velxy(:,i)./norm(velxy(:,i));
+    tmp = abs(velxy(:,i));
+    angles(i) = atan(tmp(2)/tmp(1));
+end
+errx = acos([1 0]*abs(velxy));
+erry = acos([0 1]*abs(velxy));
+err = [errx erry];
+err = err(~isnan(err));
+angles = angles(~isnan(angles));
+%plot
+[t,r]=rose(angles,20);
+figure
+polarplot(t,r,'LineWidth',1,'Color','k');
+pax=gca;
+%pax.RLim = [0 20];
+thetaticks(0:30:360);
+pax.ThetaAxisUnits='radians';
+pax.FontSize=16;
+set(gcf,'Color','w')
+%pax.RTick = [5 10 15 20 ];
+pax.GridAlpha = 0.25;
+pax.MinorGridAlpha = 0.25;
+pax.ThetaMinorGrid = 'off';
+%pax.ThetaTickLabel = {'0', ' ', '\pi/2 ', ' ','\pi',' ','3\pi/2',' '};
+pax.ThetaTickLabel = ''
+%pax.ThetaTickLabel = {'0', ' ', ' ', ' ','\pi',' ',' ',' '};
+pax.RTickLabel = {' ',' '};
+pax.RAxisLocation=1;
+pax.RAxis.LineWidth=1;
+pax.ThetaAxis.LineWidth=1;
+pax.LineWidth=1;
+pax.ThetaLim = [0 pi/2];
+temp = exp(1i*angles);
+r1 = abs(mean(temp))*1 * max(r);
+phi = angle(mean(temp));
+hold on;
+polarplot([phi-0.01 phi],[0 r1],'LineWidth',1.5,'Color','r')
+polarplot([0 0],[0 0.25e3],'LineWidth',1.5,'Color','k')
+polarplot([pi/2 pi/2 ],[0 0.25e3],'LineWidth',1.5,'Color','k')
+set(gcf,'PaperPositionMode','auto')
+set(gcf,'Position',[680.0,865,120.0,113.0])
+
+% null model of what distributions should be like
+err_null = [zeros(1,400) 90*pi/180*ones(1,400)];
+[t,r]=rose(err_null,50);
+figure
+polarplot(t,r,'LineWidth',1,'Color','k');
+pax=gca;
+%pax.RLim = [0 20];
+thetaticks(0:30:360);
+pax.ThetaAxisUnits='radians';
+pax.FontSize=16;
+set(gcf,'Color','w')
+%pax.RTick = [5 10 15 20 ];
+pax.GridAlpha = 0.25;
+pax.MinorGridAlpha = 0.25;
+pax.ThetaMinorGrid = 'off';
+%pax.ThetaTickLabel = {'0', ' ', '\pi/2 ', ' ','\pi',' ','3\pi/2',' '};
+pax.ThetaTickLabel = ''
+%pax.ThetaTickLabel = {'0', ' ', ' ', ' ','\pi',' ',' ',' '};
+pax.RTickLabel = {' ',' '};
+pax.RAxisLocation=1;
+pax.RAxis.LineWidth=1;
+pax.ThetaAxis.LineWidth=1;
+pax.LineWidth=1;
+pax.ThetaLim = [0 90*pi/180];
+hold on;
+polarplot([0 0],[0 0.4e3],'LineWidth',1.5,'Color','k')
+polarplot([pi/2 pi/2 ],[0 0.4e3],'LineWidth',1.5,'Color','k')
+set(gcf,'PaperPositionMode','auto')
+set(gcf,'Position',[680.0,865,120.0,113.0])
+
+
+% now plotting a few example trials along with position, user input and
+% velocity profile
+
+idx=1;
+load(files{idx})
+kin = TrialData.CursorState;
+task_state = TrialData.TaskState;
+kinidx = find(task_state==3);
+kin = kin(:,kinidx);
+decodes = TrialData.FilteredClickerState;
+fs=TrialData.Params.UpdateRate;
+tt = [0:length(decodes)-1]*(1/fs);
+col = turbo(8);
+
+% plot the trajectory 
+figure
+hold on
+for i=1:length(decodes)
+    c = col(decodes(i)+1,:);
+    plot3(kin(1,i),-kin(2,i),kin(3,i),'.','MarkerSize',40,'Color',c);
+end
+xlim([-300 300])
+ylim([-300 300])
+zlim([-300 300])
+target = TrialData.TargetPosition;
+plot3(target(1),-target(2),target(3),'ok','MarkerSize',50)
+%plot(-150,150,'o','MarkerSize',50,'Color','k')
+set(gcf,'Color','w')
+xticks([-200:200:200])
+yticks([-200:200:200])
+zticks([-200:200:200])
+
+% plot the decodes
+figure;
+set(gcf,'Color','w')
+subplot(2,1,1)
+hold on
+for i=0:7
+    h=barh(i,length(decodes),1);
+    h.FaceColor = col(i+1,:);
+    h.FaceAlpha = 0.8;
+end
+stem(decodes,'filled','LineWidth',1,'Color','k')
+ii = [9 17 25 33 41 49];
+xticks(ii)
+xticklabels(tt(ii))
+yticks ''
+axis tight
+% plot the velocity profile 
+subplot(2,1,2)
+hold on
+plot(kin(4,:),'r','LineWidth',1)
+plot(kin(5,:),'b','LineWidth',1)
+plot(kin(6,:),'g','LineWidth',1)
+xticks(ii)
+xticklabels(tt(ii))
+axis tight
+
+%%%%% plotting the dynamics and decodes for the virtual r2g lateral task
+filename = fullfile(root_path,'20211013\RobotLateralR2G\135901\BCI_Fixed\Data0001.mat');
+load(filename)
+grip_mode = TrialData.OpMode;
+decodes = TrialData.FilteredClickerState;
+translation_decodes = decodes(grip_mode==0);
+gripper_decodes = decodes(grip_mode==1);
+
+% plot the decodes
+fs=TrialData.Params.UpdateRate;
+tt = [0:length(decodes)-1]*(1/fs);
+col = turbo(8);
+figure;
+set(gcf,'Color','w')
+hold on
+for i=0:7
+    h=barh(i,length(decodes),1);
+    h.FaceColor = col(i+1,:);
+    h.FaceAlpha = 0.5;
+end
+stem(decodes,'filled','LineWidth',1,'Color','k')
+ii = [26 51 76 101 126 151 176 201 226 ];
+xticks(ii)
+xticklabels(tt(ii))
+yticks ''
+axis tight
 
 
 
