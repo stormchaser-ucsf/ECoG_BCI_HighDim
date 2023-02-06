@@ -1,5 +1,6 @@
+%% EVERYTHING HERE IS FOR B3
 
-
+%%
 % classifying hand actions
 
 clc;clear
@@ -551,25 +552,22 @@ set(gcf,'Color','w')
 
 %% MAHALANOBIS AFTER NORMAIZING DATA WITHIN A SESSION (MAIN)
 
-clc;clear
 
-root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
-foldernames = {'20211201','20211203','20211206','20211208','20211215','20211217',...
-    '20220126','20220223','20220225'};
+
+clc;clear
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath('C:\Users\nikic\Documents\MATLAB')
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+foldernames = {'20230111','20230118','20230119','20230125','20230126','20230201','20230203'};
 cd(root_path)
+
 
 files=[]; % these are the foldernanes within each day
 for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'ImaginedMvmtDAQ')
     D=dir(folderpath);
-    if i==3
-        D = D([1:3 5:7 9:end]);
-    elseif i==4
-        D = D([1:3 5:end]);
-    elseif i==6
-        D = D([1:5 7:end]);
-    end
-
     for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'Imagined');
         tmp=dir(filepath);
@@ -587,7 +585,8 @@ ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right P
     'Left Shoulder Shrug',...
     'Right Tricep','Left Tricep',...
     'Right Bicep','Left Bicep',...
-    'Right Leg','Left Leg',...
+    'Right Knee','Left Knee',...
+    'Right Ankle','Left Ankle',...
     'Lips','Tongue'};
 
 %no bicep or tricep
@@ -625,60 +624,83 @@ for i=1:length(files)
     data_overall=[];
     cd(files{i})
     for jj=1:len
-        load(d(jj).name)
-        features  = TrialData.SmoothedNeuralFeatures;
-        kinax = TrialData.TaskState;
-        kinax2 = find(kinax==2);
-        kinax = find(kinax==3);
-        temp = cell2mat(features(kinax));        
-        temp2 = cell2mat(features(kinax2));
-        %temp=temp(:,3:end); % ignore the first 600ms
+        %disp(d(jj).name)
+        file_loaded=true;
+        try
+            load(d(jj).name)
+        catch
+            file_loaded=false;
+            %disp(['file not loaded  ' d(jj).name])
+        end
+        if file_loaded
+            features  = TrialData.SmoothedNeuralFeatures;
+            kinax = TrialData.TaskState;
+            kinax2 = find(kinax==2);
+            kinax = find(kinax==3);
+            temp = cell2mat(features(kinax));
+            temp2 = cell2mat(features(kinax2));
+            %temp=temp(:,3:end); % ignore the first 600ms
 
-        % baseline the data to state 2
-        %m = mean(temp2,2);
-        %s = std(temp2')';
-        %temp = (temp-m)./s;
+            % baseline the data to state 2
+            %m = mean(temp2,2);
+            %s = std(temp2')';
+            %temp = (temp-m)./s;
 
-        % take from 400 to 2000ms
-        temp = temp(:,3:10);
-        %temp=temp(:,3:end); % ignore the first 600ms
+            % take from 400 to 2000ms
+            temp = temp(:,3:end);
+            %temp=temp(:,3:end); % ignore the first 600ms
 
-        % hg and delta and beta
-        temp = temp([129:256 513:640 769:end],:);
-        %temp = temp([ 769:end],:);
+            if size(temp,1)==1792
 
-        %get smoothed delta hg and beta features
-        %         new_temp=[];
-        %         [xx yy] = size(TrialData.Params.ChMap);
-        %         for k=1:size(temp,2)
-        %             tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
-        %             tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
-        %             tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-        %             pooled_data=[];
-        %             for i=1:2:xx
-        %                 for j=1:2:yy
-        %                     delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
-        %                     beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
-        %                     hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-        %                     pooled_data = [pooled_data; delta; beta ;hg];
-        %                 end
-        %             end
-        %             new_temp= [new_temp pooled_data];
-        %         end
-        %         temp=new_temp;
-        %         temp = temp([ 1:32 65:96 ],:);
+                % hg and delta and beta
+                temp = temp([257:512 1025:1280 1537:1792],:);
 
 
-        data_overall = [data_overall;temp'];
+                % remove the bad channels 108, 113 118
+                bad_ch = [108 113 118];
+                good_ch = ones(size(temp,1),1);
+                for ii=1:length(bad_ch)
+                    bad_ch_tmp = bad_ch(ii)*[1 2 3];
+                    good_ch(bad_ch_tmp)=0;
+                end
+
+                temp = temp(logical(good_ch),:);
+                figure;hist(temp(:))
+                title(d(jj).name)
+
+                %get smoothed delta hg and beta features
+                %         new_temp=[];
+                %         [xx yy] = size(TrialData.Params.ChMap);
+                %         for k=1:size(temp,2)
+                %             tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                %             tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                %             tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                %             pooled_data=[];
+                %             for i=1:2:xx
+                %                 for j=1:2:yy
+                %                     delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                %                     beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                %                     hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                %                     pooled_data = [pooled_data; delta; beta ;hg];
+                %                 end
+                %             end
+                %             new_temp= [new_temp pooled_data];
+                %         end
+                %         temp=new_temp;
+                %         temp = temp([ 1:32 65:96 ],:);
 
 
-
-        for j=1:length(ImaginedMvmt)
-            if strcmp(ImaginedMvmt{j},TrialData.ImaginedAction)
-                tmp=Data_tmp{j};
-                tmp = [tmp temp];
-                Data_tmp{j} = tmp;
-                break
+                if max(abs(temp(:))) < 10                    
+                    data_overall = [data_overall;temp'];
+                    for j=1:length(ImaginedMvmt)
+                        if strcmp(ImaginedMvmt{j},TrialData.ImaginedAction)
+                            tmp=Data_tmp{j};
+                            tmp = [tmp temp];
+                            Data_tmp{j} = tmp;
+                            break
+                        end
+                    end
+                end
             end
         end
     end
@@ -688,13 +710,15 @@ for i=1:length(files)
 
     for j=1:length(Data_tmp)
         tmp=Data_tmp{j};
-        tmp = (tmp-m')./s';
-        Data_tmp{j}=tmp;
+        if ~isempty(tmp)
+            tmp = (tmp-m')./s';
+            Data_tmp{j}=tmp;
 
-        % transfer to main file
-        tmp=Data{j};
-        tmp = [tmp Data_tmp{j}];
-        Data{j} = tmp;
+            % transfer to main file
+            tmp=Data{j};
+            tmp = [tmp Data_tmp{j}];
+            Data{j} = tmp;
+        end
     end
 end
 
@@ -1218,25 +1242,18 @@ clc;clear
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 addpath('C:\Users\nikic\Documents\MATLAB')
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 
-root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
-foldernames = {'20211201','20211203','20211206','20211208','20211215','20211217',...
-    '20220126','20220223','20220225'};
-
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+foldernames = {'20230111','20230118','20230119','20230125','20230126','20230201','20230203'};
 cd(root_path)
+
+
+
 
 files=[];
 for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'ImaginedMvmtDAQ')
-    D=dir(folderpath);
-    if i==3
-        D = D([1:3 5:7 9:end]);
-    elseif i==4
-        D = D([1:3 5:end]);
-    elseif i==6
-        D = D([1:5 7:end]);
-    end
+    D=dir(folderpath);    
 
     for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'Imagined');
@@ -1255,7 +1272,8 @@ ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right P
     'Left Shoulder Shrug',...
     'Right Tricep','Left Tricep',...
     'Right Bicep','Left Bicep',...
-    'Right Leg','Left Leg',...
+    'Right Knee','Left Knee',...
+    'Right Ankle','Left Ankle',...
     'Lips','Tongue'};
 
 
@@ -1267,8 +1285,8 @@ for i=1:length(ImaginedMvmt)
 end
 
 % TIMING INFORMATION FOR THE TRIALS
-Params.InterTrialInterval = 3; % rest period between trials 
-Params.InstructedDelayTime = 4; % text appears telling subject which action to imagine
+Params.InterTrialInterval = 2; % rest period between trials 
+Params.InstructedDelayTime = 2; % text appears telling subject which action to imagine
 Params.CueTime = 2; % A red square; subject has to get ready
 Params.ImaginedMvmtTime = 4; % A green square, subject has actively imagine the action
 
@@ -1278,7 +1296,7 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'SampleRate',1e3);
 
 
-% 
+%
 % % log spaced hg filters
 % Params.Fs = 1000;
 % Params.FilterBank(1).fpass = [70,77];   % high gamma1
@@ -1292,7 +1310,7 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 % Params.FilterBank(end+1).fpass = [0.5,4]; % delta
 % Params.FilterBank(end+1).fpass = [13,19]; % beta1
 % Params.FilterBank(end+1).fpass = [19,30]; % beta2
-% 
+%
 % % compute filter coefficients
 % for i=1:length(Params.FilterBank),
 %     [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
@@ -1302,178 +1320,304 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 
 for i=1:length(files)
     disp(i/length(files)*100)
-    load(files{i});
-    features  = TrialData.BroadbandData;
-    features = cell2mat(features');
-    Params = TrialData.Params;
-
-
-
-
-    %get hG through filter bank approach
-    filtered_data=zeros(size(features,1),size(features,2),2);
-    k=1;
-    for ii=9:16 %9:16 is hG, 4:5 is beta
-        filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
-            Params.FilterBank(ii).b, ...
-            Params.FilterBank(ii).a, ...
-            features)));
-        k=k+1;
+    file_loaded=1;
+    try
+        load(files{i});
+    catch
+        file_loaded=0;
     end
-    %tmp_hg = squeeze(mean(filtered_data.^2,3));
-    tmp_hg = squeeze(mean(filtered_data,3));
+    if file_loaded
+        features  = TrialData.BroadbandData;
+        features = cell2mat(features');
+        Params = TrialData.Params;
 
-    % low pass filter the data 
-%     features1 = [randn(4000,128);features;randn(4000,128)];
-%     tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
-%     tmp_hg = tmp_hg(4001:end-4000,:);
 
-    task_state = TrialData.TaskState;
-    idx=[];
-    for ii=1:length(task_state)
-        tmp = TrialData.BroadbandData{ii};
-        idx = [idx;task_state(ii)*ones(size(tmp,1),1)];
-    end    
-    
-    % z-score to 1s before the get ready symbol
-    fidx2 =  find(idx==2);fidx2=fidx2(1);
-    fidx2 = fidx2+[-1000:0];
-    m = mean(tmp_hg(fidx2,:));
-    s = std(tmp_hg(fidx2,:));
-    fidx = [fidx2 fidx2(end)+[1:7000]];
+        % artifact correction is there is too much noise in raw signal
+        if sum(abs(features(:))>5)/length(features(:))*100 < 5
 
-    tmp_hg_epoch  = tmp_hg(fidx,:);
-    tmp_hg_epoch = (tmp_hg_epoch-m)./s;
 
-    % downsample to 200Hz
-    %tmp_lp = resample(tmp_lp,200,800);
-%     tmp_hg_epoch1=[];
-%     for j=1:size(tmp_hg_epoch,2);
-%         tmp_hg_epoch1(:,j) = decimate(tmp_hg_epoch(:,j),5);
-%     end
 
-    features = tmp_hg_epoch;
 
-    for j=1:length(ImaginedMvmt)
-        if strcmp(ImaginedMvmt{j},TrialData.ImaginedAction)
-            tmp = ERP_Data{j};
-            tmp = cat(3,tmp,features);
-            ERP_Data{j}=tmp;
-            break
+            %get hG through filter bank approach
+            filtered_data=zeros(size(features,1),size(features,2),2);
+            k=1;
+            for ii=9:16 %9:16 is hG, 4:5 is beta
+                filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
+                    Params.FilterBank(ii).b, ...
+                    Params.FilterBank(ii).a, ...
+                    features)));
+                k=k+1;
+            end
+            %tmp_hg = squeeze(mean(filtered_data.^2,3));
+            tmp_hg = squeeze(mean(filtered_data,3));
+
+            % low pass filter the data
+            %     features1 = [randn(4000,128);features;randn(4000,128)];
+            %     tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+            %     tmp_hg = tmp_hg(4001:end-4000,:);
+
+            task_state = TrialData.TaskState;
+            idx=[];
+            for ii=1:length(task_state)
+                tmp = TrialData.BroadbandData{ii};
+                idx = [idx;task_state(ii)*ones(size(tmp,1),1)];
+            end
+
+
+            % z-score to 1s before the get ready symbol
+            fidx2 =  find(idx==2);fidx2=fidx2(1);
+            fidx2 = fidx2+[-1000:0];
+            m = mean(tmp_hg(fidx2,:));
+            s = std(tmp_hg(fidx2,:));
+            fidx = [fidx2 fidx2(end)+[1:7000]];
+
+            tmp_hg_epoch  = tmp_hg(fidx,:);
+            tmp_hg_epoch = (tmp_hg_epoch-m)./s;
+
+            % downsample to 200Hz
+            %tmp_lp = resample(tmp_lp,200,800);
+            %     tmp_hg_epoch1=[];
+            %     for j=1:size(tmp_hg_epoch,2);
+            %         tmp_hg_epoch1(:,j) = decimate(tmp_hg_epoch(:,j),5);
+            %     end
+
+            features = tmp_hg_epoch;
+            var_exists=true;
+            try
+                tmp_action_name = TrialData.ImaginedAction;
+            catch
+                var_exists=false;
+            end
+
+            if var_exists && size(features,2)==256
+                for j=1:length(ImaginedMvmt)
+                    if strcmp(ImaginedMvmt{j},TrialData.ImaginedAction)
+                        tmp = ERP_Data{j};
+                        tmp = cat(3,tmp,features);
+                        ERP_Data{j}=tmp;
+                        break
+                    end
+                end
+            end
         end
     end
 end
 
-save high_res_erp_beta_imagined_data -v7.3
+%save high_res_erp_beta_imagined_data -v7.3
 %save high_res_erp_LMP_imagined_data -v7.3
-%save high_res_erp_imagined_data -v7.3
+save B3_high_res_erp_imagined_data -v7.3
+
+% get the number of epochs used
+ep=[];
+for i=1:length(ERP_Data)
+    tmp = ERP_Data{i};
+    ep(i) = size(tmp,3);
+end
+figure;stem(ep)
+xticks(1:32)
+xticklabels(ImaginedMvmt)
+
+% plot ERPs and see individual channels, with stats
+data = ERP_Data{21};
+figure;
+for ch=1:size(data,2)
+    
+    clf
+    set(gcf,'Color','w')
+    set(gcf,'WindowState','maximized')
+    title(num2str(ch))
+
+    chdata = squeeze((data(:,ch,:)));
+
+    % bad trial removal
+    tmp_bad=zscore(chdata')';
+    artifact_check=((tmp_bad)>=5) + (tmp_bad<=-4);
+    good_idx = find(sum(artifact_check)==0);
+    chdata = chdata(:,good_idx);
+
+
+    % confidence intervals around the mean
+    m=mean(chdata,2);
+    opt=statset('UseParallel',true);
+    mb = sort(bootstrp(1000,@mean,chdata','Options',opt));
+    tt=linspace(-1,7,size(data,1));
+    %figure;
+    [fillhandle,msg]=jbfill(tt,(mb(25,:)),(mb(975,:))...
+        ,[0.5 0.5 0.5],[0.5 0.5 0.5],1,.4);
+    hold on
+    plot(tt,(m),'k','LineWidth',1)
+    axis tight
+    %plot(tt,mb(25,:),'--k','LineWidth',.25)
+    %plot(tt,mb(975,:),'--k','LineWidth',.25)
+    % beautify
+    ylabel(num2str(ch))
+    ylim([-1.5 2])
+    %yticks ''
+    %xticks ''
+    vline([0 2 6],'r')
+    hline(0)
+    axis tight
+
+    % channel significance: if mean is outside the 95% boostrapped C.I. for
+    % any duration of time
+    tmp = mb(:,1:1000);
+    tmp = tmp(:);
+    pval=[];sign_time=[];
+    for j=3001:6000
+        if m(j)>0
+            ptest = (sum(m(j) >= tmp(:)))/length(tmp);
+            sign_time=[sign_time 1];
+        else
+            ptest = (sum(m(j) <= tmp(:)))/length(tmp);
+            sign_time=[sign_time -1];
+        end
+        ptest = 1-ptest;
+        pval = [pval ptest];
+
+    end
+    [pfdr, pval1]=fdr(pval,0.05);pfdr;
+    %pfdr=0.0005;
+    pval(pval<=pfdr) = 1;
+    pval(pval~=1)=0;
+    m1=m(3001:6000);
+    tt1=tt(3001:6000);
+    idx1=find(pval==1);
+    plot(tt1(idx1),m1(idx1),'b')
+
+    %sum(pval/3000)
+
+
+    %
+    if sum(pval)>300 % how many sig. samples do you want for it to be 'sig'
+        if sum(pval.*sign_time)>0
+            box_col = 'g';            
+        else
+            box_col = 'b';            
+        end
+        box on
+        set(gca,'LineWidth',2)
+        set(gca,'XColor',box_col)
+        set(gca,'YColor',box_col)
+    end
+
+    waitforbuttonpress
+    
+
+
+end
+
+
+
 
 % plot ERPs at all channels with tests for significance
-idx = [1:30];
-%idx =  [1,10,30,25,20,28];
-data = ERP_Data{1};
-chMap=TrialData.Params.ChMap;
-%ch=3;
-sig_ch=zeros(30,128);
-for i=1:length(idx)    
-%     figure
-%     ha=tight_subplot(8,16);
-%     d = 1;
-%     set(gcf,'Color','w')
-%     set(gcf,'WindowState','maximized')
+idx = [9,10,20,21,27,29,31,32 ];
+bad_ch = [108,113,118];
+load('ECOG_Grid_8596_000063_B3.mat')
+chMap=ecog_grid;
+sig_ch=zeros(32,256);
+for i=1:length(idx)
+    figure
+    ha=tight_subplot(size(chMap,1),size(chMap,2));
+    d = 1;
+    set(gcf,'Color','w')
+    set(gcf,'WindowState','maximized')
     data = ERP_Data{idx(i)};
-    for ch=1:128
-        disp(['movement ' num2str(i) ' channel ' num2str(ch)])
+    for ch=1:size(data,2)
 
-%         [x y] = find(chMap==ch);
-%         if x == 1
-%             axes(ha(y));
-%             %subplot(8, 16, y)
-%         else
-%             s = 16*(x-1) + y;
-%             axes(ha(s));
-%             %subplot(8, 16, s)
-%         end
-%         hold on
+        if sum(ch==bad_ch) == 0
 
-        chdata = squeeze((data(:,ch,:)));
-        
-        % bad trial removal
-        tmp_bad=zscore(chdata')';
-        artifact_check=((tmp_bad)>=5) + (tmp_bad<=-4);
-        good_idx = find(sum(artifact_check)==0);
-        chdata = chdata(:,good_idx);      
+            disp(['movement ' num2str(i) ' channel ' num2str(ch)])
 
-
-        % confidence intervals around the mean
-        m=mean(chdata,2);
-        opt=statset('UseParallel',true);
-        mb = sort(bootstrp(1000,@mean,chdata','Options',opt));
-        tt=linspace(-1,7,size(data,1));
-        %figure;        
-%         [fillhandle,msg]=jbfill(tt,(mb(25,:)),(mb(975,:))...
-%         ,[0.5 0.5 0.5],[0.5 0.5 0.5],1,.4);
-%         hold on        
-%         plot(tt,(m),'k','LineWidth',1)
-%         axis tight
-%         %plot(tt,mb(25,:),'--k','LineWidth',.25)
-%         %plot(tt,mb(975,:),'--k','LineWidth',.25)
-%         % beautify
-%         ylabel(num2str(ch))        
-%         ylim([-1.5 2])
-%         yticks ''
-%         xticks ''
-%         vline([0 2 6],'r')
-%         hline(0)
-        %hline([0.5, -0.5])
-        %axis tight
-
-        
-        % channel significance: if mean is outside the 95% boostrapped C.I. for
-        % any duration of time
-        tmp = mb(:,1:1000);
-        tmp = tmp(:);
-        pval=[];sign_time=[];
-        for j=3001:6000
-            if m(j)>0
-                ptest = (sum(m(j) >= tmp(:)))/length(tmp);
-                sign_time=[sign_time 1];
+            [x y] = find(chMap==ch);
+            if x == 1
+                axes(ha(y));
+                %subplot(8, 16, y)
             else
-                ptest = (sum(m(j) <= tmp(:)))/length(tmp);
-                sign_time=[sign_time -1];
+                s = 23*(x-1) + y;
+                axes(ha(s));
+                %subplot(8, 16, s)
             end
-            ptest = 1-ptest;
-            pval = [pval ptest];   
+            hold on
 
+            chdata = squeeze((data(:,ch,:)));
+
+            % bad trial removal
+            tmp_bad=zscore(chdata')';
+            artifact_check=((tmp_bad)>=5) + (tmp_bad<=-4);
+            good_idx = find(sum(artifact_check)==0);
+            chdata = chdata(:,good_idx);
+
+
+            % confidence intervals around the mean
+            m=mean(chdata,2);
+            opt=statset('UseParallel',true);
+            mb = sort(bootstrp(1000,@mean,chdata','Options',opt));
+            tt=linspace(-1,7,size(data,1));
+            %figure;
+            [fillhandle,msg]=jbfill(tt,(mb(25,:)),(mb(975,:))...
+                ,[0.5 0.5 0.5],[0.5 0.5 0.5],1,.4);
+            hold on
+            plot(tt,(m),'k','LineWidth',1)
+            axis tight
+            %plot(tt,mb(25,:),'--k','LineWidth',.25)
+            %plot(tt,mb(975,:),'--k','LineWidth',.25)
+            % beautify
+            ylabel(num2str(ch))
+            ylim([-1.5 2])
+            yticks ''
+            xticks ''
+            vline([0 2 6],'r')
+            hline(0)
+            %hline([0.5, -0.5])
+            axis tight
+
+
+            % channel significance: if mean is outside the 95% boostrapped C.I. for
+            % any duration of time
+            tmp = mb(:,1:1000);
+            tmp = tmp(:);
+            pval=[];sign_time=[];
+            for j=3001:6000
+                if m(j)>0
+                    ptest = (sum(m(j) >= tmp(:)))/length(tmp);
+                    sign_time=[sign_time 1];
+                else
+                    ptest = (sum(m(j) <= tmp(:)))/length(tmp);
+                    sign_time=[sign_time -1];
+                end
+                ptest = 1-ptest;
+                pval = [pval ptest];
+
+            end
+            [pfdr, pval1]=fdr(pval,0.05);pfdr;
+            pfdr=0.0005;
+            pval(pval<=pfdr) = 1;
+            pval(pval~=1)=0;
+            m1=m(3001:6000);
+            tt1=tt(3001:6000);
+            idx1=find(pval==1);
+            plot(tt1(idx1),m1(idx1),'b')
+
+            %sum(pval/3000)
+
+
+            %
+            if sum(pval)>300
+                if sum(pval.*sign_time)>0
+                    box_col = 'g';
+                    sig_ch(i,ch)=1;
+                else
+                    box_col = 'b';
+                    sig_ch(i,ch)=-1;
+                end
+                box on
+                set(gca,'LineWidth',2)
+                set(gca,'XColor',box_col)
+                set(gca,'YColor',box_col)
+            end
         end
-        [pfdr, pval1]=fdr(pval,0.05);pfdr;
-        pfdr=0.0005;
-        pval(pval<=pfdr) = 1;
-        pval(pval~=1)=0;
-        m1=m(3001:6000);
-        tt1=tt(3001:6000);
-        idx1=find(pval==1);
-        %plot(tt1(idx1),m1(idx1),'b')
-
-        %sum(pval/3000)
-
-        
-% 
-        if sum(pval>0)
-            if sum(pval.*sign_time)>0
-                box_col = 'g';
-                sig_ch(i,ch)=1;
-            else
-                box_col = 'b';
-                sig_ch(i,ch)=-1;
-            end
-%             box on
-%             set(gca,'LineWidth',2)
-%             set(gca,'XColor',box_col)
-%             set(gca,'YColor',box_col)
-        end        
-    end    
-    %sgtitle(ImaginedMvmt(idx(i)))
+    end
+    sgtitle(ImaginedMvmt(idx(i)))
 %     filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
 %     saveas(gcf,filename)
 %     set(gcf,'PaperPositionMode','auto')

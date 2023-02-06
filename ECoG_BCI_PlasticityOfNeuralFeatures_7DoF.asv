@@ -4372,7 +4372,7 @@ x=[ones(length(y),1) [1:length(y)]'];
 lm = fitlm(x(:,2),y);
 
 %B1
-y=[5.95474288, 6.8286061 , 8.39052186, 8.17585576, 8.27175004,...
+y=[5.95474288, 6.8286061 , 8.39052186, 8.17585576, 8.27175004,.
        9.24597975, 8.60957232, 9.03721714, 8.79579779]';
 x=[ones(length(y),1) [1:length(y)]'];
 
@@ -4380,14 +4380,6 @@ x=[ones(length(y),1) [1:length(y)]'];
 STATS2
 lm = fitlm(x(:,2),y)
 
-% for lm get the data from python
-mahab=data(:,1);
-days = data(:,2);
-data=table(days,mahab);
-
-glm = fitglme(data,'mahab ~ 1+ days');
-
-save latent_across_day_proj_B1 -v7.3
 
 
 %% ANALYSIS OF THE 3D PATH TASK AND ITS PERFORMANCE ETC.
