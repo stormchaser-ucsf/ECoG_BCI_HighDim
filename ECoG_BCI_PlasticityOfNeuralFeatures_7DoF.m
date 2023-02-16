@@ -1510,7 +1510,7 @@ glme = fitglme(data,'latent_var ~ 1 + exp_type +(1|day_name)+(1|subject)')
 % doing paired t-tests
 I = sort([find(data.exp_type==3);find(data.exp_type==2)]);
 data1=data(I,:);
-glme = fitglme(data1,'latent_var ~ 1 + exp_type +(1|day_name)+(1|subject)')
+glme = fitglme(data1,'latent_var ~ 1 + exp_type +(1|day_name)')
 
 
 

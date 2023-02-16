@@ -665,8 +665,8 @@ for i=1:length(files)
                 end
 
                 temp = temp(logical(good_ch),:);
-                figure;hist(temp(:))
-                title(d(jj).name)
+%                 figure;hist(temp(:))
+%                 title(d(jj).name)
 
                 %get smoothed delta hg and beta features
                 %         new_temp=[];
@@ -741,7 +741,7 @@ xticklabels(ImaginedMvmt)
 yticklabels(ImaginedMvmt)
 set(gcf,'Color','w')
 %colormap bone
-%caxis([0 200])
+%caxis([20 200])
 
 Z = linkage(D,'ward');
 figure;dendrogram(Z,0)
@@ -816,11 +816,11 @@ for iter=1:1
     for i=1:length(condn_data)
         %disp(i)
         A = condn_data{i}';
-        A = A(257:end,:);
+        A = A(1:end,:);
         model_wts=[];
         for j=i:length(condn_data)
             B = condn_data{j}';
-            B = B(257:end,:);
+            B = B(1:end,:);
             if i==j
                 D(i,j)=0;
                 svm_model{i,j}=0;

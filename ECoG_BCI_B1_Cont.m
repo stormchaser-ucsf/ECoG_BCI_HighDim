@@ -3699,6 +3699,8 @@ title('Classif. using temporal history')
 clc;clear
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath 'C:\Users\nikic\Documents\MATLAB'
 
 foldernames = {'20220713'};
 cd(root_path)
@@ -3781,8 +3783,13 @@ title(['Accuracy of ' num2str(100*mean(diag(T))) '%' ' and bitrate of ' num2str(
 
 
 clc;clear
+close all
+
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath 'C:\Users\nikic\Documents\MATLAB'
+
 
 %foldernames = {'20220601'};
 foldernames = {'20210813','20210818','20210825','20210827','20210901','20210903',...
@@ -3794,7 +3801,8 @@ folders={};
 br_across_days={};
 time2target_days=[];
 acc_days=[];
-for i=1:length(foldernames)
+conf_matrix_overall=[];
+for i=1:10%length(foldernames)
 
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
@@ -3833,7 +3841,9 @@ for i=1:length(foldernames)
             folders=[folders;filepath];
         end
         if length(files)>0
-            [b,a,t] = compute_bitrate(files,7);
+            [b,a,t,T] = compute_bitrate(files,7);
+            %[b,a,t,T] = compute_bitrate_constTime(files,7);
+            conf_matrix_overall = cat(3,conf_matrix_overall,T);
             br = [br b];
             acc = [acc mean(a)];
             time2target = [time2target; mean(t)];
@@ -3852,6 +3862,7 @@ end
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
 figure;hold on
 br=[];
+brh=[];
 %cmap = brewermap(11,'blues');
 %cmap=flipud(cmap);
 %cmap=cmap(1:length(br_across_days),:);
@@ -3859,9 +3870,10 @@ br=[];
 cmap = turbo(7);%turbo(length(br_across_days));
 for i=1:7%length(br_across_days)
     tmp = br_across_days{i};
+    brh = [brh tmp];
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    br(i) = mean(tmp);
+    br(i) = median(tmp);
 end
 plot(br(1:end),'k','LineWidth',2)
 days={'1','5','12','14','19','21','28','32','35','40','42'};
@@ -3874,7 +3886,21 @@ ylabel('BitRate')
 set(gca,'LineWidth',1)
 %set(gca,'Color',[.85 .85 .85])
 xlim([0 7.5])
+ylim([0 3.5])
 %
+
+figure
+boxplot(brh,'whisker',1.75)
+set(gcf,'Color','w')
+xticks(1)
+xticklabels('PnP Experiment 1')
+ylabel('Effective bit rate')
+set(gca,'FontSize',12)
+box off
+xlim([.75 1.25])
+ylim([0 3.5])
+yticks([0:.5:3.5])
+set(gca,'LineWidth',1,'TickLength',[0.025 0.025]);
 
 figure;hold on
 acc=[];
@@ -3883,7 +3909,7 @@ for i=1:7%length(acc_days)
     tmp  = acc_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    acc(i) = mean(tmp);
+    acc(i) = median(tmp);
     acch = [acch ;tmp];
 end
 plot(acc,'k','LineWidth',2)
@@ -3898,6 +3924,7 @@ set(gca,'LineWidth',1)
 xlim([0.5 7.5])
 h=hline(1/7);
 set(h,'LineWidth',2)
+yticks([0:.2:1])
 
 figure;hold on
 t2t=[];
@@ -3906,7 +3933,7 @@ for i=1:7%length(time2target_days)
     tmp  = time2target_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    t2t(i) = mean(tmp);
+    t2t(i) = median(tmp);
     t2th = [t2th;tmp];
 end
 plot(t2t,'k','LineWidth',2)
@@ -3916,8 +3943,10 @@ set(gca,'XTickLabel',days)
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
 xlabel('Days - PnP')
-ylabel('Time to Target (s)')
+ylabel('Mean time to Target (s)')
 set(gca,'LineWidth',1)
+xlim([0.5 7.5])
+yticks([0:.5:3])
 
 figure;hist(acch,10)
 xlim([0 1])
@@ -3957,7 +3986,6 @@ set(gca,'LineWidth',1)
 % scatter(idx,acc_days,'k')
 
 
-
 %% BLOCK BY BLOCK BIT RATE CALCULATIONS ACROSS DAYS - PNP 2
 %%%%(MAIN)
 % second plug and play experiment 
@@ -3966,6 +3994,7 @@ set(gca,'LineWidth',1)
 clc;clear
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath('C:\Users\nikic\Documents\MATLAB')
 
 %foldernames = {'20210903'};
 foldernames = {'20211013','20211015','20211020','20211022','20211027','20211029',...
@@ -3982,31 +4011,27 @@ for i=1:length(foldernames)
     
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
-%     if i==1
-%         idx = [1 2 3 4];
-%         D = D(idx);
-%     elseif i==2
-%         idx = [1 2 3 4 6 7];
-%         D = D(idx);
-%     elseif i==3
-%         idx = [1 2 5 6];
-%         D = D(idx);
-%     elseif i==6
-%         idx = [1 2 3 4 5 6];
-%         D = D(idx);
-%     elseif i==8
-%         idx = [1 2 3 4 5 6 7];
-%         D = D(idx);
-%     elseif i==9
-%         idx = [1 2 5 6 7 9 10];
-%         D = D(idx);
-%     elseif i==11
-%         idx = [1 2 3  5 6 9 10 11];
-%         D = D(idx);
-%     elseif i == 10
-%         idx = [1 2 3 4 5  7 8];
-%         D = D(idx);
-%     end
+
+    if i==1
+        idx=[1 2 3 4 7 8];
+        D = D(idx);
+    end
+
+    if i==2
+        idx=[1 2 4:length(D)];
+        D = D(idx);
+    end
+
+    if i==6
+        idx=[1 2 3 4 7];
+        D = D(idx);
+    end
+
+    if i==7
+        idx=[1 2 5 8 ];
+        D = D(idx);
+    end
+
     br=[];acc=[];time2target=[];
     for j=3:length(D)
         files=[];
@@ -4017,7 +4042,8 @@ for i=1:length(foldernames)
             folders=[folders;filepath];
         end
         if length(files)>0
-            [b,a,t] = compute_bitrate(files,7);
+            [b,a,t,T] = compute_bitrate(files,7);
+            %[b,a,t] = compute_bitrate_constTime(files,7);
             br = [br b];
             acc = [acc mean(a)];
             time2target = [time2target; mean(t)];
@@ -4036,13 +4062,15 @@ end
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
 figure;hold on
 br=[];
+brh=[];
 cmap = turbo(10);%turbo(length(br_across_days));
 for i=1:10%length(br_across_days)
     tmp = br_across_days{i};
-    tmp=tmp(tmp>0.5);
+    brh =[brh tmp];
+    %tmp=tmp(tmp>0.5);
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    br(i) = mean(tmp);
+    br(i) = median(tmp);
 end
 plot(br(1:end),'k','LineWidth',2)
 days={'1', '3', '8' ,'10' ,'15', '17', '22', '24', '36', '38'};
@@ -4058,21 +4086,34 @@ set(gca,'LineWidth',1)
 xlim([0 10.5])
 ylim([0 3.5])
 
+figure
+boxplot(brh,'whisker',1.75)
+set(gcf,'Color','w')
+xticks(1)
+xticklabels('PnP Experiment 2')
+ylabel('Effective bit rate')
+set(gca,'FontSize',12)
+box off
+xlim([.75 1.25])
+ylim([0 3.5])
+yticks([0:.5:3.5])
+set(gca,'LineWidth',1,'TickLength',[0.025 0.025]);
+
 % accuracy
 figure;hold on
 acc=[];
 acch=[];
 idxx=[];
-for i=1:7%length(acc_days)
+for i=1:10%length(acc_days)
     tmp  = acc_days{i};
-    tmp=tmp(tmp>0.6);
+    %tmp=tmp(tmp>0.6);
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    acc(i) = mean(tmp);
+    acc(i) = median(tmp);
     acch = [acch ;tmp];
     idxx=[idxx;idx];
 end
-%plot(acc,'k','LineWidth',2)
+plot(acc,'k','LineWidth',2)
 ylim([0 1])
 xticks(1:length(acc))
 set(gca,'XTickLabel',days)
@@ -4081,24 +4122,25 @@ set(gca,'FontSize',12)
 xlabel('Days - PnP')
 ylabel('Decoder Accuracy')
 set(gca,'LineWidth',1)
-xlim([0.5 7.5])
+xlim([0.5 10.5])
 h=hline(1/7);
 set(h,'LineWidth',2)
+yticks([0:.2:1])
 
 figure;hold on
 t2t=[];
 t2th=[];
 idxx=[];
-for i=1:7%length(time2target_days)
+for i=1:10%length(time2target_days)
     tmp  = time2target_days{i};
-    tmp=tmp(tmp<1.2);
+    %tmp=tmp(tmp<1.2);
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
-    t2t(i) = mean(tmp);
+    t2t(i) = median(tmp);
     t2th = [t2th;tmp];
     idxx=[idxx;idx];
 end
-%plot(t2t,'k','LineWidth',2)
+plot(t2t,'k','LineWidth',2)
 ylim([0 3])
 xticks(1:length(acc))
 set(gca,'XTickLabel',days)
@@ -4107,7 +4149,7 @@ set(gca,'FontSize',12)
 xlabel('Days - PnP')
 ylabel('Time to Target (s)')
 set(gca,'LineWidth',1)
-xlim([0.5 7.5])
+xlim([0.5 10.5])
 
 figure;hist(acch,10)
 xlim([0 1])
@@ -4131,8 +4173,44 @@ set(gca,'LineWidth',1)
 
 
 
-
 %save bit_rate_discrete_PnP2 -v7.3
+
+
+%% (MAIN) plotting combined time to target and accuracy across both PnP experiments
+
+clear;clc
+close all
+
+a = load('bit_rate_discrete_PnP.mat');
+b = load('bit_rate_discrete_PnP2.mat');
+
+acch =[a.acch;b.acch];
+figure;hist(acch,10)
+xlim([0 1])
+
+t2th =[a.t2th;b.t2th];
+figure;hist(t2th,10)
+xlim([0 2.5])
+
+br =[a.br';b.br'];
+figure;hist(br,10)
+
+tmp = [(a.br) (b.br)];
+
+
+br_overall=[];
+br_across_days = a.br_across_days;
+for i=1:7
+    br_overall = [br_overall br_across_days{i}];        
+end
+br_across_days = b.br_across_days;
+for i=1:10
+    br_overall = [br_overall br_across_days{i}];        
+end
+
+m = median(br_overall);
+mb = sort(bootstrp(1000,@median,br_overall));
+[mb(25) mb(975)]
 
 
 %% %% BLOCK BY BLOCK BIT RATE CALCULATIONS ACROSS DAYS 9DOF
