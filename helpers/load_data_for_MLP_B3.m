@@ -1,4 +1,4 @@
-function [condn_data] = load_data_for_MLP(files)
+function [condn_data] = load_data_for_MLP_B3(files,ecog_grid)
 %function [condn_data] = load_data_for_MLP(files)
 
 
@@ -18,40 +18,24 @@ for ii=1:length(files)
         file_loaded=0;
     end
     if file_loaded
+
         features  = TrialData.SmoothedNeuralFeatures;
-        kinax = TrialData.TaskState;
-        kinax = [find(kinax==3)];
+        temp = cell2mat(features);
+        kinax = find(TrialData.TaskState==3);
         temp = cell2mat(features(kinax));
-        
-        % get the pooled data
-        new_temp=[];
-        [xx yy] = size(TrialData.Params.ChMap);
-        for k=1:size(temp,2)
-            tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
-            tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
-            tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-            tmp3_smoothed=zeros(size(tmp3));
-            tmp3_pooled=[];
-            ix=1;
-            iy=1;
-            pooled_data=[];            
-            for i=1:2:xx
-                for j=1:2:yy
-                    delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
-                    beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
-                    hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-                    pooled_data = [pooled_data; delta; beta ;hg];
-                    tmp3_smoothed(i:i+1,j:j+1) = hg;
-                end
-            end
-            new_temp= [new_temp pooled_data];
+
+        % get delta, beta and hG removing bad channels
+        temp = temp([257:512 1025:1280 1537:1792],:);
+        bad_ch = [108 113 118];
+        good_ch = ones(size(temp,1),1);
+        for iii=1:length(bad_ch)
+            bad_ch_tmp = bad_ch(iii)*[1 2 3];
+            good_ch(bad_ch_tmp)=0;
         end
-        temp=new_temp;
+        temp = temp(logical(good_ch),:);
+
         %if TrialData.TargetID  ==  TrialData.SelectedTargetID
         % temp=temp(:,end-5:end);
-
-        % take only the first 2.5s or 13 bins
-        temp = temp(:,1:13);
         if TrialData.TargetID == 1
             D1 = [D1 temp];
         elseif TrialData.TargetID == 2
@@ -73,16 +57,14 @@ end
 
 
 clear condn_data
-idx = [1:96];
+idx = 1:size(D1,1);
 condn_data{1}=[D1(idx,:) ]'; % right thumb
 condn_data{2}= [D2(idx,:)]'; % left leg
 condn_data{3}=[D3(idx,:)]'; % left thumb
 condn_data{4}=[D4(idx,:)]'; % head
 condn_data{5}=[D5(idx,:)]'; % lips
-condn_data{6}=[D6(idx,:)]'; % tongue
-if size(D7,1)>0
-    condn_data{7}=[D7(idx,:)]'; % both middle fingers
-end
+condn_data{6}=[D6(idx,:)]'; % tong
+condn_data{7}=[D7(idx,:)]'; % BMF
 
 % 2norm
 for i=1:length(condn_data)

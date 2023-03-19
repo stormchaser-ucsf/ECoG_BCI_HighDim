@@ -3,7 +3,7 @@
 % goal here is to compare continuous kinematic decoding (using GRU and KF
 % vs discrete input based model).
 
-%% ANALYSIS 1: USING ORIGINAL 6DOF
+%% ANALYSIS 1: USING ORIGINAL 6DOF BUT IN A CONTINUOUS VEL MAPPING FRAMEWORK
 
 clc;clear
 close all
@@ -43,8 +43,8 @@ for i=1:length(files_train)
     neural_features = neural_features(fidx,:);
     %neural = [neural neural_features];
     kinematics = [kinematics kin];
-    
-    % get smoothed delta hg and beta features    
+
+    % get smoothed delta hg and beta features
     new_temp=[];
     [xx yy] = size(TrialData.Params.ChMap);
     for k=1:size(temp,2)
@@ -64,7 +64,7 @@ for i=1:length(files_train)
     end
     temp=new_temp;
     neural = [neural temp];
-    
+
     if TrialData.TargetID == 1
         D1 = [D1 temp];
     elseif TrialData.TargetID == 2
@@ -78,11 +78,11 @@ for i=1:length(files_train)
     elseif TrialData.TargetID == 6
         D6 = [D6 temp];
     end
-    
+
     % getting data for GRU -> hG and Low Freq Oscill. (<20Hz) at 10Hz
     raw_data = TrialData.BroadbandData;
     raw_data = cell2mat(raw_data(idx)');
-    
+
 end
 
 
@@ -118,7 +118,7 @@ end
 C = Y/(X(4:end,:));
 C = [zeros(size(C,1),3) C];
 
-% get estimates of Q 
+% get estimates of Q
 q = Y-C*X;
 Q= cov(q');
 
@@ -128,7 +128,7 @@ chk=1;
 counter=0;
 norm_val=[];
 while chk>1e-10
-    temp_norm = norm(P(:));    
+    temp_norm = norm(P(:));
     P = A*P*A' + W;
     P(1:3,:) = zeros(3,size(P,2));
     P(:,1:3) = zeros(size(P,1),3);
@@ -141,7 +141,7 @@ while chk>1e-10
 end
 
 
-%%%%% build a classifier using simple MLP 
+%%%%% build a classifier using simple MLP
 idx = [1:96];
 condn_data{1}=[D1(idx,:) ]';
 condn_data{2}= [D2(idx,:)]';
@@ -184,7 +184,7 @@ net.performParam.regularization=0.2;
 net = train(net,N,T','UseGPU','yes');
 
 
-% test the model out on held out trials 
+% test the model out on held out trials
 KF_dev=[];
 MLP_dev=[];
 for i=1:length(test_files)
@@ -197,7 +197,7 @@ for i=1:length(test_files)
     temp=neural_features;
     fidx = [129:256 513:640 769:896];
     neural_features = neural_features(fidx,:);
-    
+
     % get smoothed delta hg and beta features
     new_temp=[];
     [xx yy] = size(TrialData.Params.ChMap);
@@ -218,14 +218,14 @@ for i=1:length(test_files)
     end
     temp=new_temp;
     neural_features = [temp];
-    
-    
-    
+
+
+
     % run it through KF
     Y = neural_features;
     X = kin;
     X(end+1,:)=1;
-    
+
     Xhat=1e-6*zeros(size(X));
     Xhat(:,1)=X(:,1);
     for j=2:size(X,2)
@@ -233,7 +233,7 @@ for i=1:length(test_files)
         x = x + K*(Y(:,j) - C*x);
         Xhat(:,j)=x;
     end
-    
+
     % run it through MLP
     B =  TrialData.Params.dB;
     out  = net(neural_features);
@@ -263,18 +263,18 @@ for i=1:length(test_files)
         xt = xtm1 + u;
         Xhat1(:,j)=xt;
     end
-    
+
     %if TrialData.TargetID==6
     pos=TrialData.TargetPosition;
     figure;plot3(X(1,:),X(2,:),X(3,:),'LineWidth',1)
-    hold on    
+    hold on
     plot3(Xhat(1,:),Xhat(2,:),Xhat(3,:),'LineWidth',1)
     plot3(Xhat1(1,:),Xhat1(2,:),Xhat1(3,:),'--k','LineWidth',1)
     title(['Target ID ' num2str(TrialData.TargetID)])
     plot3(X(1,1),X(2,1),X(3,1),'.g','MarkerSize',50)
     plot3(pos(1),pos(2),pos(3),'sb','MarkerSize',50,'MarkerEdgeColor','b',...
-    'MarkerFaceColor',[0.2,0.2,0.2],'LineWidth',2)
-    legend({'Ground Truth','ReFit KF','IBID','',''})    
+        'MarkerFaceColor',[0.2,0.2,0.2],'LineWidth',2)
+    legend({'Ground Truth','ReFit KF','IBID','',''})
     set(gcf,'Color','w')
     set(gca,'LineWidth',1)
     xlabel('X- axis')
@@ -282,18 +282,18 @@ for i=1:length(test_files)
     zlabel('Z- axis')
     set(gca,'FontSize',14)
     %end
-    
-    % calculate deviations from robot's trajectory
-%     a = X(1:3,:) - Xhat(1:3,:);
-%     a = mean(sqrt(sum(a.^2)));
-%     KF_dev = [KF_dev (a)];
-%     
-%     
-%     a = X(1:3,:) - Xhat1(1:3,:);
-%     a = mean(sqrt(sum(a.^2)));
-%     MLP_dev = [MLP_dev (a)];
 
-    % calculate deviations based on ground truth position     
+    % calculate deviations from robot's trajectory
+    %     a = X(1:3,:) - Xhat(1:3,:);
+    %     a = mean(sqrt(sum(a.^2)));
+    %     KF_dev = [KF_dev (a)];
+    %
+    %
+    %     a = X(1:3,:) - Xhat1(1:3,:);
+    %     a = mean(sqrt(sum(a.^2)));
+    %     MLP_dev = [MLP_dev (a)];
+
+    % calculate deviations based on ground truth position
     ax = find(pos==0);
     a=sqrt(sum(sum(Xhat(ax,:).^2)))/size(Xhat,2);
     %a=mean(sqrt(sum(Xhat(ax,:).^2)));
@@ -319,15 +319,15 @@ box off
 [h p tb st]=ttest(MLP_dev,KF_dev)
 
 
-%%  SAME AS ABOVE BUT USING A GRU 
+%%  SAME AS ABOVE BUT USING A GRU
 % using a sequence to sequence classifcation sceheme where o/p is class and
-% i/p are neural features. 
+% i/p are neural features.
 
 %Xtrain - cell array of sequences, features, time
 %Ytrain - cell array of sequences and outputs
 % can concatenate to make it one sequence of model each trial as a sequence
 
-% also use in a regression model 
+% also use in a regression model
 
 clc;clear
 close all
@@ -362,20 +362,20 @@ for ii=1:length(files_train)
     idx1=[find(TrialData.TaskState==4)];
     idx1=idx1(1:1);
     idx=[idx idx1];
-    
+
     kin = TrialData.CursorState;
     kin = kin(:,idx);
-    
+
     neural_features = TrialData.NeuralFeatures;
     neural_features = cell2mat(neural_features(idx));
-    
-    temp=neural_features;   
+
+    temp=neural_features;
     fidx = [ 769:896];
     neural_features = neural_features(fidx,:);
     %neural = [neural neural_features];
     %kinematics = [kinematics kin];
-    
-    % get smoothed delta hg and beta features    
+
+    % get smoothed delta hg and beta features
     new_temp=[];
     [xx yy] = size(TrialData.Params.ChMap);
     for k=1:size(temp,2)
@@ -395,12 +395,12 @@ for ii=1:length(files_train)
     end
     temp=new_temp;
 
-%     %2-norm 
-%     for j=1:size(temp,2)
-%         temp(:,j) = temp(:,j)./norm(temp(:,j));
-%     end
-    
-    
+    %     %2-norm
+    %     for j=1:size(temp,2)
+    %         temp(:,j) = temp(:,j)./norm(temp(:,j));
+    %     end
+
+
     % get all the data at once
     %neural = cat(3,neural,temp);
     %kinematics_tid = cat(2,kinematics_tid,repmat(TrialData.TargetID,size(temp,2),1));
@@ -409,33 +409,33 @@ for ii=1:length(files_train)
     neural{ii} = temp;
     %kinematics_tid(ii)=TrialData.TargetID;
     %kinematics_tid{ii} = categorical(((repmat(TrialData.TargetID,1,size(temp,2)))));
-%     if TrialData.TargetID ==1
-%         tmp = categorical(repmat(TrialData.TargetID,1,size(temp,2)));
-%     elseif TrialData.TargetID ==2
-%         tmp = repmat(categorical(cellstr('Two')),1,1);
-%     elseif TrialData.TargetID ==3
-%         tmp = repmat(categorical(cellstr('Three')),1,1);
-%     elseif TrialData.TargetID ==4
-%         tmp = repmat(categorical(cellstr('Four')),1,1);
-%     elseif TrialData.TargetID ==5
-%         tmp = repmat(categorical(cellstr('Five')),1,1);
-%     elseif TrialData.TargetID ==6
-%         tmp = repmat(categorical(cellstr('Six')),1,1);
-%     end
+    %     if TrialData.TargetID ==1
+    %         tmp = categorical(repmat(TrialData.TargetID,1,size(temp,2)));
+    %     elseif TrialData.TargetID ==2
+    %         tmp = repmat(categorical(cellstr('Two')),1,1);
+    %     elseif TrialData.TargetID ==3
+    %         tmp = repmat(categorical(cellstr('Three')),1,1);
+    %     elseif TrialData.TargetID ==4
+    %         tmp = repmat(categorical(cellstr('Four')),1,1);
+    %     elseif TrialData.TargetID ==5
+    %         tmp = repmat(categorical(cellstr('Five')),1,1);
+    %     elseif TrialData.TargetID ==6
+    %         tmp = repmat(categorical(cellstr('Six')),1,1);
+    %     end
     tmp = categorical(repmat(TrialData.TargetID,1,size(temp,2)));
     kinematics_tid{ii}=tmp;
     kinematics{ii} = kin(4:6,:);
 
 
-    
-%     % get the samples for the lstm
-%     for j=1:2:size(temp,2)
-%         if (j+4)<size(temp,2)
-%             neural=cat(3,neural,temp(:,j:j+4)');   
-%             kinematics=cat(3,kinematics,kin(:,j:j+4)');
-%             kinematics_tid=[kinematics_tid;TrialData.TargetID];
-%         end
-%     end
+
+    %     % get the samples for the lstm
+    %     for j=1:2:size(temp,2)
+    %         if (j+4)<size(temp,2)
+    %             neural=cat(3,neural,temp(:,j:j+4)');
+    %             kinematics=cat(3,kinematics,kin(:,j:j+4)');
+    %             kinematics_tid=[kinematics_tid;TrialData.TargetID];
+    %         end
+    %     end
 end
 
 condn_data_new = neural';
@@ -461,7 +461,7 @@ numHiddenUnits = [64];
 drop = [0.5];
 numClasses = 6;
 layers = [sequenceInputLayer(inputSize)
-    gruLayer(numHiddenUnits,'OutputMode','sequence')    
+    gruLayer(numHiddenUnits,'OutputMode','sequence')
     dropoutLayer(drop)
     fullyConnectedLayer(numClasses)
     softmaxLayer
@@ -474,8 +474,8 @@ options = trainingOptions('adam', ...
     'GradientThreshold',2, ...
     'Verbose',true, ...
     'ValidationFrequency',4,...
-    'Shuffle','every-epoch', ...    
-    'ValidationPatience',5,...            
+    'Shuffle','every-epoch', ...
+    'ValidationPatience',5,...
     'Plots','training-progress');
 
 %'ValidationData',{XTest,YTest},...
@@ -500,7 +500,7 @@ numHiddenUnits = [64];
 drop = [0.5];
 kinDimension = 3;
 layers = [sequenceInputLayer(inputSize)
-    gruLayer(numHiddenUnits,'OutputMode','sequence')    
+    gruLayer(numHiddenUnits,'OutputMode','sequence')
     dropoutLayer(drop)
     fullyConnectedLayer(kinDimension)
     regressionLayer];
@@ -512,8 +512,8 @@ options = trainingOptions('adam', ...
     'GradientThreshold',2, ...
     'Verbose',true, ...
     'ValidationFrequency',4,...
-    'Shuffle','every-epoch', ...    
-    'ValidationPatience',5,...            
+    'Shuffle','every-epoch', ...
+    'ValidationPatience',5,...
     'ValidationData',{XTest,YTest},...
     'Plots','training-progress');
 
@@ -524,26 +524,26 @@ net1 = trainNetwork(XTrain,YTrain,layers,options);
 
 
 
-% test the model out on held out trials 
+% test the model out on held out trials
 gru_dev=[];
 gru_kin_dev=[];
 acc=zeros(6);
 for ii=1:length(test_files)
     load(test_files{ii})
-    
+
     idx=find(TrialData.TaskState==3);
     idx1=[find(TrialData.TaskState==4)];
     idx1=idx1(1:1);
     idx=[idx idx1];
-    
+
     kin = TrialData.CursorState;
-    kin = kin(:,idx);    
+    kin = kin(:,idx);
     neural_features = TrialData.NeuralFeatures;
-    neural_features = cell2mat(neural_features(idx));    
+    neural_features = cell2mat(neural_features(idx));
     temp=neural_features;
     fidx = [ 769:896];
     neural_features = neural_features(fidx,:);
-    
+
     % get smoothed delta hg and beta features
     new_temp=[];
     [xx yy] = size(TrialData.Params.ChMap);
@@ -564,9 +564,9 @@ for ii=1:length(test_files)
     end
     temp=new_temp;
 
-    % get predictions for the entire sequence 
+    % get predictions for the entire sequence
     act=predict(net,temp);
-    
+
     % classify and generate trajectory
     X=kin;
     Xhat1=zeros(size(X));
@@ -594,8 +594,8 @@ for ii=1:length(test_files)
         xt = xtm1 + u;
         Xhat1(:,j)=xt;
     end
-    
-    % use GRU for kinematics decoding 
+
+    % use GRU for kinematics decoding
     act=predict(net1,temp); % these are all the velocities at individdual time-points
     Xhat = zeros(size(X));
     Xhat(:,1) = X(:,1);
@@ -605,15 +605,15 @@ for ii=1:length(test_files)
         Xhat(:,j) = A*Xhat(:,j-1);
     end
 
-    
-    % plotting 
+
+    % plotting
     figure;plot3(X(1,:),X(2,:),X(3,:),'LineWidth',1)
-    hold on    
+    hold on
     plot3(Xhat(1,:),Xhat(2,:),Xhat(3,:),'LineWidth',1)
     plot3(Xhat1(1,:),Xhat1(2,:),Xhat1(3,:),'--k','LineWidth',1)
     title(['Target ID ' num2str(TrialData.TargetID)])
     plot3(X(1,1),X(2,1),X(3,1),'.g','MarkerSize',50)
-    legend({'Ground Truth','GRU velocity decoding','Input-based Discrete',''})    
+    legend({'Ground Truth','GRU velocity decoding','Input-based Discrete',''})
     set(gcf,'Color','w')
     set(gca,'LineWidth',1)
     xlabel('X- axis')
@@ -627,23 +627,237 @@ for ii=1:length(test_files)
     ax = find(pos==0);
 
     % disrete gru
-    a=sqrt(sum(sum(Xhat1(ax,:).^2)))/size(Xhat1,2);    
+    a=sqrt(sum(sum(Xhat1(ax,:).^2)))/size(Xhat1,2);
     gru_dev = [gru_dev (a)];
-    
-    % kin gru 
-    a=sqrt(sum(sum(Xhat(ax,:).^2)))/size(Xhat,2);    
-    gru_kin_dev = [gru_kin_dev (a)];
-    
 
-    
-    
+    % kin gru
+    a=sqrt(sum(sum(Xhat(ax,:).^2)))/size(Xhat,2);
+    gru_kin_dev = [gru_kin_dev (a)];
+
+
+
+
 end
 
 
 figure;boxplot([gru_dev' gru_kin_dev'])
 
-%% USING A GRU MODEL FOR BOTH DISCRETE AND CONTINUOUS DECODING 
-
-
 
 %% ANALYSIS 2: USING IMAGINED END POINT CONTROL OF THE ROBOT HAND
+
+
+% STEP 1: Take the first 2sec of online data and the first 3s of Imagined
+% data for the iAE analyses
+
+% STEP 2:
+% take the first 2 sec of online data and look at trajectories towards the
+% target
+
+clc;clear;
+close all
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd(root_path)
+
+%day1
+session_data(1).Day = '20230220';
+session_data(1).folders = {'102528','103151','103544','104517','105110','110103',...
+    '110650','111006','112144','112608','113541','114821'};
+session_data(1).folder_type={'I','I','I','I','I','O','O','O','B','B','B','B'};
+
+% day 2
+session_data(2).Day = '20230224';
+session_data(2).folders = {'103522','103942','104105','104228','104354',...
+    '104954','105421','105712',...
+    '110944','111424','111723','112021',...
+    };
+session_data(2).folder_type={'I','I','I','I','I','O','O','O','B','B','B','B'};
+
+mahab_full_online=[];
+mahab_full_imagined=[];
+mahab_full_batch=[];
+kin_data = [];
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+
+    %%%%%%imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'RobotKF',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %     %load the data
+    %     condn_data = load_data_for_MLP(files);
+    %
+    %     % save the data
+    %     filename = ['Biomimetic_CenterOut_condn_data_Imagined_Day' num2str(i)];
+    %     save(filename, 'condn_data', '-v7.3')
+    %
+    %     % get the mahab distance in the full dataset
+    %     Dimagined = mahal2_full(condn_data);
+    %     Dimagined = triu(Dimagined);
+    %     Dimagined = Dimagined(Dimagined>0);
+    %     mahab_full_imagined = [mahab_full_imagined Dimagined];
+
+
+    %%%%%%online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'RobotKF',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %
+    %     %load the data
+    %     condn_data = load_data_for_MLP(files);
+    %
+    %     % save the data
+    %     filename = ['Biomimetic_CenterOut_condn_data_Online_Day' num2str(i)];
+    %     save(filename, 'condn_data', '-v7.3')
+    %
+    %     % get the mahab distance in the full dataset
+    %     Donline = mahal2_full(condn_data);
+    %     Donline = triu(Donline);
+    %     Donline = Donline(Donline>0);
+    %     mahab_full_online = [mahab_full_online Donline];
+
+
+    % get the kinematics
+    kin_data_tmp = get_kinematics(files);
+    kin_data = cat(1,kin_data,kin_data_tmp');
+
+
+
+    %%%%%%batch data
+    folders = session_data(i).folders(batch_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'RobotKF',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+
+
+    %load the data
+    %condn_data = load_data_for_MLP(files);
+
+    % save the data
+    %filename = ['Biomimetic_CenterOut_condn_data_Batch_Day' num2str(i)];
+    %save(filename, 'condn_data', '-v7.3')
+
+    %
+    %     % get the mahab distance in the full dataset
+    %     Donline = mahal2_full(condn_data);
+    %     Donline = triu(Donline);
+    %     Donline = Donline(Donline>0);
+    %     mahab_full_batch = [mahab_full_batch Donline];
+
+    % get the kinematics
+    kin_data_tmp = get_kinematics(files);
+    kin_data = cat(1,kin_data,kin_data_tmp');
+
+end
+%
+% figure;
+% boxplot([mahab_full_imagined mahab_full_online mahab_full_batch])
+%
+%
+close all
+
+% plot the trajectories with the lowest errors
+figure;
+hold on
+view(40,40)
+xlim([-200,200]*0.5)
+ylim([-200,200]*0.5)
+zlim([-200,200]*0.5)
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('X-axis')
+ylabel('Y-axis')
+zlabel('Z-axis')
+cmap = turbo(6);
+recon_error=[];
+for i=1:6
+    idx = find([kin_data(:).TargetID]==i);
+    errors = [kin_data(idx).error ];
+    [aa bb] = sort(errors);
+    bb = idx(bb(1:2));
+    col = cmap(i,:);
+
+    for j=1:length(bb)
+        filename = kin_data(bb(j)).filename;
+        file_loaded=1;
+        try
+            load(filename);
+        catch
+            file_loaded=0;
+        end
+        if file_loaded
+            kinax = TrialData.TaskState;
+            kinax = [find(kinax==3)];
+            % get the kinematics data and the target data
+            kindata = TrialData.CursorState;
+            kindata = kindata(1:3,kinax);
+            kindata = kindata(:,1:15) - kindata(:,1);
+            plot3(kindata(1,:),kindata(2,:),kindata(3,:),'LineWidth',2,'Color',col)
+
+            % get the errors in terms of deviation from the ideal path
+            target = TrialData.TargetPosition;
+            kin = kindata;
+            idx = find(target==0); % get the axes where errors shoudln't happen
+            idx_target = find(target~=0);
+            tmp_error = [];
+            kin = kin(1:3,:);
+            for j=1:size(kin,2)
+                if sum(kin(:,j)) ~= 0
+                    break
+                end
+            end
+            kin = kin(:,j:end);
+            for j=1:size(kin,2)
+                if (sign(target(idx_target)) * sign(kin(idx_target,j))) == -1
+                    f=2;
+                else
+                    f=1;
+                end
+                e = f*(sum((target(idx)' - kin(idx,j)).^2));
+                tmp_error = [tmp_error;e];
+            end
+            recon_error =[recon_error; sqrt(sum(tmp_error))];
+        end
+    end
+    %waitforbuttonpress
+end
+grid on
+
+recon_error1 = load('recon_error_IBID.mat');
+recon_error1 = recon_error1.recon_error;
+
+recon_error(end+1:length(recon_error1)) = NaN;
+figure;boxplot(([recon_error recon_error1]/14),'whisker',2.5)
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xticks(1:2)
+xticklabels({'CKD','CIDC'})
+ylabel('Trajectory Error')
+box off
+set(gca,'LineWidth',1)
+
+
+
+
+

@@ -640,7 +640,7 @@ for i=1:length(files)
         %temp = (temp-m)./s;
 
         % take from 400 to 2000ms
-        temp = temp(:,3:10);
+        temp = temp(:,3:end);
         %temp=temp(:,3:end); % ignore the first 600ms
 
         % hg and delta and beta
@@ -872,7 +872,8 @@ chmap=TrialData.Params.ChMap;
 figure;imagesc(abs(tmp(chmap)))
 colormap bone
 
-
+Data_hdof = Data;
+save Data_hdof condn_data -v7.3
 
 
 % swap the 18th and 6th columns and rows
