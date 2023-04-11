@@ -2788,5 +2788,8 @@ for k=1:size(temp,2)
     new_temp(:,k) = out_data(:);
 end
 
+%% TEMP STUFF FOR PLOTTING CKA FOR HDOF PAPER
 
-
+res=[b1';b2'];
+m = mean(res,1);
+figure;bar(0:5,m')

@@ -643,8 +643,8 @@ end
 figure;boxplot([gru_dev' gru_kin_dev'])
 
 
-%% ANALYSIS 2: USING IMAGINED END POINT CONTROL OF THE ROBOT HAND
-
+%% (MAIN: KF) ANALYSIS 2: USING IMAGINED END POINT CONTROL OF THE ROBOT HAND (MAIN)
+% SMOOTH BATCH KALMAN FILTER (MAIN)
 
 % STEP 1: Take the first 2sec of online data and the first 3s of Imagined
 % data for the iAE analyses
@@ -674,6 +674,46 @@ session_data(2).folders = {'103522','103942','104105','104228','104354',...
     };
 session_data(2).folder_type={'I','I','I','I','I','O','O','O','B','B','B','B'};
 
+% day 3
+session_data(3).Day = '20230301';
+session_data(3).folders = {'101030','101443','101604','101716','101834','101947',...
+    '102646','103040','103331','103632',...
+    '104548','104845','105142','105437','105728',...
+    '110536','110917','111210','111509'};
+session_data(3).folder_type={'I','I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B','B',...
+    'B','B','B','B'};
+
+% day 4
+session_data(4).Day = '20230315';
+session_data(4).folders = {'103701','104112','104246','104421','104548',...
+    '105260','105948','110323','110631'...
+    '111229','111639','112018','112331',...
+    '113004','113259','113554','113904'
+    };
+session_data(4).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B',...
+    'B','B','B','B'};
+
+% day 5
+session_data(5).Day = '20230322';
+session_data(5).folders = {'103916','104251','104414','104531','104647',...
+    '105507','105812','110106','110345'...
+    '111337','111656','111953','112247',...
+    '113330','113651','113946','114241'
+    };
+session_data(5).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B',...
+    'B','B','B','B'};
+
+% also make sure to load the data i.e., the neural activity corresponding
+% to an intended decode that is within 30degrees towards target. 
+%FIRST is however, on just the imagined movement data itself 
+
+
 mahab_full_online=[];
 mahab_full_imagined=[];
 mahab_full_batch=[];
@@ -697,18 +737,19 @@ for i=1:length(session_data)
         files = [files;findfiles('',folderpath)'];
     end
 
-    %     %load the data
-    %     condn_data = load_data_for_MLP(files);
+    %load the data
+    condn_data = load_data_for_MLP_CKD(files);
+    %condn_data = load_data_for_MLP(files,1);
     %
-    %     % save the data
-    %     filename = ['Biomimetic_CenterOut_condn_data_Imagined_Day' num2str(i)];
-    %     save(filename, 'condn_data', '-v7.3')
+    % save the data
+    filename = ['Biomimetic_CenterOut_condn_data_Imagined_Day_45deg' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
     %
-    %     % get the mahab distance in the full dataset
-    %     Dimagined = mahal2_full(condn_data);
-    %     Dimagined = triu(Dimagined);
-    %     Dimagined = Dimagined(Dimagined>0);
-    %     mahab_full_imagined = [mahab_full_imagined Dimagined];
+    % get the mahab distance in the full dataset
+    Dimagined = mahal2_full(condn_data);
+    Dimagined = triu(Dimagined);
+    Dimagined = Dimagined(Dimagined>0);
+    mahab_full_imagined = [mahab_full_imagined Dimagined];
 
 
     %%%%%%online data
@@ -720,19 +761,20 @@ for i=1:length(session_data)
         files = [files;findfiles('',folderpath)'];
     end
 
-    %
-    %     %load the data
-    %     condn_data = load_data_for_MLP(files);
-    %
-    %     % save the data
-    %     filename = ['Biomimetic_CenterOut_condn_data_Online_Day' num2str(i)];
-    %     save(filename, 'condn_data', '-v7.3')
-    %
-    %     % get the mahab distance in the full dataset
-    %     Donline = mahal2_full(condn_data);
-    %     Donline = triu(Donline);
-    %     Donline = Donline(Donline>0);
-    %     mahab_full_online = [mahab_full_online Donline];
+
+    %load the data
+    condn_data = load_data_for_MLP_CKD(files);
+    %condn_data = load_data_for_MLP(files,1);
+
+    % save the data
+    filename = ['Biomimetic_CenterOut_condn_data_Online_Day_45deg' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
+
+    % get the mahab distance in the full dataset
+    Donline = mahal2_full(condn_data);
+    Donline = triu(Donline);
+    Donline = Donline(Donline>0);
+    mahab_full_online = [mahab_full_online Donline];
 
 
     % get the kinematics
@@ -752,18 +794,19 @@ for i=1:length(session_data)
 
 
     %load the data
-    %condn_data = load_data_for_MLP(files);
+    condn_data = load_data_for_MLP_CKD(files);
+    %condn_data = load_data_for_MLP(files,1);
 
-    % save the data
-    %filename = ['Biomimetic_CenterOut_condn_data_Batch_Day' num2str(i)];
-    %save(filename, 'condn_data', '-v7.3')
+    %save the data
+    filename = ['Biomimetic_CenterOut_condn_data_Batch_Day_45deg' num2str(i)];
+    save(filename, 'condn_data', '-v7.3')
 
-    %
-    %     % get the mahab distance in the full dataset
-    %     Donline = mahal2_full(condn_data);
-    %     Donline = triu(Donline);
-    %     Donline = Donline(Donline>0);
-    %     mahab_full_batch = [mahab_full_batch Donline];
+
+    % get the mahab distance in the full dataset
+    Donline = mahal2_full(condn_data);
+    Donline = triu(Donline);
+    Donline = Donline(Donline>0);
+    mahab_full_batch = [mahab_full_batch Donline];
 
     % get the kinematics
     kin_data_tmp = get_kinematics(files);
@@ -771,11 +814,17 @@ for i=1:length(session_data)
 
 end
 %
-% figure;
-% boxplot([mahab_full_imagined mahab_full_online mahab_full_batch])
-%
-%
+
 close all
+
+figure;
+boxplot([mahab_full_imagined mahab_full_online mahab_full_batch])
+
+figure;
+boxplot([mahab_full_imagined(:) mahab_full_online(:) mahab_full_batch(:)])
+
+
+
 
 % plot the trajectories with the lowest errors
 figure;
@@ -800,6 +849,7 @@ for i=1:6
 
     for j=1:length(bb)
         filename = kin_data(bb(j)).filename;
+        disp(filename)
         file_loaded=1;
         try
             load(filename);
@@ -812,7 +862,7 @@ for i=1:6
             % get the kinematics data and the target data
             kindata = TrialData.CursorState;
             kindata = kindata(1:3,kinax);
-            kindata = kindata(:,1:15) - kindata(:,1);
+            kindata = kindata(:,1:20) - kindata(:,1);
             plot3(kindata(1,:),kindata(2,:),kindata(3,:),'LineWidth',2,'Color',col)
 
             % get the errors in terms of deviation from the ideal path
@@ -858,6 +908,36 @@ box off
 set(gca,'LineWidth',1)
 
 
+%% PLAYING AROUND WITH NORMALIZING DATA 
+
+% rows are observations, columns are features
+a=randn(20,50);
+b=randn(20,50)*3;
+figure;
+stem(std(a))
+hold on
+stem(std(b))
+
+a=a./std(a);
+b=b./std(b);
+
+figure;
+stem(std(a))
+hold on
+stem(std(b))
+
+% norm each column
+for i=1:size(a,2)
+    a(:,i) = a(:,i)./norm(a(:,i));
+end
+for i=1:size(b,2)
+    b(:,i) = b(:,i)./norm(b(:,i));
+end
+
+figure;
+stem(std(a))
+hold on
+stem(std(b))
 
 
 

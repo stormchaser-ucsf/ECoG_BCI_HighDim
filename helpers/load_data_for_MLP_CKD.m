@@ -1,10 +1,6 @@
-function [condn_data] = load_data_for_MLP(files,tim_cutoff)
-%function [condn_data] = load_data_for_MLP(files)
+function [condn_data] = load_data_for_MLP_CKD(files)
+%function [condn_data] = load_data_for_MLP_CKD(files)
 
-
-if nargin<2
-    tim_cutoff=0;
-end
 
 D1=[];
 D2=[];
@@ -51,23 +47,62 @@ for ii=1:length(files)
             new_temp= [new_temp pooled_data];
         end
         temp=new_temp;
+
         %if TrialData.TargetID  ==  TrialData.SelectedTargetID
         % temp=temp(:,end-5:end);
 
-        % take only the first 2.5s or 13 bins
+        %%% take only the first 2.5s or 13 bins
         %len_data = min(20,size(temp,2)); % this is for only imagined movement data
-        %len_data = min(20,size(temp,2)); % this is the first 2.6s
-        %temp = temp(:,1:len_data);
-        if tim_cutoff==1
-            len_data = min(15,size(temp,2)); % this is the first 2.6s
-            temp = temp(:,1:len_data);
+        %len_data = min(12,size(temp,2)); % this is the first 2.4s
+        % temp = temp(:,1:len_data);
+
+        %%%% get all neural if intended direction towards target (within 30deg
+        %%%% bound)
+        kin = TrialData.CursorState;
+        kin = kin(1:3,kinax);
+        target_pos = TrialData.TargetPosition;
+        idx=[];
+        angles=[];
+        % get the ideal vector towards target
+        pos2target = target_pos' - kin(:,1);
+        chk=[];
+        for i=1:size(kin,2)
+            % compute the angle between ideal vector and intended vector.
+            % this should be less than 30 degrees
+            int_dir = target_pos' - kin(:,i);            
+            ang = acosd((pos2target'*int_dir)/(norm(pos2target)*norm(int_dir)));            
+%             if ang>90
+%                 ang=180-ang;
+%                 chk=[chk i];
+%             end
+%             if abs(ang)<45
+%                 idx=[idx i];
+%             end
+            if ang<45 && ang>=0
+                idx = [idx i];
+            end
+            angles(i)=ang;
         end
+%         figure;
+%         hold on
+%         for i=1:size(kin,2)
+%             if sum(idx==i) 
+%                 col='r';
+%             else
+%                 col='k';
+%             end
+%             plot3(kin(1,i),kin(2,i),kin(3,i),'.','Color',col,'MarkerSize',20)
+%         end
+%         plot3(target_pos(1),target_pos(2),target_pos(3),'.r','MarkerSize',50)
+%         plot3(kin(1,1),kin(2,1),kin(3,1),'.g','MarkerSize',50)
+%         figure;stem(angles)
+%         hline(30)
 
-
+        temp = temp(:,idx);
         if TrialData.TargetID == 1
             D1 = [D1 temp];
         elseif TrialData.TargetID == 2
-            D2 = [D2 temp];
+            D2 = [D2 temp];            
         elseif TrialData.TargetID == 3
             D3 = [D3 temp];
         elseif TrialData.TargetID == 4

@@ -5968,36 +5968,9 @@ for i=1:length(session_data)
     condn_data_total{i}=condn_data_tmp;
 end
 
-condn_data_total_prePnPB1 = condn_data_total;
-save condn_data_total_prePnPB1 condn_data_total_prePnPB1 -v7.3
-
 
 % building a decoder with cumulatively increasing number of days and
-% testing performance on the PnP task in terms of overall accuracy and
-% bitrates
-bit_rates=[];
-res_acc=[];
-for i=1:length(condn_data_total)
-    days=[1:i];
-    condn_data=cell(1,7);
-    for j=1:length(days)
-        tmp = condn_data_total{days(j)};
-        for k=1:length(tmp)
-            tmp0 = condn_data{k};
-            tmp1 = tmp{k};
-            tmp0 = cat(1,tmp0,tmp1);
-            condn_data{k}=tmp0;
-        end
-    end
-
-    % build a PnP decoder
-    net = get_mlp(condn_data,64);
-
-    % test it out on the PnP experimental data
-
-
-end
-
+% testing performance on the 
 
 
 %% PLOTTING STATS FOR REAL ROBOT R2G PERFORMANCE

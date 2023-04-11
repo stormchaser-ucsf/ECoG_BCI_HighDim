@@ -761,7 +761,7 @@ for ii=1:length(dates)
 end
 
 acc_overall=[];
-for iter=1:20
+for iter=1:5
     disp(iter)
 
     % structure to host all the data
@@ -965,19 +965,19 @@ for iter=1:20
     condn_data{17}=[ D17(idx,:)]';
     condn_data{18}=[ D18(idx,:)]';
     condn_data{19}=[ D19(idx,:)]';
-    condn_data{20}=[ D20(idx,:)]';
-    condn_data{21}=[ D21(idx,:)]';
-    condn_data{22}=[ D22(idx,:)]';
-    condn_data{23}=[ D23(idx,:)]';
-    condn_data{24}=[ D24(idx,:)]';
-    condn_data{25}=[ D25(idx,:)]';
-    condn_data{26}=[ D26(idx,:)]';
-    condn_data{27}=[ D27(idx,:)]';
-    condn_data{28}=[ D28(idx,:)]';
-    condn_data{29}=[ D29(idx,:)]';
-    condn_data{30}=[ D30(idx,:)]';
-    condn_data{31}=[ D31(idx,:)]';
-    condn_data{32}=[ D32(idx,:)]';
+%     condn_data{20}=[ D20(idx,:)]';
+%     condn_data{21}=[ D21(idx,:)]';
+%     condn_data{22}=[ D22(idx,:)]';
+%     condn_data{23}=[ D23(idx,:)]';
+%     condn_data{24}=[ D24(idx,:)]';
+%     condn_data{25}=[ D25(idx,:)]';
+%     condn_data{26}=[ D26(idx,:)]';
+%     condn_data{27}=[ D27(idx,:)]';
+%     condn_data{28}=[ D28(idx,:)]';
+%     condn_data{29}=[ D29(idx,:)]';
+%     condn_data{30}=[ D30(idx,:)]';
+%     condn_data{31}=[ D31(idx,:)]';
+%     condn_data{32}=[ D32(idx,:)]';
 
 
 
@@ -1006,14 +1006,14 @@ for iter=1:20
     net.divideParam.trainRatio=0.8;
     net.divideParam.valRatio=0.2;
     net.divideParam.testRatio=0.0;
+    %net = train(net,N,T','useGPU','yes');
     net = train(net,N,T','useParallel','yes');
-    %net = train(net,N,T','useParallel','yes');
     % classifier_name = 'MLP_PreTrained_7DoF_Days1to11_924pm2'; % enter the name
     % genFunction(pretrain_net,classifier_name); % make sure to update GetParams
 
 
     % now  use the trained  network on the held out trial data
-    acc=zeros(32,32);
+    acc=zeros(length(condn_data),length(condn_data));
     for j=1:length(files_test)
 
         file_loaded = true;
@@ -1074,18 +1074,21 @@ for iter=1:20
                     end
                 end
 
-                % classify the data
-                D=temp;
-                out=net(D);
-                decodes=[];
-                for i=1:size(out,2)
-                    [aa bb] = max(out(:,i));
-                    decodes = [decodes bb];
-                end
-                out  = mode(decodes);
+                if idx<=19
 
-                % store results
-                acc(idx,out) = acc(idx,out)+1;
+                    % classify the data
+                    D=temp;
+                    out=net(D);
+                    decodes=[];
+                    for i=1:size(out,2)
+                        [aa bb] = max(out(:,i));
+                        decodes = [decodes bb];
+                    end
+                    out  = mode(decodes);
+
+                    % store results
+                    acc(idx,out) = acc(idx,out)+1;
+                end
             end
         end
     end
@@ -1112,8 +1115,8 @@ for iter=1:20
 
 end
 
-
-save trial_level_classification_B3 -v7.3
+% 
+% save trial_level_classification_B3 -v7.3
 
 acc=squeeze(nanmean(acc_overall,1));
 figure;imagesc(acc);

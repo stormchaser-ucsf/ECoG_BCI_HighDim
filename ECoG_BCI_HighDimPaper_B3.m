@@ -851,7 +851,7 @@ toc
 D=squeeze(mean(D_overall,1));
 
 figure;imagesc(D)
-caxis([.55 1])
+caxis([.96 1])
 xticks(1:size(D,1))
 yticks(1:size(D,1))
 xticklabels(ImaginedMvmt)
@@ -877,7 +877,7 @@ ylabel('Distances')
 
 
 %
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
 %save highDimensional_Analyses_SVM_Distances -v7.3
 %save highDimensional_Analyses_ignoringFirst600ms -v7.3
 %save highDimensional_Analyses2 -v7.3
