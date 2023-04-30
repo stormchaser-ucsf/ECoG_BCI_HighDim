@@ -1,88 +1,66 @@
-function [br, acc, time2target,T,overall_acc] = compute_bitrate_net(files,num_target)
+function [acc] = compute_bitrate_net(files,num_target,net)
 
 
 % look at the decodes per direction to get a max vote
-T=zeros(num_target,num_target+1);
-tim_to_target=[];
-num_suc=[];
-num_fail=[];
-overall_acc=zeros(num_target);
-for i=1:length(files)
-    disp(i)
+acc=zeros(num_target);
+for ii=1:length(files)
+    %disp(ii)
     indicator=1;
     try
-        load(files{i});
+        load(files{ii});
     catch ME
         warning('Not able to load file, skipping to next')
         indicator = 0;
     end
     if indicator
         kinax = TrialData.TaskState;
-        clicker_state = TrialData.FilteredClickerState;
-        if sum(clicker_state>0)
-            [aa bb]=find(clicker_state>0);
-            if length(aa)>0
-                selected_target = clicker_state(bb(1));
-                tim_taken = bb(1)+0;
-            else
-                selected_target = num_target+1;
-                tim_taken = length(clicker_state);
-            end
+        kinax = find(kinax==3);
+        temp = cell2mat(TrialData.SmoothedNeuralFeatures(kinax));
 
-            idx = TrialData.TargetID;
-            %         t(1) = sum(clicker_state ==1);
-            %         t(2) = sum(clicker_state ==2);
-            %         t(3) = sum(clicker_state ==3);
-            %         t(4) = sum(clicker_state ==4);
-            %         t(5) = sum(clicker_state ==5);
-            %         t(6) = sum(clicker_state ==6);
-            %         t(7) = sum(clicker_state ==7);
-            %         [aa bb]=max(t);
-            %         T(idx,bb) = T(idx,bb)+1;
-            T(idx,selected_target) = T(idx,selected_target)+1;
-            if TrialData.TargetID == selected_target
-                tim_to_target = [tim_to_target tim_taken];
-                num_suc = [num_suc 1];
-            else
-                tim_to_target = [tim_to_target tim_taken];
-                num_fail = [num_fail 1];
+        % get the pooled data
+        new_temp=[];
+        [xx yy] = size(TrialData.Params.ChMap);
+        for k=1:size(temp,2)
+            tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
+            tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
+            tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
+            pooled_data=[];
+            for i=1:2:xx
+                for j=1:2:yy
+                    delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
+                    beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
+                    hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
+                    pooled_data = [pooled_data; delta; beta ;hg];
+                end
             end
-            %         if TrialData.TargetID == TrialData.SelectedTargetID
-            %             tim_to_target = [tim_to_target length(clicker_state)-TrialData.Params.ClickCounter];
-            %             num_suc = [num_suc 1];
-            %         elseif TrialData.TargetID ~= TrialData.SelectedTargetID %&& TrialData.SelectedTargetID~=0
-            %             tim_to_target = [tim_to_target length(clicker_state)];
-            %             num_fail = [num_fail 1];
-            %         end
-            clicker_state = clicker_state(clicker_state>0);
-            chosen_target = mode(clicker_state);
-            overall_acc(idx,chosen_target) = overall_acc(idx,chosen_target)+1;
+            new_temp= [new_temp pooled_data];
         end
+        temp=new_temp;
+
+        % 2-norm
+        for i=1:size(temp,2)
+            temp(:,i) = temp(:,i)./norm(temp(:,i));
+        end
+
+        out = net(temp);
+        out(out<0.4)=0; % thresholding
+        [prob,idx] = max(out); % getting the decodes
+        decodes=idx;
+        %decodes = mode_filter(idx); % running it through a 5 sample mode filter
+
+        decodes_sum=[];
+        for i=1:7
+            decodes_sum(i) = sum(decodes==i);
+        end
+        [aa bb]=max(decodes_sum);
+
+        acc(TrialData.TargetID,bb) = acc(TrialData.TargetID,bb)+1;
     end
 end
-T
-for i=1:size(T)
-    T(i,:) = T(i,:)./sum(T(i,:));
+
+for i=1:size(acc,1)
+    acc(i,:) = acc(i,:)/sum(acc(i,:));
 end
-figure;imagesc(T)
-colormap bone
-caxis([0 1])
-xticks([1:num_target+1])
-yticks([1:num_target])
-%xticklabels({'Rt Hand','Both Feet','Lt. Hand','Head', 'Mime up','Tong in','Both hands','Time Out'})
-%yticklabels({'Rt Hand','Both Feet','Lt. Hand','Head', 'Mime up','Tong in','Both hands'})
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-%title('Classif. using temporal history original action space')
 
-
-% bit rate calculations
-tim_to_target = [tim_to_target.*(1/TrialData.Params.UpdateRate)];
-B = log2(7-1) * max(0,(sum(num_suc)-sum(num_fail))) / sum(tim_to_target);
-title(['Accuracy of ' num2str(100*mean(diag(T))) '%' ' and bitrate of ' num2str(B)])
-br=B;
-
-time2target = tim_to_target;
-acc = diag(T);
 
 end

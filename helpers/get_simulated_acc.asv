@@ -1,4 +1,4 @@
-function conf_matrix_overall = get_simulated_acc_PnP(net)
+function res_acc = get_simulated_acc(net)
 % function res_acc = get_simulated_acc(files,net)
 
 
@@ -64,10 +64,10 @@ for i=1:10%length(foldernames)
             %[br, acc ,t] = [br compute_bitrate(files)];
         end
     end
-    %close all
-    %br_across_days{i}=br;
-    %time2target_days{i} = time2target(:);
-    %acc_days{i} = acc(:);
+    close all
+    br_across_days{i}=br;
+    time2target_days{i} = time2target(:);
+    acc_days{i} = acc(:);
     %time2target_days = [time2target_days ;time2target(:)];
     %acc_days = [acc_days ;acc(:)];
 end

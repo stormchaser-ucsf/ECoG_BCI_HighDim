@@ -7,7 +7,7 @@ function conf_matrix_overall = get_simulated_acc_PnP(net)
 %foldernames = {'20220601'};
 foldernames = {'20210813','20210818','20210825','20210827','20210901','20210903',...
     '20210910','20210915','20210917','20210922','20210924'};
-
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 
 folders={};
 br_across_days={};
@@ -16,6 +16,7 @@ acc_days=[];
 conf_matrix_overall=[];
 overall_trial_accuracy=zeros(7);
 for i=1:10%length(foldernames)
+    disp(['Processing Day ' num2str(i) ' of 10'])
 
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
     D=dir(folderpath);
@@ -53,7 +54,7 @@ for i=1:10%length(foldernames)
             folders=[folders;filepath];
         end
         if length(files)>0
-            [acc] = compute_bitrate_net(files,7);
+            [acc] = compute_bitrate_net(files,7,net);
             %[b,a,t,T,ov_acc] = compute_bitrate(files,7);
             %[b,a,t,T] = compute_bitrate_constTime(files,7);
             conf_matrix_overall = cat(3,conf_matrix_overall,acc);

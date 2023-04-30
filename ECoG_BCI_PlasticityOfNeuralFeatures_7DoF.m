@@ -1071,9 +1071,9 @@ plot((mean(mahab_full_batch(:,1:end))))
 
 clear tmp
 w = [1/2 1/2];
-tmp(:,1) = mean(mahab_full_imagined(:,1:end));
-tmp(:,2) = mean(mahab_full_online(:,1:end));
-tmp(:,3) = mean(mahab_full_batch(:,1:end));
+tmp(:,1) = median(mahab_full_imagined(:,1:end));
+tmp(:,2) = median(mahab_full_online(:,1:end));
+tmp(:,3) = median(mahab_full_batch(:,1:end));
 
 for i=1:size(tmp,2)
     %xx = filter(w,1,[tmp(1,i) ;tmp(:,i)]);
@@ -5288,6 +5288,7 @@ zlim([-250,250])
 tid=[];
 % also get the velocities in the x and y directions
 vel=[];
+err_vel=[];
 for i=1:length(files)
     load(files{i})
     tid = [tid TrialData.TargetID];
@@ -5305,8 +5306,42 @@ for i=1:length(files)
             plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col(targetID,:));
             vel = [vel kin(4:6,:)];
         end
+        % get the velocities relative to the ideal velocity towards the
+        % target
+        pos = TrialData.TargetPosition(1:2)'
+        start_pos = kin(1:2,1);
+        ideal_vector  = pos-start_pos;
+        ideal_vector = ideal_vector./norm(ideal_vector);
+        tmp_vel = kin(4:6,1:end);
+        idx = abs(sum(tmp_vel))>0;
+        tmp_vel = tmp_vel(1:2,idx);
+        for j=1:length(tmp_vel)
+            tmp_vel(:,j)=tmp_vel(:,j)./norm(tmp_vel(:,j));
+        end
+        %%% cos angle
+        %angles_err = acos(ideal_vector'*tmp_vel);
+        %err_vel =[err_vel angles_err];  
+        %%% angle to target
+        %ideal_angle = atan2(ideal_vector(2)/ideal_vector(1));
+        %angles_err = atan2(tmp_vel(2,:)./tmp_vel(1,:));
+        ideal_angle = atan2(ideal_vector(1),ideal_vector(2));
+        angles_err = atan2(tmp_vel(1,:),tmp_vel(2,:));
+        angles_err_rel = angles_err - ideal_angle;
+        err_vel =[err_vel angles_err_rel];                
     end
 end
+
+% histogram of the errors in decoded velocities with the ideal velocity
+figure;rose(err_vel)
+figure;hist(err_vel*180/pi)
+vline(45)
+
+% circular statistics test 
+addpath(genpath('C:\Users\nikic\Documents\MATLAB\CircStat2012a'))
+mu = circ_mean(err_vel') % get the mean
+[pval, z] = circ_rtest(err_vel); % is it uniformly distributed
+[h mu ul ll]  = circ_mtest(err_vel', 0) % does it have a specific mean 
+
 
 %grid off 
 set(gcf,'Color','w')
@@ -5385,7 +5420,7 @@ velxy = vel(1:2,:);
 angles = [];
 for i=1:size(velxy,2)    
     velxy(:,i) = velxy(:,i)./norm(velxy(:,i));
-    tmp = abs(velxy(:,i));
+    tmp = (velxy(:,i));
     angles(i) = atan(tmp(2)/tmp(1));
 end
 errx = acos([1 0]*abs(velxy));
@@ -5393,8 +5428,23 @@ erry = acos([0 1]*abs(velxy));
 err = [errx erry];
 err = err(~isnan(err));
 angles = angles(~isnan(angles));
+
+% null distribution to compare these angles towards:
+% Fit an exponential distribution centered at 0 and pi/2 with variance
+% equal to the actual data
+mu = std(angles);
+tmp=0:0.01:pi/2;
+y = exppdf(tmp,mu);
+%y = conv(y,fliplr(y),'same');
+y=y+fliplr(y);
+y=y./sum(y);
+figure;plot(tmp,y)
+figure;hist(angles)
+
+
+
 %plot
-[t,r]=rose(angles,20);
+[t,r]=rose(err_vel,20);
 figure
 polarplot(t,r,'LineWidth',1,'Color','k');
 pax=gca;
@@ -5415,16 +5465,18 @@ pax.RAxisLocation=1;
 pax.RAxis.LineWidth=1;
 pax.ThetaAxis.LineWidth=1;
 pax.LineWidth=1;
-pax.ThetaLim = [0 pi/2];
-temp = exp(1i*angles);
+%pax.ThetaLim = [0 pi/2];
+temp = exp(1i*err_vel);
 r1 = abs(mean(temp))*1 * max(r);
 phi = angle(mean(temp));
 hold on;
 polarplot([phi-0.01 phi],[0 r1],'LineWidth',1.5,'Color','r')
-polarplot([0 0],[0 0.25e3],'LineWidth',1.5,'Color','k')
-polarplot([pi/2 pi/2 ],[0 0.25e3],'LineWidth',1.5,'Color','k')
+%polarplot([0.7854-0.01 0.7854],[0 r1],'LineWidth',1.5,'Color','m')
+%polarplot([0 0],[0 0.25e3],'LineWidth',1.5,'Color','k')
+%polarplot([pi/2 pi/2 ],[0 0.25e3],'LineWidth',1.5,'Color','k')
 set(gcf,'PaperPositionMode','auto')
 set(gcf,'Position',[680.0,865,120.0,113.0])
+
 
 % null model of what distributions should be like
 err_null = [zeros(1,400) 90*pi/180*ones(1,400)];
@@ -5460,7 +5512,7 @@ set(gcf,'Position',[680.0,865,120.0,113.0])
 % now plotting a few example trials along with position, user input and
 % velocity profile
 
-idx=7;
+idx=1; %1 and 7
 load(files{idx})
 kin = TrialData.CursorState;
 task_state = TrialData.TaskState;
@@ -5520,7 +5572,8 @@ hold on
 for i=0:7
     h=barh(i,length(decodes),1);
     h.FaceColor = col(i+1,:);
-    h.FaceAlpha = 0.8;
+    %h.FaceAlpha = 0.8;
+    h.FaceAlpha = 1;
 end
 stem(decodes,'filled','LineWidth',1,'Color','k')
 ii = [9 17 25 33 41 49];
@@ -5885,7 +5938,7 @@ addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 addpath('C:\Users\nikic\Documents\MATLAB')
 cd(root_path)
 load session_data
-session_data = session_data([1:9 11]); % removing bad days
+%session_data = session_data([1:9 11]); % removing bad days
 condn_data_total={};
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -5978,6 +6031,7 @@ save condn_data_total_prePnPB1 condn_data_total_prePnPB1 -v7.3
 bit_rates=[];
 res_acc=[];
 for i=1:length(condn_data_total)
+    disp(['Analyzing PnP with Day ' num2str(i) ' of ' num2str(length(condn_data_total))])
     days=[1:i];
     condn_data=cell(1,7);
     for j=1:length(days)
@@ -5994,10 +6048,18 @@ for i=1:length(condn_data_total)
     net = get_mlp(condn_data,64);
 
     % test it out on the PnP experimental data
+    conf_matrix_overall = get_simulated_acc_PnP(net);
 
-
+    % store average
+    conf_matrix_overall1 = squeeze(mean(conf_matrix_overall,3));
+    res_acc(i) = median(diag(conf_matrix_overall1));
 end
 
+
+figure;plot(res_acc)
+figure;plot(res_acc,'.','MarkerSize',20)
+
+save simulate_PnP_Exp1_withLesserDays_B1 -v7.3
 
 
 %% PLOTTING STATS FOR REAL ROBOT R2G PERFORMANCE
@@ -6022,4 +6084,217 @@ b2_var_effsize = b2_var(1)./b2_var(2:3);
 sum(b2_var_effsize + b1_var_effsize)/4
 sum(b1_mean_effsize + b2_mean_effsize)/4
 
+%% STATS OF THE REAL ROBOT TASKS
 
+
+clc;clear
+close all
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd(root_path)
+load('wall_1_9.mat')
+
+%PnP_days_wall_task = [2,14,19,21,34,35,40,210,0];
+
+% get the overall distances from target for the wall task
+dist_total = cell2mat(dist);
+min_d = min(dist_total);
+max_d = max(dist_total);
+
+% to scale size based on distance from target, it is (value - min) / (max-min)
+% for different dim-> circle, triangle and cross
+
+% batch update time on 20230331
+% load the folders and add duration of trials needed for batch update
+folders={'104704','105331','110952','111222','111432','111651'};
+dayname = '20230331';
+total_time=[];
+for i=1:length(folders)
+    filename = fullfile(root_path,dayname,'RealRobotBatch',folders{i},'BCI_Fixed');
+    files=findfiles('',filename)';
+    for j=1:length(files)
+        load(files{i});
+        total_time=[total_time TrialData.Time(end)-TrialData.Time(1)];
+    end
+end
+
+
+figure; 
+%set(gca,'Color',[.5 .5 .5 0.7])
+% ylabel is time to target, xlabel is date, size of data-pt. is distance,
+% shape of data-pt. is dim type, color is day
+hold on
+col=turbo(length(ttc));
+%col=['r','b','m']; % in case of plotting the task difficulty by color
+mm=[];
+for i=1:length(ttc)
+    tmp=ttc{i};
+    dim_tmp = dim{i};
+    dist_tmp = dist{i};
+    idx=length(tmp);
+    idx = i+0.1*randn(idx,1);
+    for j=1:length(idx)
+        if dim_tmp(j)==1
+            shape = '+';
+        elseif dim_tmp(j)==2
+            shape = '*';
+        elseif dim_tmp(j)==3
+            shape = 'd';
+        end
+        msize = 10 + 10*((dist_tmp(j) - min_d)/(max_d - min_d));
+        mm=[mm msize];
+        plot(idx(j),tmp(j),'Marker',shape,'MarkerSize',msize,'color',col(i,:),...
+            'LineWidth',2)
+    end
+end
+xlim([0 10])
+xticks(1:9)
+xticklabels(PnP_days_wall_task)
+ylim([0 150])
+yticks([0:20:160])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('Days - PnP')
+ylabel('Time to target')
+
+% plotting the task difficulty by color, and scale the size
+figure;
+hold on
+col=turbo(length(ttc));
+col={'r','b','k'}; % in case of plotting the task difficulty by color
+mm=[];
+for i=1:length(ttc)
+    tmp=ttc{i};
+    dim_tmp = dim{i};
+    dist_tmp = dist{i};
+    idx=length(tmp);
+    idx = i+0.1*randn(idx,1);
+    for j=1:length(idx)      
+        msize = 5 + 5*((dist_tmp(j) - min_d)/(max_d - min_d));
+        mm=[mm msize];
+        plot(idx(j),tmp(j),'Marker','o',...%'MarkerFaceColor', col{dim_tmp(j)},...
+            'MarkerSize',msize,'color',col{dim_tmp(j)},...
+            'LineWidth',2)
+    end
+end
+xlim([0 10])
+xticks(1:9)
+xticklabels(PnP_days_wall_task)
+ylim([0 150])
+yticks([0:20:160])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('Days - PnP')
+ylabel('Time to target')
+
+% plot the boxplot of time to target
+figure;
+boxplot(cell2mat(ttc))
+ylim([0 150])
+yticks([0:20:160])
+set(gcf,'Color','w')
+xlim([0.85 1.15])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+ylabel('Time to target')
+box off
+
+
+% plot the accuracy
+acc=successRate;
+figure;hold on
+plot(acc,'ok','MarkerSize',15)
+plot(acc,'k','LineWidth',1)
+xlim([0 10])
+xticks(1:9)
+xticklabels(PnP_days_wall_task)
+ylim([0 1.05])
+yticks([0:.1:1.01])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('Days - PnP')
+ylabel('Accuracy')
+box off
+
+
+% compare performance in first month to rest of session
+t1 = cell2mat(ttc(1:4));
+t1b = sort(bootstrp(1000,@median,t1));
+[t1b(25) median(t1) t1b(975)]
+
+t1 = cell2mat(ttc(5:8));
+t1b = sort(bootstrp(1000,@median,t1));
+[t1b(25) median(t1) t1b(975)]
+
+a1= acc(1:4);
+median(a1)
+a2= acc(5:8);
+median(a2)
+
+clc;clear;
+load('topDown_rotate_v2.mat');
+PnP_days_rotate_task = [77,81,102,203];
+ % plot the success rate
+acc=successRate;
+figure;hold on
+plot(acc,'ok','MarkerSize',15)
+plot(acc,'k','LineWidth',1)
+xlim([0.5 4.5])
+xticks(1:4)
+xticklabels(PnP_days_rotate_task)
+ylim([0 1.05])
+yticks([0:.1:1.01])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('Days - PnP')
+ylabel('Accuracy')
+box off
+
+% plotting the time to target
+figure;
+hold on
+col=turbo(length(ttc));
+col={'r','b','k'}; % in case of plotting the task difficulty by color
+for i=1:length(ttc)
+    tmp=ttc{i};
+    idx=length(tmp);
+    idx = i+0.1*randn(idx,1);
+    for j=1:length(idx)      
+        msize = 7.5;        
+        plot(idx(j),tmp(j),'Marker','o',...%'MarkerFaceColor', col{dim_tmp(j)},...
+            'MarkerSize',msize,'color','k',...
+            'LineWidth',2)
+    end
+end
+xlim([0.5 4.5])
+xticks(1:4)
+xticklabels(PnP_days_rotate_task)
+ylim([0 1.05])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('Days - PnP')
+ylim([0 150])
+yticks([0:20:160])
+set(gcf,'Color','w')
+xlabel('Days - PnP')
+ylabel('Time to target')
+
+
+% plot the boxplot of time to target
+figure;
+boxplot(cell2mat(ttc))
+ylim([0 150])
+yticks([0:20:160])
+set(gcf,'Color','w')
+xlim([0.85 1.15])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+ylabel('Time to target')
+box off
+
+
+% performace metrics
+t1 = cell2mat(ttc);
+t1b = sort(bootstrp(1000,@median,t1));
+[t1b(25) median(t1) t1b(975)]
