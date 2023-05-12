@@ -710,8 +710,8 @@ session_data(5).folder_type={'I','I','I','I','I',...
     'B','B','B','B'};
 
 % also make sure to load the data i.e., the neural activity corresponding
-% to an intended decode that is within 30degrees towards target. 
-%FIRST is however, on just the imagined movement data itself 
+% to an intended decode that is within 30degrees towards target.
+%FIRST is however, on just the imagined movement data itself
 
 
 mahab_full_online=[];
@@ -908,7 +908,109 @@ box off
 set(gca,'LineWidth',1)
 
 
-%% PLAYING AROUND WITH NORMALIZING DATA 
+%% KF 3D end point control: getting batch sizes and half lives
+
+
+
+clc;clear;
+close all
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd(root_path)
+
+%day1
+session_data(1).Day = '20230220';
+session_data(1).folders = {'102528','103151','103544','104517','105110','110103',...
+    '110650','111006','112144','112608','113541','114821'};
+session_data(1).folder_type={'I','I','I','I','I','O','O','O','B','B','B','B'};
+
+% day 2
+session_data(2).Day = '20230224';
+session_data(2).folders = {'103522','103942','104105','104228','104354',...
+    '104954','105421','105712',...
+    '110944','111424','111723','112021',...
+    };
+session_data(2).folder_type={'I','I','I','I','I','O','O','O','B','B','B','B'};
+
+% day 3
+session_data(3).Day = '20230301';
+session_data(3).folders = {'101030','101443','101604','101716','101834','101947',...
+    '102646','103040','103331','103632',...
+    '104548','104845','105142','105437','105728',...
+    '110536','110917','111210','111509'};
+session_data(3).folder_type={'I','I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B','B',...
+    'B','B','B','B'};
+
+% day 4
+session_data(4).Day = '20230315';
+session_data(4).folders = {'103701','104112','104246','104421','104548',...
+    '105260','105948','110323','110631'...
+    '111229','111639','112018','112331',...
+    '113004','113259','113554','113904'
+    };
+session_data(4).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B',...
+    'B','B','B','B'};
+
+% day 5
+session_data(5).Day = '20230322';
+session_data(5).folders = {'103916','104251','104414','104531','104647',...
+    '105507','105812','110106','110345'...
+    '111337','111656','111953','112247',...
+    '113330','113651','113946','114241'
+    };
+session_data(5).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B',...
+    'B','B','B','B'};
+
+half_lives=[];
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+
+    %%%%%%online data    
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'RobotKF',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    [neural,kinematics]=get_neural_kinematics_KF(files,1);
+    half_lives = [half_lives (size(neural,2)*(1/5)) * log(0.5)/log(0.75)];
+
+     %%%%%%batch data    
+    folders = session_data(i).folders(batch_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'RobotKF',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    [neural,kinematics]=get_neural_kinematics_KF(files,1);
+    half_lives = [half_lives (size(neural,2)*(1/5)) * log(0.5)/log(0.75)];
+end
+
+figure;hist(half_lives)
+vline(mean(half_lives))
+vline(median(half_lives))
+
+
+
+
+%% PLAYING AROUND WITH NORMALIZING DATA
 
 % rows are observations, columns are features
 a=randn(20,50);

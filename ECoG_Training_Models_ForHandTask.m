@@ -2020,7 +2020,7 @@ save net_mlp_hand_adam_64 net_mlp_hand_adam_64
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
-foldernames = {'20220302'}'%{'20220302','20220223'};20220302 is online hand...amaze
+foldernames = {'20230428'}'%{'20220302','20220223'};20220302 is online hand...amaze
 cd(root_path)
 
 imagined_files=[];
@@ -2030,7 +2030,7 @@ for i=1:1%length(foldernames)
     else
        folderpath = fullfile(root_path, foldernames{i},'Hand')
     end
-       %folderpath = fullfile(root_path, foldernames{i},'Hand');
+    folderpath = fullfile(root_path, foldernames{i},'HandImagined');
 
     D=dir(folderpath);
     
@@ -2046,7 +2046,7 @@ for i=1:1%length(foldernames)
 end
 
 res_overall=[];
-for iter=1:20
+for iter=1:5
     disp(iter)
 
 
@@ -2182,7 +2182,7 @@ for iter=1:20
             kinax = TrialData.TaskState;
             kinax = find(kinax==3);
             temp = cell2mat(features(kinax));
-            temp = temp(:,5:end);
+            temp = temp(:,1:end);
 
             % get the smoothed and pooled data
             % get smoothed delta hg and beta features
@@ -2249,7 +2249,7 @@ for iter=1:20
 
 end
 
-acc=squeeze(nanmedian(res_overall,1));
+acc=squeeze(nanmean(res_overall,1));
 figure;imagesc(acc)
 diag(acc)
 mean(ans)

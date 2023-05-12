@@ -1278,8 +1278,8 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'PassbandFrequency',5,'PassbandRipple',0.2, ...
     'SampleRate',1e3);
 
-
 % 
+% % 
 % % log spaced hg filters
 % Params.Fs = 1000;
 % Params.FilterBank(1).fpass = [70,77];   % high gamma1
@@ -1293,7 +1293,7 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 % Params.FilterBank(end+1).fpass = [0.5,4]; % delta
 % Params.FilterBank(end+1).fpass = [13,19]; % beta1
 % Params.FilterBank(end+1).fpass = [19,30]; % beta2
-% 
+% % 
 % % compute filter coefficients
 % for i=1:length(Params.FilterBank),
 %     [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
@@ -1312,9 +1312,9 @@ for i=1:length(files)
 
 
     %get hG through filter bank approach
-    filtered_data=zeros(size(features,1),size(features,2),2);
+    filtered_data=zeros(size(features,1),size(features,2),1);
     k=1;
-    for ii=9:16 %9:16 is hG, 4:5 is beta
+    for ii=1 %9:16 is hG, 4:5 is beta
         filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
             Params.FilterBank(ii).b, ...
             Params.FilterBank(ii).a, ...
@@ -1365,9 +1365,10 @@ for i=1:length(files)
     end
 end
 
-save high_res_erp_beta_imagined_data -v7.3
+%save high_res_erp_beta_imagined_data -v7.3
 %save high_res_erp_LMP_imagined_data -v7.3
 %save high_res_erp_imagined_data -v7.3
+save high_res_delta_erp_imagined_data -v7.3
 
 % plot ERPs at all channels with tests for significance
 idx = [1:30];
@@ -1377,25 +1378,25 @@ chMap=TrialData.Params.ChMap;
 %ch=3;
 sig_ch=zeros(30,128);
 for i=1:length(idx)    
-%     figure
-%     ha=tight_subplot(8,16);
-%     d = 1;
-%     set(gcf,'Color','w')
-%     set(gcf,'WindowState','maximized')
+    figure
+    ha=tight_subplot(8,16);
+    d = 1;
+    set(gcf,'Color','w')
+    set(gcf,'WindowState','maximized')
     data = ERP_Data{idx(i)};
     for ch=1:128
         disp(['movement ' num2str(i) ' channel ' num2str(ch)])
 
-%         [x y] = find(chMap==ch);
-%         if x == 1
-%             axes(ha(y));
-%             %subplot(8, 16, y)
-%         else
-%             s = 16*(x-1) + y;
-%             axes(ha(s));
-%             %subplot(8, 16, s)
-%         end
-%         hold on
+        [x y] = find(chMap==ch);
+        if x == 1
+            axes(ha(y));
+            %subplot(8, 16, y)
+        else
+            s = 16*(x-1) + y;
+            axes(ha(s));
+            %subplot(8, 16, s)
+        end
+        hold on
 
         chdata = squeeze((data(:,ch,:)));
         
@@ -1410,24 +1411,24 @@ for i=1:length(idx)
         m=mean(chdata,2);
         opt=statset('UseParallel',true);
         mb = sort(bootstrp(1000,@mean,chdata','Options',opt));
-        tt=linspace(-1,7,size(data,1));
+        %tt=linspace(-1,7,size(data,1));
         %figure;        
-%         [fillhandle,msg]=jbfill(tt,(mb(25,:)),(mb(975,:))...
-%         ,[0.5 0.5 0.5],[0.5 0.5 0.5],1,.4);
-%         hold on        
-%         plot(tt,(m),'k','LineWidth',1)
-%         axis tight
-%         %plot(tt,mb(25,:),'--k','LineWidth',.25)
-%         %plot(tt,mb(975,:),'--k','LineWidth',.25)
-%         % beautify
-%         ylabel(num2str(ch))        
-%         ylim([-1.5 2])
-%         yticks ''
-%         xticks ''
-%         vline([0 2 6],'r')
-%         hline(0)
-        %hline([0.5, -0.5])
-        %axis tight
+        [fillhandle,msg]=jbfill(tt,(mb(25,:)),(mb(975,:))...
+        ,[0.5 0.5 0.5],[0.5 0.5 0.5],1,.4);
+        hold on        
+        plot(tt,(m),'k','LineWidth',1)
+        axis tight
+        %plot(tt,mb(25,:),'--k','LineWidth',.25)
+        %plot(tt,mb(975,:),'--k','LineWidth',.25)
+        % beautify
+        ylabel(num2str(ch))        
+        ylim([-1.5 2])
+        yticks ''
+        xticks ''
+        vline([0 2 6],'r')
+        hline(0)
+        hline([0.5, -0.5])
+        axis tight
 
         
         % channel significance: if mean is outside the 95% boostrapped C.I. for
@@ -1468,20 +1469,20 @@ for i=1:length(idx)
                 box_col = 'b';
                 sig_ch(i,ch)=-1;
             end
-%             box on
-%             set(gca,'LineWidth',2)
-%             set(gca,'XColor',box_col)
-%             set(gca,'YColor',box_col)
+            box on
+            set(gca,'LineWidth',2)
+            set(gca,'XColor',box_col)
+            set(gca,'YColor',box_col)
         end        
     end    
-    %sgtitle(ImaginedMvmt(idx(i)))
-%     filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
-%     saveas(gcf,filename)
-%     set(gcf,'PaperPositionMode','auto')
-%     print(gcf,filename,'-dpng','-r500')
+    sgtitle(ImaginedMvmt(idx(i)))
+    filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
+    saveas(gcf,filename)
+    set(gcf,'PaperPositionMode','auto')
+    print(gcf,filename,'-dpng','-r500')
 end
 %save ERPs_sig_ch_beta -v7.3
-save ERPs_sig_ch_LMP -v7.3
+save ERPs_sig_ch_beta -v7.3
 %save ERPs_sig_ch_hg -v7.3
 
 % plotting sig channels on by one
@@ -1522,11 +1523,11 @@ view(-94,30)
 %idx = [3,8,10,19,20,25,28,30];
 %idx = [1,10,20,25,30]; % have to play around with this
 %idx= [ 20 29 30]; % face
-%idx = [1 3  19];%hand
-%idx= [ 25 28]% limbs
-idx=[ 10 12 16 ];% left hand
+%idx = [1 3  19 ];%hand
+idx= [15 16 17]% limbs
+%idx=[ 10 12 16 ];% left hand
 %cmap = turbo(length(idx));
-cmap = brewermap(length(idx),'Set1')
+cmap = brewermap(length(idx),'Set1');
 s1 = [106 97 103 100 116 115];
 m1 = [25 31 3 9 27];
 rol = [42 15 59 36 32 63];
@@ -1535,6 +1536,9 @@ pmv= [53 2 13 ];
 channels = {s1,m1,rol,pmd,pmv};
 % plotting
 channels=1:128;
+% for beta, hand: 96, limbs: 127,79,49, face: 82
+% for delta, face: 116, 104, 36, limbs: 119, 95, 35
+
 for i=1:length(channels)    
     figure;
     hold on
@@ -1544,10 +1548,22 @@ for i=1:length(channels)
         tmp_erp = ERP_Data{idx(j)};        
         tmp = tmp_erp(:,ch,:);
         tmp = squeeze(mean(tmp,2))';        
-        tmp=detrend(tmp')';
-        tmp = tmp+0.1;
-%         if j==4
-%             tmp = tmp-0.4;
+        tmp=detrend(tmp')'; 
+        tmp=tmp+0.2;
+%         if j==2
+%             tmp=tmp-0.2;
+%         end
+%         if j==2
+%             tmp = tmp+0.4;
+%         else
+%             tmp = tmp+0.2;
+%         end
+
+%         if j==1
+%             tmp = tmp-0.25;
+%         end
+%         if j==3
+%             tmp = tmp-0.15;
 %         end
         m = smooth(mean(tmp,1),300);
         %mb = sort(bootstrp(1000,@mean,tmp)); % bootstrap
@@ -1566,9 +1582,20 @@ for i=1:length(channels)
         tmp = tmp_erp(:,ch,:);
         tmp = squeeze(mean(tmp,2))';        
         tmp=detrend(tmp')';
-        tmp = tmp+0.1;
-%         if j==4
-%             tmp = tmp-0.4;
+        tmp=tmp+0.2;
+%         if j==2
+%             tmp=tmp-0.2;
+%         end
+%         if j==2
+%             tmp = tmp+0.4;
+%         else
+%             tmp = tmp+0.2;
+%         end
+%         if j==1
+%             tmp = tmp-0.25;
+%         end
+%         if j==3
+%             tmp = tmp-0.15;
 %         end
         m = smooth(mean(tmp,1),300);
         %mb = sort(bootstrp(1000,@mean,tmp)); % bootstrap
@@ -1581,14 +1608,14 @@ for i=1:length(channels)
         hold on        
     end 
     axis tight
-    legend(ImaginedMvmt(idx))    
-    vline([1000 3000 7000]+3000,'r')
+    legend(ImaginedMvmt(idx))       
     hline(0,'k')           
     xlim([2000 7200]+3000)
     title(num2str(i))
     xticks(4000:2000:11000)
-    %yticks(-.6:.4:1.4)
-    %ylim([-.6 1.3])
+    yticks(-.6:.4:3.4)
+    ylim([-.4 1.1])
+    vline([1000 3000 7000]+3000,'r')
     %waitforbuttonpress
     %close
 end
@@ -1605,7 +1632,7 @@ for i=1:16:128
 end
 grid_ecog=flipud(grid_ecog);
 figure;
-ch=51;
+ch=10;
 [x y] = find(chMap==ch);
 ch1 = grid_ecog(x,y);
 c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh',1,1,1);
@@ -1613,6 +1640,14 @@ e_h = el_add(elecmatrix(1:end,:),'color','w','msize',2);
 e_h = el_add(elecmatrix(ch1,:),'color','r','msize',10);
 set(gcf,'Color','w')
 view(-99,21)
+
+
+
+b= abs(sin(2*pi*1/100*(1:100)))+0.1*randn(1,100);
+b= (conv(b,b,'same')) + randn(1,100);
+figure;plot(b)
+[r,lags]=xcorr(b,'unbiased');
+figure;stem(lags,(r))
 
 
 %%%%% ROI specific activity in the various regions

@@ -253,20 +253,16 @@ for i=1:length(test_files)
     end
     temp = temp(logical(good_ch),:);
 
-    %decodes = net_hand_mlp(temp);
-    decodes = predict(net_mlp_hand,temp');
-    [aa bb]=max(sum(decodes));
+    decodes = net_hand_mlp(temp);
     %decodes(decodes<=0.4)=0;
-    %[aa bb]=max(decodes');
+    [aa bb]=max(decodes);
     %figure;stem(sum(decodes,2))
-    decision = (bb);
-    res_acc(TrialData.TargetID,decision)=res_acc(TrialData.TargetID,decision)+1;
+
+
+
 end
 
-for i=1:length(res_acc)
-    res_acc(i,:)=res_acc(i,:)./sum(res_acc(i,:));
-end
-figure;imagesc(res_acc)
+
 
 
 %% LDA on hand data

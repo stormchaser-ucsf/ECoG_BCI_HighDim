@@ -21,6 +21,7 @@ clear files1
 decodes_overall=[];
 data=[];
 len=1000;
+Trial_Data={};n=1;
 for i=1:length(files)
     %disp(i)
 
@@ -62,6 +63,10 @@ for i=1:length(files)
         % store results
         if state_idx(j)==3
             decodes=[decodes class_predict];
+            Trial_Data(n).neural_features = neural_features;
+            Trial_Data(n).TargetID = TrialData.TargetID;
+            Trial_Data(n).TrialID = i;
+            n=n+1;
         end
     end
 

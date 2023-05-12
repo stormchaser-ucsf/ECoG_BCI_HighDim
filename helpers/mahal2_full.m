@@ -8,7 +8,7 @@ for i=1:length(x)
     A = x{i};
     %A = A(:,65:96);
     m1 = mean(A);
-    C1 = cov(A) + 1e-3*eye(size(cov(A)));
+    C1 = cov(A) + 1e-4*eye(size(cov(A)));
     %     if rank(C1) < size(A,2)
     %         [u,s,v] = svd(C1);
     %         r=rank(C1);
@@ -21,7 +21,7 @@ for i=1:length(x)
         B = x{j};
         %B = B(:,65:96);
         m2 = mean(B);
-        C2 = cov(B) + 1e-3*eye(size(cov(B)));
+        C2 = cov(B) + 1e-4*eye(size(cov(B)));
         %         if rank(C2) < size(B,2)
         %             [u,s,v] = svd(C2);
         %             r=rank(C2);

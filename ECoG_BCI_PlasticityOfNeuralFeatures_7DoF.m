@@ -1065,49 +1065,62 @@ plot(smooth(median(mahab_full_batch(:,1:end)),2))
 
 figure;
 hold on
-plot((mean(mahab_full_imagined(:,1:end))))
-plot((mean(mahab_full_online(:,1:end))))
-plot((mean(mahab_full_batch(:,1:end))))
+plot((median(mahab_full_imagined(:,1:end))))
+plot((median(mahab_full_online(:,1:end))))
+plot((median(mahab_full_batch(:,1:end))))
 
 clear tmp
 w = [1/2 1/2];
-tmp(:,1) = median(mahab_full_imagined(:,1:end));
-tmp(:,2) = median(mahab_full_online(:,1:end));
-tmp(:,3) = median(mahab_full_batch(:,1:end));
+tmp(:,1) = mean(mahab_full_imagined(:,1:end));
+tmp(:,2) = mean(mahab_full_online(:,1:end));
+tmp(:,3) = mean(mahab_full_batch(:,1:end));
 
-for i=1:size(tmp,2)
-    %xx = filter(w,1,[tmp(1,i) ;tmp(:,i)]);
-    xx = filter(w,1,[tmp(:,i) ;tmp(end,i)]);
-    tmp(:,i) = xx(2:end);
-end
+% for i=1:size(tmp,2)
+%     %xx = filter(w,1,[tmp(1,i) ;tmp(:,i)]);
+%     xx = filter(w,1,[tmp(:,i) ;tmp(end,i)]);
+%     tmp(:,i) = xx(2:end);
+% end
 
-% plotting with regression lines
+% plotting with regression lines, mahab full
+% plotting the regression for Mahab distance increases as a function of day
 figure;
+xlim([0 11])
 hold on
-x=1:10;
-x1=[ones(length(x),1) x'];
-% imagined
-y=smooth(median(mahab_full_imagined(:,1:end)),2);
-plot(x,y,'.','MarkerSize',20,'Color','b')
-[B,BINT,R,RINT,STATS1] = regress(y,x1);
-yhat=x1*B;
-plot(x,yhat,'b','LineWidth',1)
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:10,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+[B,BINT,R,RINT,STATS1] = regress(y,x);
+yhat = x*B;
+plot(1:10,yhat,'b','LineWidth',1)
 % online
-y=smooth(median(mahab_full_online(:,1:end)),2);
-plot(x,y,'.','MarkerSize',20,'Color','k')
-[B,BINT,R,RINT,STATS2] = regress(y,x1);
-yhat=x1*B;
-plot(x,yhat,'k','LineWidth',1)
+plot(1:10,tmp(:,2),'.k','MarkerSize',20)
+y = tmp(:,2);
+[B,BINT,R,RINT,STATS2] = regress(y,x);
+yhat = x*B;
+plot(1:10,yhat,'k','LineWidth',1)
 % batch
-y=smooth(median(mahab_full_batch(:,1:end)),2);
-plot(x,y,'.','MarkerSize',20,'Color','r')
-[B,BINT,R,RINT,STATS3] = regress(y,x1);
-yhat=x1*B;
-plot(x,yhat,'r','LineWidth',1)
+plot(1:10,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+[B,BINT,R,RINT,STATS3] = regress(y,x);
+yhat = x*B;
+plot(1:10,yhat,'r','LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xticks([1:10])
+% yticks([5:5:35])
+% ylim([5 35])
 
+%t-tests
+[h p tb st]=ttest(tmp(:,1),tmp(:,2));p
+[h p tb st]=ttest(tmp(:,1),tmp(:,3));p
+[h p tb st]=ttest(tmp(:,3),tmp(:,2));p
 
+% boxplots of mahab full
+figure;
+aa=([mahab_full_imagined(:) mahab_full_online(:) mahab_full_batch(:)]);
+figure;boxplot(aa)
 
-res
 
 figure;
 plot(mean(dist_online_total'))
@@ -1273,6 +1286,12 @@ STATS(3)
 
 figure;plot(tmp(:,2),'.','MarkerSize',20)
 
+
+tmp=randn(10,3);
+figure;plot(tmp(:,1),'.','MarkerSize',20)
+
+
+
 %%%% REGRESSION LINES AS FUNCITON OF DAY %%%%%
 clear tmp
 w = [1/2 1/2 ];
@@ -1420,9 +1439,10 @@ for i=1:size(tmp,1)
 end
 data = table(day_name,mahab_dist);
 glm = fitglme(data,'mahab_dist ~ 1+ day_name');
+%glm = fitlm(data,'mahab_dist ~ 1+ day_name');
 stat = glm.Coefficients.tStat(2);
 stat_boot=[];
-for i=1:500
+for i=1:2000
     disp(i)
     day_name_tmp = day_name(randperm(numel(day_name)));
     data_tmp = table(day_name_tmp,mahab_dist);
@@ -3857,6 +3877,7 @@ set(gcf,'Color','w')
 set(gca,'LineWidth',1)
 xlim([0.5  4.5])
 xticks([1:4])
+ylim([0 10])
 %yticks([5:5:35])
 %ylim([5 35])
 
@@ -4131,6 +4152,21 @@ figure;boxplot(tmp)
 
 tmp = [ m1 m2 m3];
 figure;boxplot(tmp)
+
+% bootstrapped statistics on whether closed loop control sig. above chance
+acc_CL1 = mean(acc_online_days,1);
+a = acc_CL1 - mean(acc_CL1) + 0.25;
+acc_CL1_boot = sort(bootstrp(1000,@mean,a));
+figure;hist(acc_CL1_boot)
+vline(mean(acc_CL1))
+sum(acc_CL1_boot>mean(acc_CL1))/length(acc_CL1_boot)
+
+acc_CL2 = mean(acc_batch_days(:,2:5),1);
+a = acc_CL2 - mean(acc_CL2) + 0.25;
+acc_CL2_boot = sort(bootstrp(1000,@mean,a));
+figure;hist(acc_CL2_boot)
+vline(mean(acc_CL2))
+sum(acc_CL2_boot>mean(acc_CL2))/length(acc_CL2_boot)
 
 % regression lines for mahab distances in latent space
 imag = [0.732087
