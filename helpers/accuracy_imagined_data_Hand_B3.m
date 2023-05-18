@@ -1,10 +1,10 @@
-function [acc,train_permutations] = accuracy_imagined_data_9DOF(condn_data, iterations)
+function [acc,train_permutations] = accuracy_imagined_data_Hand_B3(condn_data, iterations)
 
 num_trials = length(condn_data);
 train_permutations = zeros(num_trials,iterations)';
 acc_permutations=[];
 for iter = 1:iterations % loop over 20 times
-    train_idx = randperm(num_trials,round(0.8*num_trials));
+    train_idx = randperm(num_trials,round(0.75*num_trials));
     test_idx = ones(num_trials,1);
     test_idx(train_idx) = 0;
     test_idx = find(test_idx==1);
@@ -22,6 +22,9 @@ for iter = 1:iterations % loop over 20 times
     D7=[];
     D8=[];
     D9=[];
+    D10=[];
+    D11=[];
+    D12=[];
     for i=1:length(train_data)
         temp = train_data(i).neural;
         if train_data(i).targetID == 1
@@ -42,61 +45,63 @@ for iter = 1:iterations % loop over 20 times
             D8 = [D8 temp];
         elseif train_data(i).targetID == 9
             D9 = [D9 temp];
+        elseif train_data(i).targetID == 10
+            D10 = [D10 temp];
+        elseif train_data(i).targetID == 11
+            D11 = [D11 temp];
+        elseif train_data(i).targetID == 12
+            D12 = [D12 temp];
         end
     end
-    A = D1';
-    B = D2';
-    C = D3';
-    D = D4';
-    E = D5';
-    F = D6';
-    G = D7';
-    H = D8';
-    I = D9';
 
-    % organize data
-    clear N
-    N = [A' B' C' D' E' F' G' H' I'];
-    T1 = [ones(size(A,1),1);2*ones(size(B,1),1);3*ones(size(C,1),1);4*ones(size(D,1),1);...
-        5*ones(size(E,1),1);6*ones(size(F,1),1);7*ones(size(G,1),1);8*ones(size(H,1),1);...
-        9*ones(size(I,1),1)];
-    T = zeros(size(T1,1),9);
-    [aa bb]=find(T1==1);
-    T(aa(1):aa(end),1)=1;
-    [aa bb]=find(T1==2);
-    T(aa(1):aa(end),2)=1;
-    [aa bb]=find(T1==3);
-    T(aa(1):aa(end),3)=1;
-    [aa bb]=find(T1==4);
-    T(aa(1):aa(end),4)=1;
-    [aa bb]=find(T1==5);
-    T(aa(1):aa(end),5)=1;
-    [aa bb]=find(T1==6);
-    T(aa(1):aa(end),6)=1;
-    [aa bb]=find(T1==7);
-    T(aa(1):aa(end),7)=1;
-    [aa bb]=find(T1==8);
-    T(aa(1):aa(end),8)=1;
-    [aa bb]=find(T1==9);
-    T(aa(1):aa(end),9)=1;
+
+    clear condn_data1
+    idx=1;
+    condn_data1{1}=[D1(idx:end,:) ]';
+    condn_data1{2}= [D2(idx:end,:)]';
+    condn_data1{3}=[D3(idx:end,:)]';
+    condn_data1{4}=[D4(idx:end,:)]';
+    condn_data1{5}=[D5(idx:end,:)]';
+    condn_data1{6}=[D6(idx:end,:)]';
+    condn_data1{7}=[D7(idx:end,:)]';
+    condn_data1{8}=[D8(idx:end,:)]';
+%     condn_data1{9}=[D9(idx:end,:)]';
+%     condn_data1{10}=[D10(idx:end,:)]';
+%     condn_data1{11}=[D11(idx:end,:)]';
+%     condn_data1{12}=[D12(idx:end,:)]';
+
+
+    N=[];
+    T1=[];
+    for i=1:length(condn_data1)
+        tmp=condn_data1{i};
+        N = [N tmp'];
+        T1 = [T1;i*ones(size(tmp,1),1)];
+    end
+
+
+    T = zeros(size(T1,1),length(condn_data1));
+    for i=1:length(condn_data1)
+        [aa bb]=find(T1==i);
+        T(aa(1):aa(end),i)=1;
+    end
 
     % train MLP
-    net = patternnet([64 64]) ;
-    net.performParam.regularization=0.4;
-    net = train(net,N,T','UseGPU','yes');
+    net = patternnet([64 64 ]) ;
+    net.performParam.regularization=0.2;
+    net = train(net,N,T','UseParallel','yes');
 
     % test it out on the held out trials using a mode filter
-    acc = zeros(9);
+    acc = zeros(length(condn_data1));
     for i=1:length(test_data)
         features = test_data(i).neural;
-        if ~isempty(features)
+        if ~isempty(features) && test_data(i).targetID<=length(condn_data1)
             out = net(features);
-            %out(out<0.4)=0; % thresholding
+            out(out<0.4)=0; % thresholding
             [prob,idx] = max(out); % getting the decodes
-            decodes = mode_filter(idx,9); % running it through a 5 sample mode filter
-            %decodes=idx;
+            decodes = mode_filter(idx,length(condn_data1)); % running it through a 5 sample mode filter
             decodes_sum=[];
-            for ii=1:9
+            for ii=1:length(condn_data1)
                 decodes_sum(ii) = sum(decodes==ii);
             end
             [aa bb]=max(decodes_sum);

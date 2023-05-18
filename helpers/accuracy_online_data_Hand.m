@@ -1,6 +1,6 @@
-function [acc] = accuracy_online_data_9DOF(files)
+function [acc] = accuracy_online_data_Hand(files,targets)
 
-acc=zeros(9);
+acc=zeros(targets);
 for i=1:length(files)
     file_loaded=1;
     try
@@ -13,7 +13,7 @@ for i=1:length(files)
         out = TrialData.ClickerState;
         tid = TrialData.TargetID;
         decodes=[];
-        for ii=1:9
+        for ii=1:targets
             decodes(ii) = sum(out==ii);
         end
         [aa bb]=max(decodes);
@@ -33,7 +33,7 @@ for i=1:length(files)
     end
 end
 
-for i=1:9
+for i=1:targets
     acc(i,:) = acc(i,:)/sum(acc(i,:));
 end
 
