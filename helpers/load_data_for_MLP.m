@@ -59,7 +59,7 @@ for ii=1:length(files)
         %len_data = min(20,size(temp,2)); % this is the first 2.6s
         %temp = temp(:,1:len_data);
         if tim_cutoff==1
-            len_data = min(15,size(temp,2)); % this is the first 2.6s
+            len_data = min(13,size(temp,2)); % this is the first 2.6s
             temp = temp(:,1:len_data);
         end
 

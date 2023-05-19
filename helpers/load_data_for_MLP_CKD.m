@@ -56,8 +56,8 @@ for ii=1:length(files)
         %len_data = min(12,size(temp,2)); % this is the first 2.4s
         % temp = temp(:,1:len_data);
 
-        %%%% get all neural if intended direction towards target (within 30deg
-        %%%% bound)
+        %%%% get all neural if intended direction towards target (within
+        %%%% 45deg bound)
         kin = TrialData.CursorState;
         kin = kin(1:3,kinax);
         target_pos = TrialData.TargetPosition;
@@ -68,7 +68,7 @@ for ii=1:length(files)
         chk=[];
         for i=1:size(kin,2)
             % compute the angle between ideal vector and intended vector.
-            % this should be less than 30 degrees
+            % this should be less than 45 degrees
             int_dir = target_pos' - kin(:,i);            
             ang = acosd((pos2target'*int_dir)/(norm(pos2target)*norm(int_dir)));            
 %             if ang>90

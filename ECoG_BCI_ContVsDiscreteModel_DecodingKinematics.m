@@ -738,8 +738,8 @@ for i=1:length(session_data)
     end
 
     %load the data
-    condn_data = load_data_for_MLP_CKD(files);
-    %condn_data = load_data_for_MLP(files,1);
+    %condn_data = load_data_for_MLP_CKD(files);
+    condn_data = load_data_for_MLP(files,1);
     %
     % save the data
     filename = ['Biomimetic_CenterOut_condn_data_Imagined_Day_45deg' num2str(i)];
@@ -763,8 +763,8 @@ for i=1:length(session_data)
 
 
     %load the data
-    condn_data = load_data_for_MLP_CKD(files);
-    %condn_data = load_data_for_MLP(files,1);
+    %condn_data = load_data_for_MLP_CKD(files);
+    condn_data = load_data_for_MLP(files,1);
 
     % save the data
     filename = ['Biomimetic_CenterOut_condn_data_Online_Day_45deg' num2str(i)];
@@ -794,8 +794,8 @@ for i=1:length(session_data)
 
 
     %load the data
-    condn_data = load_data_for_MLP_CKD(files);
-    %condn_data = load_data_for_MLP(files,1);
+    %condn_data = load_data_for_MLP_CKD(files);
+    condn_data = load_data_for_MLP(files,1);
 
     %save the data
     filename = ['Biomimetic_CenterOut_condn_data_Batch_Day_45deg' num2str(i)];
