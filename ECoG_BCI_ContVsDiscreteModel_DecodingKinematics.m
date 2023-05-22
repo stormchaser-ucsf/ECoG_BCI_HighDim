@@ -742,7 +742,7 @@ for i=1:length(session_data)
     condn_data = load_data_for_MLP(files,1);
     %
     % save the data
-    filename = ['Biomimetic_CenterOut_condn_data_Imagined_Day_45deg' num2str(i)];
+    filename = ['Biomimetic_CenterOut_condn_data_Imagined_Day_First2pt5s_new' num2str(i)];
     save(filename, 'condn_data', '-v7.3')
     %
     % get the mahab distance in the full dataset
@@ -767,7 +767,7 @@ for i=1:length(session_data)
     condn_data = load_data_for_MLP(files,1);
 
     % save the data
-    filename = ['Biomimetic_CenterOut_condn_data_Online_Day_45deg' num2str(i)];
+    filename = ['Biomimetic_CenterOut_condn_data_Online_Day_First2pt5s_new' num2str(i)];
     save(filename, 'condn_data', '-v7.3')
 
     % get the mahab distance in the full dataset
@@ -798,7 +798,7 @@ for i=1:length(session_data)
     condn_data = load_data_for_MLP(files,1);
 
     %save the data
-    filename = ['Biomimetic_CenterOut_condn_data_Batch_Day_45deg' num2str(i)];
+    filename = ['Biomimetic_CenterOut_condn_data_Batch_Day_First2pt5s_new' num2str(i)];
     save(filename, 'condn_data', '-v7.3')
 
 
