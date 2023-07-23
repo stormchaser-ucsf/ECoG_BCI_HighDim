@@ -8722,7 +8722,7 @@ end
 % now build a classifier to discriminate between the neural features
 % a 7X10X10X5 MLP will do the trick
 acc_overall=[];
-for iter=1:50
+for iter=1:10
 
     tid = unique([filedata(1:end).TargetID]);
     train_idx=[];
@@ -8779,7 +8779,7 @@ for iter=1:50
 
     % code to train a neural network
     clear net
-    net = patternnet([10 ]) ;
+    net = patternnet([64 64 ]) ;
     net.performParam.regularization=0.2;
     %net.divideParam.trainRatio=0.85;
     %net.divideParam.valRatio=0.15;
@@ -8814,18 +8814,18 @@ for iter=1:50
         acc(i,:) = acc(i,:)./sum(acc(i,:));
     end
 
-    % figure;
-    % imagesc(acc)
-    % set(gcf,'Color','w')
-    % set(gca,'FontSize',14)
-    % xticks(1:5)
-    % yticks(1:5)
-    % xticklabels({'Right Thumb','Left leg','Head','Rt. Thumb + Head','Rt. Thumb + Lt. Leg'})
-    % yticklabels({'Right Thumb','Left leg','Head','Rt. Thumb + Head','Rt. Thumb + Lt. leg'})
-    % colormap bone
-    % caxis([0 1])
-    % colorbar
-    % title([num2str(100*mean(diag(acc))) '% Accuracy'])
+    figure;
+    imagesc(acc)
+    set(gcf,'Color','w')
+    set(gca,'FontSize',14)
+    xticks(1:5)
+    yticks(1:5)
+    xticklabels({'Right Thumb','Left leg','Head','Rt. Thumb + Head','Rt. Thumb + Lt. Leg'})
+    yticklabels({'Right Thumb','Left leg','Head','Rt. Thumb + Head','Rt. Thumb + Lt. leg'})
+    colormap bone
+    caxis([0 1])
+    colorbar
+    title([num2str(100*mean(diag(acc))) '% Accuracy'])
     acc_overall(iter,:,:)=acc;
 
 end
@@ -8845,7 +8845,7 @@ colorbar
 title([num2str(100*mean(diag(acc))) '% Accuracy'])
 
 
-save multistate_decoding_results -v7.3
+%save multistate_decoding_results -v7.3
 
 
 

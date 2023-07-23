@@ -11,19 +11,19 @@
 % travling waves with a transformer
 
 
-%% SESSION DATA FOR HAND EXPERIMENTS B3
+%% SESSION DATA FOR HAND EXPERIMENTS 
 
 clc;clear
 session_data=[];
-root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 cd(root_path)
 
 %day1
-session_data(1).Day = '20230510';
-session_data(1).folders = {'114718','115447','120026','120552','121111','121639',...
+session_data(1).Day = '20230421';
+session_data(1).folders = {'135818','140708','141436','142253','142936',...
     '122957','123819','124556','125329','130014',...
     '130904'};
-session_data(1).folder_type={'I','I','I','I','I','I','O','O','O','O',...
+session_data(1).folder_type={'I','I','I','I','I','O','O','O','O',...
     'O','B'};
 session_data(1).AM_PM = {'am','am','am','am','am','am','am','am','am','am',...
     'am','am'};

@@ -65,10 +65,10 @@ for iter = 1:iterations % loop over 20 times
     condn_data1{6}=[D6(idx:end,:)]';
     condn_data1{7}=[D7(idx:end,:)]';
     condn_data1{8}=[D8(idx:end,:)]';
-%     condn_data1{9}=[D9(idx:end,:)]';
-%     condn_data1{10}=[D10(idx:end,:)]';
-%     condn_data1{11}=[D11(idx:end,:)]';
-%     condn_data1{12}=[D12(idx:end,:)]';
+    condn_data1{9}=[D9(idx:end,:)]';
+    condn_data1{10}=[D10(idx:end,:)]';
+    condn_data1{11}=[D11(idx:end,:)]';
+    condn_data1{12}=[D12(idx:end,:)]';
 
 
     N=[];

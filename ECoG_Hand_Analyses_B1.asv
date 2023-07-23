@@ -11,11 +11,11 @@
 % travling waves with a transformer
 
 
-%% SESSION DATA FOR HAND EXPERIMENTS B3
+%% SESSION DATA FOR HAND EXPERIMENTS 
 
 clc;clear
 session_data=[];
-root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 cd(root_path)
 
 %day1

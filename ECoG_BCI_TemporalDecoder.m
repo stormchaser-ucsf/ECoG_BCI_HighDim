@@ -652,36 +652,40 @@ end
 figure;hist(mean_val)
 
 %
-% % plotting for presentation
-% tmp=squeeze(condn_data_new(:,:,1245));
-% figure;
-% imagesc(tmp(:,1:128)')
-% caxis([0 .5])
-% figure;%hg
-% offset = 0:.1:127*.1;
-% tmp1=tmp(:,1:128)+offset;
-% tt=(1:80)*(1/100);
-% plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
-% axis tight
-% set(gcf,'Color','w')
-% set(gca,'FontSize',14)
-% xlabel('Time in sec')
-% ylabel('hG norm')
-% box off
-% yticks ''
-%
-% figure;%lmp
-% offset = 0:.2:127*.2;
-% tmp1=tmp(:,129:256)+offset;
-% tt=(1:80)*(1/100);
-% plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
-% axis tight
-% set(gcf,'Color','w')
-% set(gca,'FontSize',14)
-% xlabel('Time in sec')
-% ylabel('LPF norm')
-% box off
-% yticks ''
+% plotting for presentation
+tmp=squeeze(condn_data_new(:,:,1245));
+figure;
+imagesc(tmp(:,1:128)')
+caxis([0 .5])
+figure;%hg
+offset = 0:1.1:127*1.1;
+tmp1=tmp(:,1:128)+offset;
+tt=(1:100)*(1/100);
+plot(tt,tmp1(:,1:30),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xlabel('Time in sec')
+ylabel('hG norm')
+box off
+xlim([0.2 1])
+axis off
+yticks ''
+
+figure;%lmp
+offset = 0:3:127*3;
+tmp1=tmp(:,129:256)+offset;
+tt=(1:100)*(1/100);
+plot(tt,tmp1(:,1:30),'k','LineWidth',1,'Color',[.2 .3 .9])
+axis tight
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+xlabel('Time in sec')
+ylabel('LPF norm')
+box off
+xlim([0.2 1])
+axis off
+yticks ''
 
 
 

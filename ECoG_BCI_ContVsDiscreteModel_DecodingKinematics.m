@@ -643,6 +643,155 @@ end
 figure;boxplot([gru_dev' gru_kin_dev'])
 
 
+%% (MAIN) plotting center out traj for IBID
+
+clc;clear
+foldername = '20210326';
+task_name = 'Robot';
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+addpath(genpath('C:\Users\nikic\Documents\MATLAB\svg_plot'))
+
+fullpath = fullfile(root_path,foldername,task_name);
+files = findfiles('.mat',fullpath,1);
+files1=[];
+for i=1:length(files)
+    if length(regexp(files{i},'Data'))>0
+        files1=[files1;files(i)'];
+    end
+end
+files=files1;
+
+% get all the good robot 3D trial data and plot them
+col = {'r','g','b','c','m','y'};
+col=turbo(6);
+files_suc=[];
+figure;
+hold on
+xlim([-250,250])
+ylim([-250,250])
+zlim([-250,250])
+recon_error = [];% wrt to how well straight line trajecotry is reconstructed
+trial_error = [];% just the plain error with respect to target location
+for i=1:length(files)
+    load(files{i})
+    if TrialData.TargetID == TrialData.SelectedTargetID
+        kin = TrialData.CursorState;
+        task_state = TrialData.TaskState;
+        kinidx = find(task_state==3);
+        kin = kin(:,kinidx);
+        target = TrialData.TargetPosition;
+        targetID = TrialData.TargetID;
+        fs = TrialData.Params.UpdateRate;
+        if size(kin,2)*(1/fs) < 12
+            files_suc = [files_suc;files(i)];
+            %plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col{targetID});
+            plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col(targetID,:));
+        end
+
+        % get the errors in terms of deviation from the ideal path
+        idx = find(target==0); % get the axes where errors shoudln't happen
+        idx_target = find(target~=0);
+        tmp_error = [];
+        kin = kin(1:3,:);
+        for j=1:size(kin,2)
+            if sum(kin(:,j)) ~= 0
+                break
+            end
+        end
+        kin = kin(:,j:end);
+        for j=1:size(kin,2)
+            if (sign(target(idx_target)) * sign(kin(idx_target,j))) == -1
+                f=2;
+            else
+                f=1;
+            end
+            e = f*(sum((target(idx)' - kin(idx,j)).^2));
+            tmp_error = [tmp_error;e];
+        end
+        recon_error =[recon_error; sqrt(sum(tmp_error(1:14)))];
+        trial_error = [trial_error sqrt(sum(sum((kin(:,1:10) - target').^2)))];
+        %end
+    end
+end
+
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('X-axis')
+ylabel('Y-axis')
+zlabel('Z-axis')
+set(gca,'LineWidth',1.0)
+grid on
+
+save recon_error_IBID recon_error -v7.3
+
+
+% plotting the center out trajectory with velocity profile for coasting
+figure;hold on
+for i=1:length(files_suc)
+    load(files_suc{i})
+    kin = TrialData.CursorState;
+    task_state = TrialData.TaskState;
+    kinidx = find(task_state==3);
+    kin = kin(:,kinidx);
+    targetID = TrialData.TargetID;
+    decodes=TrialData.FilteredClickerState;
+    target = TrialData.TargetPosition;
+    start_pos=kin(1:3,1);
+    if TrialData.TargetID==1
+        figure;hold on
+        subplot(2,1,1)
+        hold on
+        plot3(kin(1,1:end-5),kin(2,1:end-5),kin(3,1:end-5),'LineWidth',2,'color','k');
+        plot3(start_pos(1),start_pos(2),start_pos(3),'.g','MarkerSize',100)
+        plot3(target(1)+40,target(2),target(3),'.r','MarkerSize',100)
+        xlim([-100,400]);ylim([-200,200]);zlim([-200,200])
+        for j=1:size(kin,2)-5
+            if decodes(j)==1
+                plot3(kin(1,j),kin(2,j),kin(3,j),'ob','MarkerSize',15);
+            else
+                plot3(kin(1,j),kin(2,j),kin(3,j),'.b');
+            end
+        end
+        subplot(2,1,2)
+        hold on
+        t=(0:length(decodes)-1)*(1/TrialData.Params.UpdateRate);
+        plot(t,kin(4,:));
+        title(num2str(i))
+        for j=1:length(decodes)
+            plot(t(j),kin(4,j),'.b')
+%             if decodes(j)>0
+%                 plot(j,kin(4,j),'ob','MarkerSize',15)
+%             else
+%                 plot(j,kin(4,j),'.b')
+%             end
+        end
+    end
+
+    %     %if TrialData.TargetID==2
+    %      %   figure;hold on
+    %         plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color','k');
+    %         for j=1:size(kin,2)
+    %             if decodes(j)>0
+    %                 plot3(kin(1,j),kin(2,j),kin(3,j),'ob','MarkerSize',10);
+    %             else
+    %                 %plot3(kin(1,j),kin(2,j),kin(3,j),'.k','MarkerSize',10);
+    %             end
+    %         end
+    %         plot3(start_pos(1),start_pos(2),start_pos(3),'.g','MarkerSize',100)
+    %         plot3(target(1),target(2),target(3),'.r','MarkerSize',100)
+    %         %xlim([-100,100]);ylim([-400,400]);zlim([-100,100])
+    %       %  title(num2str(i))
+    %     %end
+end
+
+
+plot2svg('coasting_example.svg');
+
+
 %% (MAIN: KF) ANALYSIS 2: USING IMAGINED END POINT CONTROL OF THE ROBOT HAND (MAIN)
 % SMOOTH BATCH KALMAN FILTER (MAIN)
 
@@ -844,7 +993,7 @@ for i=1:6
     idx = find([kin_data(:).TargetID]==i);
     errors = [kin_data(idx).error ];
     [aa bb] = sort(errors);
-    bb = idx(bb(1:2));
+    bb = idx(bb(1:3)); % number of trajectories to plot
     col = cmap(i,:);
 
     for j=1:length(bb)
@@ -902,10 +1051,13 @@ figure;boxplot(([recon_error recon_error1]/14),'whisker',2.5)
 set(gcf,'Color','w')
 set(gca,'FontSize',14)
 xticks(1:2)
-xticklabels({'CKD','CIDC'})
-ylabel('Trajectory Error')
+xticklabels({'Denovo comm.','Stereo. repres.'})
+ylabel('Traj. Error')
 box off
 set(gca,'LineWidth',1)
+
+
+[h p tb st]=ttest2(recon_error,recon_error1)
 
 
 %% KF 3D end point control: getting batch sizes and half lives

@@ -81,8 +81,8 @@ for iter = 1:iterations % loop over 20 times
     T(aa(1):aa(end),9)=1;
 
     % train MLP
-    net = patternnet([64 64]) ;
-    net.performParam.regularization=0.4;
+    net = patternnet([64 64 64]) ;
+    net.performParam.regularization=0.2;
     net = train(net,N,T','UseGPU','yes');
 
     % test it out on the held out trials using a mode filter
