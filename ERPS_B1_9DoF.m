@@ -320,6 +320,48 @@ session_data(10).folder_type={'I','I','I','I',...
     'B','B'};
 session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
 
+% day 11
+session_data(10).Day = '20230714';
+session_data(10).folders={'104450','105120','105739','110205',...
+    '111105','111516','112121','112440','113114','113432',...
+    '114241','114608'};
+session_data(10).folder_type={'I','I','I','I',...
+    'O','O','O','O','O','O',...
+    'B','B'};
+session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
+
+% day 12
+session_data(10).Day = '20230714';
+session_data(10).folders={'104450','105120','105739','110205',...
+    '111105','111516','112121','112440','113114','113432',...
+    '114241','114608'};
+session_data(10).folder_type={'I','I','I','I',...
+    'O','O','O','O','O','O',...
+    'B','B'};
+session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
+
+
+% day 13
+session_data(10).Day = '20230714';
+session_data(10).folders={'104450','105120','105739','110205',...
+    '111105','111516','112121','112440','113114','113432',...
+    '114241','114608'};
+session_data(10).folder_type={'I','I','I','I',...
+    'O','O','O','O','O','O',...
+    'B','B'};
+session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
+
+
+% day 14
+session_data(10).Day = '20230714';
+session_data(10).folders={'104450','105120','105739','110205',...
+    '111105','111516','112121','112440','113114','113432',...
+    '114241','114608'};
+session_data(10).folder_type={'I','I','I','I',...
+    'O','O','O','O','O','O',...
+    'B','B'};
+session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
+
 
 save session_data_9DoF session_data -v7.3
 
@@ -648,7 +690,7 @@ for i=3:length(session_data)
 
     % get the closed-loop data as well
     folders = session_data(i).folders(online_idx);
-    day_date = session_data(i).Day;    
+    day_date = session_data(i).Day;
     for ii=1:length(folders)
         folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
         %cd(folderpath)
@@ -731,6 +773,433 @@ acc_online_days(:,i) = diag(acc_online);
 %         set(gcf,'color','w')
 %     end
 %     acc_batch_days(:,i) = diag(acc_batch);
+
+%% GET SIG CHANNELS FOR EACH MOVEMENT ACROSS DAYS
+
+%% SIG CH VIA ERP FOR EACH DAY AND OVER ALL MOVEMENTS FOR OL,CL1,CL2
+
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd(root_path)
+load session_data_9DoF
+
+% init variables
+D1_imag_days=[];
+D2_imag_days=[];
+D3_imag_days=[];
+D4_imag_days=[];
+D5_imag_days=[];
+D6_imag_days=[];
+D7_imag_days=[];
+D8_imag_days=[];
+D9_imag_days=[];
+D1_CL1_days=[];
+D2_CL1_days=[];
+D3_CL1_days=[];
+D4_CL1_days=[];
+D5_CL1_days=[];
+D6_CL1_days=[];
+D7_CL1_days=[];
+D8_CL1_days=[];
+D9_CL1_days=[];
+D1_CL2_days=[];
+D2_CL2_days=[];
+D3_CL2_days=[];
+D4_CL2_days=[];
+D5_CL2_days=[];
+D6_CL2_days=[];
+D7_CL2_days=[];
+
+% loop over days
+for i=1:length(session_data)
+
+
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+    folders_online = logical((strcmp(session_data(i).folder_type,'B')) + (strcmp(session_data(i).folder_type,'O')));
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+
+    %%%%%%imagined data ERPs
+    disp(['Processing Day ' num2str(i) ' Imagined Files '])
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %load the data
+    [D1,D2,D3,D4,D5,D6,D7,D8,D9,tim] = load_erp_data_7DoF(files);
+
+    % run the ERPs and get the significant channels
+    load(files{1})
+    pmask1 = sig_ch_erps(D1,TrialData,tim);
+    pmask2 = sig_ch_erps(D2,TrialData,tim);
+    pmask3 = sig_ch_erps(D3,TrialData,tim);
+    pmask4 = sig_ch_erps(D4,TrialData,tim);
+    pmask5 = sig_ch_erps(D5,TrialData,tim);
+    pmask6 = sig_ch_erps(D6,TrialData,tim);
+    pmask7 = sig_ch_erps(D7,TrialData,tim);
+    pmask8 = sig_ch_erps(D8,TrialData,tim);
+    pmask9 = sig_ch_erps(D9,TrialData,tim);
+    D1_imag_days=cat(3,D1_imag_days,pmask1);
+    D2_imag_days=cat(3,D2_imag_days,pmask2);
+    D3_imag_days=cat(3,D3_imag_days,pmask3);
+    D4_imag_days=cat(3,D4_imag_days,pmask4);
+    D5_imag_days=cat(3,D5_imag_days,pmask5);
+    D6_imag_days=cat(3,D6_imag_days,pmask6);
+    D7_imag_days=cat(3,D7_imag_days,pmask7);
+    D8_imag_days=cat(3,D8_imag_days,pmask8);
+    D9_imag_days=cat(3,D9_imag_days,pmask9);
+
+
+    %%%%%% CL1 data ERPs
+    disp(['Processing Day ' num2str(i) ' CL1 Files '])
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    %load the data
+    if length(files)>0
+        [D1,D2,D3,D4,D5,D6,D7,D8,D9,tim] = load_erp_data_7DoF(files);
+
+
+        % run the ERPs and get the significant channels
+        pmask1 = sig_ch_erps(D1,TrialData,tim);
+        pmask2 = sig_ch_erps(D2,TrialData,tim);
+        pmask3 = sig_ch_erps(D3,TrialData,tim);
+        pmask4 = sig_ch_erps(D4,TrialData,tim);
+        pmask5 = sig_ch_erps(D5,TrialData,tim);
+        pmask6 = sig_ch_erps(D6,TrialData,tim);
+        pmask7 = sig_ch_erps(D7,TrialData,tim);
+        pmask8 = sig_ch_erps(D8,TrialData,tim);
+        pmask9 = sig_ch_erps(D9,TrialData,tim);
+        D1_CL1_days=cat(3,D1_CL1_days,pmask1);
+        D2_CL1_days=cat(3,D2_CL1_days,pmask2);
+        D3_CL1_days=cat(3,D3_CL1_days,pmask3);
+        D4_CL1_days=cat(3,D4_CL1_days,pmask4);
+        D5_CL1_days=cat(3,D5_CL1_days,pmask5);
+        D6_CL1_days=cat(3,D6_CL1_days,pmask6);
+        D7_CL1_days=cat(3,D7_CL1_days,pmask7);
+        D8_CL1_days=cat(3,D8_CL1_days,pmask8);
+        D9_CL1_days=cat(3,D9_CL1_days,pmask9);
+
+    end
+
+    %
+    %     %%%%%% CL2 data ERPs
+    %     disp(['Processing Day ' num2str(i) ' CL2 Files '])
+    %     folders = session_data(i).folders(batch_idx);
+    %     day_date = session_data(i).Day;
+    %     files=[];
+    %     for ii=1:length(folders)
+    %         folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+    %         files = [files;findfiles('',folderpath)'];
+    %     end
+    %
+    %     %load the data
+    %     [D1,D2,D3,D4,D5,D6,D7,D8,D9,tim] = load_erp_data_7DoF(files);
+    %
+    %     % run the ERPs and get the significant channels
+    %     pmask1 = sig_ch_erps(D1,TrialData,tim);
+    %     pmask2 = sig_ch_erps(D2,TrialData,tim);
+    %     pmask3 = sig_ch_erps(D3,TrialData,tim);
+    %     pmask4 = sig_ch_erps(D4,TrialData,tim);
+    %     pmask5 = sig_ch_erps(D5,TrialData,tim);
+    %     pmask6 = sig_ch_erps(D6,TrialData,tim);
+    %     pmask7 = sig_ch_erps(D7,TrialData,tim);
+    %     D1_CL2_days=cat(3,D1_CL2_days,pmask1);
+    %     D2_CL2_days=cat(3,D2_CL2_days,pmask2);
+    %     D3_CL2_days=cat(3,D3_CL2_days,pmask3);
+    %     D4_CL2_days=cat(3,D4_CL2_days,pmask4);
+    %     D5_CL2_days=cat(3,D5_CL2_days,pmask5);
+    %     D6_CL2_days=cat(3,D6_CL2_days,pmask6);
+    %     D7_CL2_days=cat(3,D7_CL2_days,pmask7);
+end
+
+save sig_ch_ERPs_B1_9DoF_July2023_hG -v7.3
+
+
+% plotting the stats across days
+corr_val=[];
+mvmt={'Rt Thumb','Lt Leg','Lt Thumb','Rt Bicep','Tong','Lips','Both middle',...
+    'Rot Rt Wrist','Rot Lt Wrist'};
+for i=1:9 % plot the imag maps along with the correlation across days
+    varname = genvarname(['D' num2str(i) '_imag_days']);
+    a1 = squeeze(sum(eval(varname),3));
+    varname = genvarname(['D' num2str(i) '_CL1_days']);
+    a2 = squeeze(sum(eval(varname),3));
+    %     varname = genvarname(['D' num2str(i) '_CL2_days']);
+    %     a3 = squeeze(sum(eval(varname),3));
+    figure;
+    %     subplot(1,2,1)
+    %     imagesc(a1)
+    %colormap bone
+    %axis off
+    %box on
+    %clim([0 6])
+    %subplot(1,2,2)
+    imagesc(a2)
+    %colormap bone
+    axis off
+    box on
+    clim([0 5])
+    sgtitle(mvmt{i})
+    set(gcf,'Color','w')
+
+    % correlation
+    %     corr_val(i,:) = [corr(a1(:),a2(:),'Type','Pearson') ...
+    %         corr(a1(:),a3(:),'Type','Pearson'),...
+    %         corr(a2(:),a3(:),'Type','Pearson')];
+
+    % distance
+    %     D1 = pdist([a1(:)';a2(:)'],'cosine');
+    %     D2 = pdist([a1(:)';a3(:)'],'cosine');
+    %     D3 = pdist([a2(:)';a3(:)'],'cosine');
+    %     corr_val(i,:) = [D1 D2 D3];
+end
+mean(corr_val(:))
+
+
+%% LOOKING AT THE PERFORMANCE OF BUILDING A LSTM ACROSS DAYS for 9DoF
+
+clc;clear
+close all
+
+% get all the data , build LSTM and see how well it does on computing
+% accuracy on held out days during fixed online control
+
+clc;clear
+
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+cd(root_path)
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+load session_data_9DoF
+
+% for only 6 DoF original:
+%foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
+
+foldernames = {'20230609','20230616','20230621','20230623','20230628','20230630',...
+    '20230705','20230707','20230712','20230714','20230719','20230721',...
+    '20230726','20230728','20230809'};%
+
+
+datafiles_days={};
+k=1;jj=1;
+for i=1:length(foldernames)
+    disp([i/length(foldernames)]);
+    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+    D=dir(folderpath);
+    imag_files_temp=[];
+    online_files_temp=[];
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');
+        if exist(filepath)
+            imag_files_temp = [imag_files_temp;findfiles('mat',filepath)'];
+        end
+        filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        if exist(filepath1)
+            online_files_temp = [online_files_temp;findfiles('mat',filepath1)'];
+        end
+    end
+    %     if ~isempty(imag_files_temp)
+    %         imag_files{k} = imag_files_temp;k=k+1;
+    %     end
+    %     if ~isempty(online_files_temp)
+    %         online_files{jj} = online_files_temp;jj=jj+1;
+    %     end
+    datafiles_days(i).date =  foldernames{i};
+    datafiles_days(i).imagined =  imag_files_temp;
+    datafiles_days(i).online =  online_files_temp;
+
+    %     imag_files{i} = imag_files_temp;
+    %     online_files{i} = online_files_temp;
+end
+
+
+% PARAMS
+% filter bank hg
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+% low pass filters
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+% have to cycle through days 3 to 14 in terms of testing out model across
+% days
+testing_days=[3:15];
+idx = 1:length(datafiles_days);
+acc_sample_days_lstm=[];
+acc_trial_days_lstm=[];
+acc_sample_days_mlp=[];
+acc_trial_days_mlp=[];
+for i=1:length(testing_days)
+    test_days = testing_days(i);
+    train_days = ones(size(idx));
+    train_days(test_days)=0;
+    train_days = find(train_days>0);
+
+    % now get all the neural features to build the LSTM
+    files=[];
+    for j=1:length(train_days)
+
+        % get all the imagined and online files
+        files=[files;datafiles_days(train_days(j)).imagined];
+        files=[files;datafiles_days(train_days(j)).online];
+    end       
+
+    % get training and testing samples
+    clear XTrain XTest YTrain YTest
+    %[XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF(files,Params,lpFilt);
+    [XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF_reduced(files,Params,lpFilt);
+
+    % optional -> reduce the channel dimensions
+    load ch_per_bands
+    ch_band = ch_band{5};% Delta, Theta, Beta, LG, and HG
+    sig_ch_delta = ch_band{1};
+    sig_ch_hg = ch_band{5};
+
+    for ii=1:length(XTrain)
+        tmp=XTrain{ii};
+        tmp_hg = tmp(1:128,:);
+        tmp_hg = tmp_hg(sig_ch_hg,:);
+        tmp_lfo = tmp(129:256,:);
+        tmp_lfo = tmp_lfo(sig_ch_delta,:);
+        tmp =[tmp_hg;tmp_lfo];
+        XTrain{ii}=tmp;
+    end
+
+    for ii=1:length(XTest)
+        tmp=XTest{ii};
+        tmp_hg = tmp(1:128,:);
+        tmp_hg = tmp_hg(sig_ch_hg,:);
+        tmp_lfo = tmp(129:256,:);
+        tmp_lfo = tmp_lfo(sig_ch_delta,:);
+        tmp =[tmp_hg;tmp_lfo];
+        XTest{ii}=tmp;
+    end
+    
+    
+    % train the LSTM
+    net_bilstm = train_lstm(XTrain,XTest,YTrain,YTest,64,0.3,5);
+
+    % test out on the held-out day
+    files_test = datafiles_days(test_days).online;
+    [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
+        = get_lstm_performance_9DoF_reduced(files_test,net_bilstm,Params,lpFilt,9);
+    acc_sample_days_lstm(i,:,:) = acc_lstm_sample;
+    acc_sample_days_mlp(i,:,:) = acc_mlp_sample;
+    acc_trial_days_lstm(i,:,:) = acc_lstm_trial;
+    acc_trial_days_mlp(i,:,:) = acc_mlp_trial;
+end
+
+save 9DoF_LSTM_vs_MLP ...
+     acc_sample_days_lstm acc_sample_days_mlp acc_trial_days_lstm ...
+     acc_trial_days_mlp  -v7.3
+
+
+
+acc_lstm_sample = squeeze(mean(acc_trial_days_lstm(10:12,:,:),1));
+acc_mlp_sample = squeeze(mean(acc_trial_days_mlp(10:12,:,:),1));
+
+
+% plotting the success of individual actions
+tmp = [diag(acc_lstm_sample) diag(acc_mlp_sample)];
+figure;
+hold on
+for i=1:9
+    idx = i:9:size(tmp,1);
+    decodes = tmp(idx,:);
+    disp(decodes)
+    h=bar(2*i-0.25,mean(decodes(:,1)));
+    h1=bar(2*i+0.25,mean(decodes(:,2)));
+    h.BarWidth=0.4;
+    h.FaceColor=[0.2 0.2 0.7];
+    h1.BarWidth=0.4;
+    h1.FaceColor=[0.7 0.2 0.2];
+    h.FaceAlpha=0.85;
+    h1.FaceAlpha=0.85;
+
+    %     s=scatter(ones(3,1)*2*i-0.25+0.05*randn(3,1),decodes(:,1),'LineWidth',2);
+    %     s.CData = [0.2 0.2 0.7];
+    %     s.SizeData=50;
+    %
+    %     s=scatter(ones(3,1)*2*i+0.25+0.05*randn(3,1),decodes(:,2),'LineWidth',2);
+    %     s.CData = [0.7 0.2 0.2];
+    %     s.SizeData=50;
+end
+xticks([2:2:18])
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+ylabel('Decoding Accuracy')
+legend('LSTM','MLP')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+title(datafiles_days(test_days).date)
+
+figure;imagesc(acc_lstm_sample)
+colormap bone
+title(['PnP LSTM simulated acc - ' num2str(mean(diag(acc_lstm_sample))*100)])
+xticks(1:9)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+yticks(1:9)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+
+
+figure;imagesc(acc_mlp_sample)
+colormap bone
+title(['MLP acc - ' num2str(mean(diag(acc_mlp_sample))*100)])
+xticks(1:9)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+yticks(1:9)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+
+
+
+
+
+
 
 
 

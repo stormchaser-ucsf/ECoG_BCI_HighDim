@@ -253,9 +253,9 @@ for i=1:length(test_files)
     end
     temp = temp(logical(good_ch),:);
 
-    %decodes = net_hand_mlp(temp);
-    decodes = predict(net_mlp_hand,temp');
-    [aa bb]=max(sum(decodes));
+    decodes = net_hand_mlp(temp);
+    %decodes = predict(net_mlp_hand,temp');
+    [aa bb]=max(sum(decodes'));
     %decodes(decodes<=0.4)=0;
     %[aa bb]=max(decodes');
     %figure;stem(sum(decodes,2))

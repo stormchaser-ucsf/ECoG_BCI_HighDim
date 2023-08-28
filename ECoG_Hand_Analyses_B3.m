@@ -73,10 +73,10 @@ addpath 'C:\Users\nikic\Documents\MATLAB'
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=5;
+iterations=1;
 plot_true=true;
 acc_batch_days_overall=[];
-for i=1:length(session_data)
+for i=1:length(session_data) % 20230518 has the best hand data performance
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
@@ -84,6 +84,7 @@ for i=1:length(session_data)
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
     batch_idx = find(folders_batch==1);
+    
 
     %disp([session_data(i).Day '  ' num2str(length(batch_idx))]);
 
@@ -204,6 +205,94 @@ xticks(1:10)
  yticks(1:10)
  yticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
             'Pinch','Tripod','Wrist Add/Abd','Wrist Flex/Extend'})
+
+ %% TESTING THE CONDITIONAL PCA APPROACH FOR HAND DATA CLASSIFICATION
+
+
+clc;clear
+close all
+clc;clear;
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data_B3_Hand
+addpath 'C:\Users\nikic\Documents\MATLAB'
+acc_imagined_days=[];
+acc_online_days=[];
+acc_batch_days=[];
+iterations=1;
+plot_true=true;
+acc_batch_days_overall=[];
+
+
+% load all the imagined and online data
+i=3;
+folders_imag =  strcmp(session_data(i).folder_type,'I');
+folders_online = strcmp(session_data(i).folder_type,'O');
+folders_batch = strcmp(session_data(i).folder_type,'B');
+
+imag_idx = find(folders_imag==1);
+online_idx = find(folders_online==1);
+batch_idx = find(folders_batch==1);
+
+
+%disp([session_data(i).Day '  ' num2str(length(batch_idx))]);
+
+%%%%%% Imagined data
+folders = session_data(i).folders(imag_idx);
+day_date = session_data(i).Day;
+files=[];
+for ii=1:length(folders)
+    folderpath = fullfile(root_path, day_date,'HandImagined',folders{ii},'Imagined');
+    %cd(folderpath)
+    files = [files;findfiles('',folderpath)'];
+end
+
+%%%%%% Online data
+folders = session_data(i).folders(online_idx);
+day_date = session_data(i).Day;
+for ii=1:length(folders)
+    folderpath = fullfile(root_path, day_date,'HandOnline',folders{ii},'BCI_Fixed');
+    %cd(folderpath)
+    files = [files;findfiles('',folderpath)'];
+end
+
+% build the model now using PCA etc. 
+[acc_imagined,train_permutations] = ...
+        accuracy_imagined_data_Hand_B3(condn_data, iterations);
+
+
+%%%%%% classification accuracy for batch data
+folders = session_data(i).folders(batch_idx);
+day_date = session_data(i).Day;
+files=[];
+for ii=1:length(folders)
+    folderpath = fullfile(root_path, day_date,'HandOnline',folders{ii},'BCI_Fixed');
+    %cd(folderpath)
+    files = [files;findfiles('',folderpath)'];
+end
+
+% get the classification accuracy
+acc_batch = accuracy_online_data_Hand(files,12);
+if plot_true
+    figure;imagesc(acc_batch)
+    colormap bone
+    clim([0 1])
+    set(gcf,'color','w')
+    title(['Accuracy of ' num2str(100*mean(diag(acc_batch)))])
+    xticks(1:12)
+    yticks(1:12)
+    xticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
+        'Pinch','Tripod','Wrist In','Wrist Out','Wrist Flex','Wrist Extend'})
+    yticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
+        'Pinch','Tripod','Wrist In','Wrist Out','Wrist Flex','Wrist Extend'})
+
+end
+acc_batch_days(:,i) = diag(acc_batch);
+acc_batch_days_overall(:,:,i)=acc_batch;
+
+
 
 %% STEP 1: LOOK AT COVARIANCE MATRIX
 

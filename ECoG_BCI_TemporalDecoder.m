@@ -1000,14 +1000,14 @@ addpath('C:\Users\nikic\Documents\MATLAB')
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 cd(root_path)
 %foldernames = {'20220803','20220810','20220812'};
-foldernames = {'20230419'};
+foldernames = {'20220929','20220930'};%20220929,20221109
 
 
 % load the lstm 
 load net_bilstm_20220824
 net_bilstm = net_bilstm_20220824;
-
-
+%load net_bilstm_20220929
+%net_bilstm = net_bilstm_20220929;
 
 % filter bank hg
 Params=[];
@@ -2797,3 +2797,83 @@ end
 res=[b1';b2'];
 m = mean(res,1);
 figure;bar(0:5,m')
+
+
+%% GETTING LSTM DATA FOR UCB ANNIE ETC FOR TESTING AE
+
+clear;clc
+
+%filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
+acc_mlp_days=[];
+acc_days=[];
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath('C:\Users\nikic\Documents\MATLAB')
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+cd(root_path)
+%foldernames = {'20220803','20220810','20220812'};
+foldernames = {'20220929','20220930'};%20220929,20221109
+
+
+% load the lstm 
+load net_bilstm_20220824
+net_bilstm = net_bilstm_20220824;
+%load net_bilstm_20220929
+%net_bilstm = net_bilstm_20220929;
+
+% filter bank hg
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+
+% low pass filters
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+% for i=1:length(foldernames)
+%     disp(i)
+%     filepath = fullfile(root_path,foldernames{i},'Robot3DArrow');
+%     [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
+%         =get_lstm_performance(filepath,net_bilstm,Params,lpFilt);
+% 
+%     acc_days = [acc_days diag(acc_lstm_sample)];
+%     acc_mlp_days = [acc_mlp_days diag(acc_mlp_sample)];
+% end
+
+
+%%%%% get the training data
+folders_train = foldernames;
+
+% get the files
+files_train=[];
+for j=1:length(folders_train)
+    subfolder = fullfile(root_path,folders_train{j},'Robot3DArrow');
+    D=dir(subfolder);
+    for k=3:length(D)
+        subsubfolder = fullfile(subfolder,D(k).name,'BCI_Fixed');
+        tmp = findfiles('mat',subsubfolder,1)';
+        files_train =[files_train;tmp];
+    end
+end
+
+% get inidividual samples
+[XTrain,XTest,YTrain,YTest] = get_lstm_features(files_train,Params,lpFilt);
+
+

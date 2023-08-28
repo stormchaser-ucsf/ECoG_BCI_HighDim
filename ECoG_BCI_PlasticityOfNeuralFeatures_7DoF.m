@@ -1071,9 +1071,35 @@ plot((median(mahab_full_batch(:,1:end))))
 
 clear tmp
 w = [1/2 1/2];
-tmp(:,1) = mean(mahab_full_imagined(:,1:end));
-tmp(:,2) = mean(mahab_full_online(:,1:end));
-tmp(:,3) = mean(mahab_full_batch(:,1:end));
+tmp(:,1) = median(mahab_full_imagined(:,1:end));
+tmp(:,2) = median(mahab_full_online(:,1:end));
+tmp(:,3) = median(mahab_full_batch(:,1:end));
+
+
+% mixed effect model for batch and Init seed slopes
+day_name=[];
+mahab_dist=[];
+for i=1:size(tmp,1)
+    day_name = [day_name;i;i];
+    %day_name = [day_name;i];
+    mahab_dist = [mahab_dist;tmp(i,2:3)'];
+    %mahab_dist = [mahab_dist;tmp(i,1)'];
+end
+data = table(day_name,mahab_dist);
+glm = fitglme(data,'mahab_dist ~ 1+ day_name');
+%glm = fitlm(data,'mahab_dist ~ 1+ day_name');
+stat = glm.Coefficients.tStat(2);
+stat_boot=[];
+for i=1:2000
+    disp(i)
+    day_name_tmp = day_name(randperm(numel(day_name)));
+    data_tmp = table(day_name_tmp,mahab_dist);
+    glm_tmp = fitglme(data_tmp,'mahab_dist ~ 1 + day_name_tmp');
+    stat_boot(i) = glm_tmp.Coefficients.tStat(2);
+end
+figure;hist(stat_boot)
+vline(stat)
+sum(stat_boot>stat)/length(stat_boot)
 
 % for i=1:size(tmp,2)
 %     %xx = filter(w,1,[tmp(1,i) ;tmp(:,i)]);

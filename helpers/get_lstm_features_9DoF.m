@@ -1,4 +1,4 @@
-function [XTrain,XTest,YTrain,YTest] = get_lstm_features(files,Params,lpFilt,chmap)
+function [XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF(files,Params,lpFilt,chmap)
 
 
 % get the raw data
@@ -9,6 +9,8 @@ D4={};
 D5={};
 D6={};
 D7={};
+D8={};
+D9={};
 files_not_loaded=[];
 for j=1:length(files)
     try
@@ -91,6 +93,12 @@ for j=1:length(files)
             %D6f = cat(2,D6f,feat_stats1);
         elseif id==7
             D7 = cat(2,D7,data_seg);
+            %D7f = cat(2,D7f,feat_stats1);
+        elseif id==8
+            D8 = cat(2,D8,data_seg);
+            %D7f = cat(2,D7f,feat_stats1);
+        elseif id==9
+            D9 = cat(2,D9,data_seg);
             %D7f = cat(2,D7f,feat_stats1);
         end
     end
@@ -272,6 +280,59 @@ for ii=1:size(condn_data7,3)
     jj=jj+1;
 end
 
+
+condn_data8 = zeros(len,128,length(D8));
+k=1;
+for i=1:length(D8)
+    %disp(k)
+    tmp = D8{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data8(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;8];
+end
+
+disp('Processing action 8')
+for ii=1:size(condn_data8,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data8(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+condn_data9 = zeros(len,128,length(D9));
+k=1;
+for i=1:length(D9)
+    %disp(k)
+    tmp = D9{i};
+    %tmp1(:,1,:)=tmp;
+    tmp1=tmp;
+    condn_data9(:,:,k) = tmp1;
+    k=k+1;
+    Y = [Y ;9];
+end
+disp('Processing action 9')
+for ii=1:size(condn_data9,3)
+    %disp(ii)
+
+    tmp = squeeze(condn_data9(:,:,ii));
+
+    tmp = extract_lstm_features(tmp,Params,lpFilt);
+
+
+    % store
+    condn_data_new(:,:,jj) = tmp;
+    jj=jj+1;
+end
+
+
 % get rid of artifacts, any channel with activity >15SD, set it to near zero
 for i=1:size(condn_data_new,3)
     xx=squeeze(condn_data_new(:,1:128,i));
@@ -300,10 +361,12 @@ end
 for i=1:size(condn_data_new,3)
     tmp=squeeze(condn_data_new(:,:,i));
     tmp1=tmp(:,1:128);
-    tmp1 = (tmp1 - min(tmp1(:)))/(max(tmp1(:))-min(tmp1(:)));
+    %tmp1 = (tmp1 - min(tmp1(:)))/(max(tmp1(:))-min(tmp1(:)));
+    tmp1 = tmp1./norm(tmp1(:));
 
     tmp2=tmp(:,129:256);
-    tmp2 = (tmp2 - min(tmp2(:)))/(max(tmp2(:))-min(tmp2(:)));
+    tmp2 = tmp2./norm(tmp2(:));
+    %tmp2 = (tmp2 - min(tmp2(:)))/(max(tmp2(:))-min(tmp2(:)));
 
     %     tmp3=tmp(:,257:384);
     %     tmp3 = (tmp3 - min(tmp3(:)))/(max(tmp3(:))-min(tmp3(:)));

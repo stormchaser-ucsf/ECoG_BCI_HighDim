@@ -1,5 +1,5 @@
 function [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial] = ...
-    get_lstm_performance(filepath,net_bilstm,Params,lpFilt)
+    get_lstm_performance(filepath,net_bilstm,Params,lpFilt,num_targets)
 
 
 
@@ -23,7 +23,7 @@ data=[];
 len=1000;
 Trial_Data={};n=1;
 for i=1:length(files)
-    %disp(i)
+    disp(i/length(files))
 
     % load
     load(files{i})
@@ -83,7 +83,7 @@ end
 %save val_robot_data val_robot_data -v7.3
 
 % looking at the accuracy of the bilstm decoder overall
-acc=zeros(7,7);
+acc=zeros(num_targets,num_targets);
 for i=1:length(decodes_overall)
     tmp = decodes_overall(i).decodes;
     tid=decodes_overall(i).tid;
@@ -96,11 +96,11 @@ for i=1:length(acc)
 end
 
 % looking at accuracy in terms of max decodes
-acc_trial=zeros(7,7);
+acc_trial=zeros(num_targets,num_targets);
 for i=1:length(decodes_overall)
     tmp = decodes_overall(i).decodes;
     tid=decodes_overall(i).tid;
-    acc1=zeros(7,7);
+    acc1=zeros(num_targets,num_targets);
     for j=1:length(tmp)
         acc1(tid,tmp(j)) =  acc1(tid,tmp(j))+1;
     end
@@ -114,8 +114,8 @@ end
 
 
 %comparing to the mlp
-acc_mlp=zeros(7,7);
-acc_mlp_trial=zeros(7,7);
+acc_mlp=zeros(num_targets,num_targets);
+acc_mlp_trial=zeros(num_targets,num_targets);
 for i=1:length(files)
     %disp(i)
 
@@ -125,7 +125,7 @@ for i=1:length(files)
     decodes = TrialData.ClickerState;
     %decodes = decodes(1:25);
     tid=TrialData.TargetID;
-    acc1=zeros(7,7);
+    acc1=zeros(num_targets,num_targets);
     for j=1:length(decodes)
         if decodes(j)>0
             acc_mlp(tid,decodes(j))=acc_mlp(tid,decodes(j))+1;

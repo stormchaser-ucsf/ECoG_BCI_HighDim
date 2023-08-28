@@ -25,8 +25,8 @@ for i=1:length(files)
         features  = TrialData.SmoothedNeuralFeatures;
         features = cell2mat(features);
         %features = features(129:256,:); %delta        
-        %features = features(769:end,:); %hG
-        features = features(513:640,:);% beta
+        features = features(769:end,:); %hG
+        %features = features(513:640,:);% beta
         fs = TrialData.Params.UpdateRate;
         kinax = TrialData.TaskState;
         state1 = find(kinax==1);
@@ -73,7 +73,7 @@ for i=1:length(files)
             D1 = cat(3,D1,data);
         elseif TrialData.TargetID == 2
             D2 = cat(3,D2,data);
-        elseif TrialData.TargetID == 3
+        elseif TrialData.TargetID == 3 && size(data,2)>30
             D3 = cat(3,D3,data);
         elseif TrialData.TargetID == 4
             D4 = cat(3,D4,data);
