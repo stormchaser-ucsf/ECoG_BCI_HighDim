@@ -1652,32 +1652,48 @@ figure;stem(lags,(r))
 
 %%%%% ROI specific activity in the various regions
 chmap=TrialData.Params.ChMap;
-%hand_elec=[97 100 115 116 103 106 25 31 26 3 9 27];
-%hand_elec=[97 100 115 116 103 106 25 31 26 3 9 27];
+hand_elec=[97 106 25 3 ];
 %hand_elec =[22	5	20 111	122	117 105	120	107]; %pmv
 %hand_elec=[99	101	121	127	105	120];%pmd
-hand_elec = [49	64	58	59
-54	39	47	42
-18	1	8	15];% pmv
+% hand_elec = [49	64	58	59
+% 54	39	47	42
+% 18	1	8	15];% pmv
 % get the average activity for each imagined action with C.I.
 roi_mean=[];
 roi_dist_mean=[];
 task_state = TrialData.TaskState;
 %idx = [ find(task_state==3)];
-idx=3001:6000;
+idx=3001:4000;
+pval=[];pval1=[];pval2=[];
 %idx=idx(5:15);
 for i=1:length(ImaginedMvmt)
     disp(i)
     data = ERP_Data{i};
+
+    % boot
+    tmp = data(1:1000,hand_elec,:);
+    tmp = squeeze(mean(tmp,1));
+
+    % real
     data = data(idx,hand_elec,:);
     data = squeeze(mean(data,1)); % time
     %data = squeeze(mean(data,1)); % channels
     data = data(:);
+   
     roi_mean(i) = mean(data);
 %     if i==19
 %         roi_mean(i)=0.9;
 %     end
     roi_dist_mean(:,i) = sort(bootstrp(1000,@mean,data));
+
+    % do some stats
+    pval(i) = 1-((sum((mean(data)) >= tmp(:)))/length(tmp(:)));
+    if mean(roi_dist_mean(:,i)) >0
+        pval1(i) = 1-(sum((roi_dist_mean(:,i))>0))/length(roi_dist_mean(:,i));
+    elseif mean(roi_dist_mean(:,i)) <=0
+        pval1(i) = 1-(sum((roi_dist_mean(:,i))<=0))/length(roi_dist_mean(:,i));
+    end
+    pval2(i) = signrank(data);
 end
 figure;bar(roi_mean)
 
@@ -1687,11 +1703,21 @@ errY(:,1) = roi_dist_mean(500,:)-roi_dist_mean(25,:);
 errY(:,2) = roi_dist_mean(975,:)-roi_dist_mean(500,:);
 figure;
 barwitherr(errY, y);
+hold on
 xticks(1:30)
 set(gcf,'Color','w')
 set(gca,'FontSize',16)
 set(gca,'LineWidth',1)
 xticklabels(ImaginedMvmt)
+hold on
+[pfdr,pmask]=fdr(pval1,0.01);
+idx = pval1<=pfdr;
+idx = find(idx==1);
+%vline(idx,'r');
+for i=1:length(idx)
+    plot(idx(i),-0.25,'*r','MarkerSize',20);
+end
+
 
 subplot(2,1,2) % have to run the above code again to get roi specific activity
 barwitherr(errY, y);
@@ -2119,7 +2145,7 @@ sum(boot>stat)/length(boot)
 % and looking at average activation within each ROI
 
 clc;clear
-addpath 'C:\Users\nikic\OneDrive\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\';
 foldernames = {'20211201','20211203','20211206','20211208','20211215','20211217',...

@@ -56,6 +56,55 @@ session_data(4).folders = {'132840','133418','133923','134303','135022','135355'
 session_data(4).folder_type={'I','I','I','I','I','I'};
 session_data(4).AM_PM = {'am','am','am','am','am','am'};
 
+%day5
+session_data(5).Day = '20230922';
+session_data(5).folders = {'120223','120932','121508','121835','122306','122633',...    
+    '124030','124610','125218',...
+    '130158','130706','131319',...
+    '131960'};
+session_data(5).folder_type={'I','I','I','I','I','I','O','O','O',...
+    'B','B','B','B'};
+session_data(5).AM_PM = {'am','am','am','am','am','am',...
+    'am','am','am','am','am','am',...
+    'am'};
+
+%day6
+session_data(6).Day = '20230929';
+session_data(6).folders = {'114451','115446','115832','120436','120802','121150',...    
+    '122659','123018','123319',...
+    '123911','124247','124513',...
+    '124951','125216','125455'};
+session_data(6).folder_type={'I','I','I','I','I','I','O','O','O',...
+    'B','B','B','B','B','B'};
+session_data(6).AM_PM = {'am','am','am','am','am','am',...
+    'am','am','am','am','am','am',...
+    'am','am','am'};
+
+% day 7 -> this miming plus movement data
+session_data(7).Day = '20231006';
+session_data(7).folders = {'114305','114835','115203','115533','115852','120227',...    
+    '120914','121221','121448',...
+    '121955','122220','122451',...
+    '122856','123132','123348'};
+session_data(7).folder_type={'I','I','I','I','I','I','O','O','O',...
+    'B','B','B','B','B','B'};
+session_data(7).AM_PM = {'am','am','am','am','am','am',...
+    'am','am','am','am','am','am',...
+    'am','am','am'};
+
+
+% day 8 -> this miming plus movement data
+session_data(8).Day = '20231011';
+session_data(8).folders = {'143224','143756','144132','145307','145629','150027',...    
+    '150717','151014','151304',...
+    '151821','152025','152237',...
+    '152647','152902','153129',...
+    '153537','153736','153948'};
+session_data(8).folder_type={'I','I','I','I','I','I','O','O','O',...
+    'B','B','B','B','B','B','B','B','B'};
+session_data(8).AM_PM = {'am','am','am','am','am','am',...
+    'am','am','am','am','am','am',...
+    'am','am','am','am','am','am'};
 
 save session_data_B3_Hand session_data
 
@@ -73,7 +122,8 @@ addpath 'C:\Users\nikic\Documents\MATLAB'
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=1;
+acc_batch_bin_days=[];
+iterations=10;
 plot_true=true;
 acc_batch_days_overall=[];
 for i=1:length(session_data) % 20230518 has the best hand data performance
@@ -142,7 +192,7 @@ for i=1:length(session_data) % 20230518 has the best hand data performance
         colormap bone
         clim([0 1])
         set(gcf,'color','w')
-        title(['Accuracy of ' num2str(100*mean(diag(acc_online)))])
+        title(['CL1 Accuracy of ' num2str(100*mean(diag(acc_online)))])
         xticks(1:12)
         yticks(1:12)
         xticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
@@ -157,20 +207,20 @@ for i=1:length(session_data) % 20230518 has the best hand data performance
     folders = session_data(i).folders(batch_idx);
     day_date = session_data(i).Day;
     files=[];
-    for ii=1:length(folders)
+    for ii=7:9%length(folders)
         folderpath = fullfile(root_path, day_date,'HandOnline',folders{ii},'BCI_Fixed');
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
 
     % get the classification accuracy
-    acc_batch = accuracy_online_data_Hand(files,12);
+    [acc_batch,acc_bin,trial_len] = accuracy_online_data_Hand(files,12);
     if plot_true
         figure;imagesc(acc_batch)
         colormap bone
         clim([0 1])
         set(gcf,'color','w')
-        title(['Accuracy of ' num2str(100*mean(diag(acc_batch)))])
+        title(['CL2 Accuracy of ' num2str(100*mean(diag(acc_batch)))])
         xticks(1:12)
         yticks(1:12)
         xticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
@@ -181,6 +231,7 @@ for i=1:length(session_data) % 20230518 has the best hand data performance
     end
     acc_batch_days(:,i) = diag(acc_batch);
     acc_batch_days_overall(:,:,i)=acc_batch;
+    acc_batch_bin_days(:,:,i) = acc_bin;
 end
 
 % combining wrist actions into one class
@@ -205,6 +256,47 @@ xticks(1:10)
  yticks(1:10)
  yticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
             'Pinch','Tripod','Wrist Add/Abd','Wrist Flex/Extend'})
+
+% plotting bin level accuracies
+for i=1:size(acc_batch_bin_days,3)
+    figure;
+    tmp=squeeze(acc_batch_bin_days(:,:,i));
+    imagesc(tmp);
+    title([num2str(mean(diag(tmp))) ' day '   num2str(i)])
+    colormap bone    
+end
+
+% plotting the accuracy over days
+acc_batch_days_overall = acc_batch_days_overall(:,:,[1:3 5:end]);
+acc_batch_days = acc_batch_days(:,[1:3 5:end]);
+figure;
+plot(1:size(acc_batch_days,2),mean(acc_batch_days,1),'k','LineWidth',1);
+xticks(1:6)
+xlabel('Days')
+ylabel('Trial Level Accuracy')
+title('12 Hand Actions CL Decoding')
+ylim([0 1])
+yticks([0:0.1:1])
+hline(1/12,'r')
+set(gca,'FontSize',12)
+set(gcf,'Color','w')
+box off
+xlim([0.5 6.5])
+
+% plotting the confusion matrix
+tmp1=squeeze(nanmean(acc_batch_days_overall(:,:,end),3));
+figure;imagesc(tmp1*100)
+colormap bone
+xticks(1:12)
+yticks(1:12)
+xticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
+    'Pinch','Tripod','Wrist In','Wrist Out','Wrist Flex','Wrist Extend'})
+yticklabels({'Thumb','Index','Middle','Ring','Pinky','Power',...
+    'Pinch','Tripod','Wrist In','Wrist Out','Wrist Flex','Wrist Extend'})
+set(gcf,'Color','w')
+set(gca,'FontSize',10)
+title(['Across day Accuracy of ' num2str(100*mean(diag(tmp1))) '%'])
+clim([0 100])
 
  %% TESTING THE CONDITIONAL PCA APPROACH FOR HAND DATA CLASSIFICATION
 
@@ -258,9 +350,28 @@ for ii=1:length(folders)
     files = [files;findfiles('',folderpath)'];
 end
 
-% build the model now using PCA etc. 
+% load the data using PCA 
+load('ECOG_Grid_8596_000067_B3.mat')
+[condn_data,coeff,score,latent] = load_data_for_MLP_TrialLevel_B3(files,ecog_grid);
+
+% build the model, first 150 PCs, calibration on held out data 
 [acc_imagined,train_permutations] = ...
-        accuracy_imagined_data_Hand_B3(condn_data, iterations);
+        accuracy_imagined_data_Hand_B3_PCA(condn_data, 5,coeff,100);
+[acc_imagined,train_permutations] = ...
+        accuracy_imagined_data_Hand_B3(condn_data, 5);
+acc_imagined = squeeze(nanmean(acc_imagined,1));
+figure;imagesc(acc_imagined)
+mean(diag(acc_imagined))
+
+% build the model, first 150 PCs, calibration on all data 
+[acc_imagined,train_permutations] = ...
+        accuracy_imagined_data_Hand_B3_PCA(condn_data, 5,coeff,100);
+acc_imagined = squeeze(nanmean(acc_imagined,1));
+figure;imagesc(acc_imagined)
+mean(diag(acc_imagined))
+
+
+% test the model's performance on batch data 
 
 
 %%%%%% classification accuracy for batch data

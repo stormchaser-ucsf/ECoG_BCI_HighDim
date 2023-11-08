@@ -1,5 +1,25 @@
 %% TRAVELING WAVES ECOG BCI 
 
+% STEP 1a: state 3 of arrow task: first get a sense of the electrode clusters across
+% trials that show a significant increase in spectral power compared to 1/f
+
+% STEP 1b: Make plots showing which frequencies most prominent and across
+% what electrodes
+
+% STEP 2: to get planar traveling waves (and not rotating), use the
+% relative phase method
+
+% STEP 3: to get rotating waves method, get the gradient method from Muller
+
+% STEP 4: experiment with different frequency bands, and especially use the
+% Muller method for broadband phase
+
+%% STEP 1A AND 1B
+
+clc;clear
+close all
+
+
 %% ROBOT 3D ARROW TASK
 % see if traveling waves emerge during state 3 and not during other states
 
@@ -18,7 +38,10 @@ for j=3:length(D)
 end
 
 bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',12,'HalfPowerFrequency2',16, ...
+    'HalfPowerFrequency1',16,'HalfPowerFrequency2',26, ...
+    'SampleRate',1e3);
+bpFilt2 = designfilt('bandpassiir','FilterOrder',4, ...
+    'HalfPowerFrequency1',70,'HalfPowerFrequency2',150, ...
     'SampleRate',1e3);
 col={'k','r','g'};
 pow_stat2=[];
@@ -28,6 +51,8 @@ for i=1:length(files)
     raw_data=TrialData.BroadbandData(1:end);
     raw_data = cell2mat(raw_data');
     chmap = TrialData.Params.ChMap;
+    raw_data = filtfilt(bpFilt,raw_data);
+    %raw_data = abs(hilbert(filtfilt(bpFilt2,raw_data)));
     %raw_data = filtfilt(bpFilt,raw_data);
     task_state = TrialData.TaskState;
     idx = [0 diff(task_state)];
@@ -40,13 +65,18 @@ for i=1:length(files)
 
     %[P, f ,Phi, lambda, Xhat, z0, Z,rf]=dmd_alg(state1',1e3,0,200);
     [P1, f1 ,Phi, lambda, Xhat, z0, Z,rf]=dmd_alg(state2',1e3,0,200);
-    [P2, f2 ,Phi, lambda, Xhat, z0, Z,rf]=dmd_alg(state3',1e3,0,200);
-%     figure;plot(f,P)
-%     hold on
-%     plot(f1,P1)
-%     plot(f2,P2)
+    [P2, f2 ,Phi, lambda, Xhat, z0, Z,rf]=dmd_alg(state3',1e3,5,9);
+    %     figure;plot(f,P)
+    %     hold on
+    %     plot(f1,P1)
+    %     plot(f2,P2)
 
-    % get power within 1Hz increments 
+    % normalize the data at each channel to be within 0 and 1
+    for j=1:size(raw_data,2)
+        raw_data(:,j) = rescale(raw_data(:,j));
+    end
+    
+    % get power within 1Hz increments
     xx=0:500;
     P1x=[];
     P2x=[];
@@ -59,19 +89,21 @@ for i=1:length(files)
     end
     pow_stat2=[pow_stat2;P1x];
     pow_stat3=[pow_stat3;P2x];
-    
 
-% 
+
+    %
     figure;
-    for j=1000:size(raw_data,1)
+    for j=1:size(raw_data,1)
         tmp=raw_data(j,:);
         imagesc(tmp(chmap))
+        %caxis([0 1])
         colormap bone
+        colorbar
         axis off
         textboxHandle = uicontrol('Style', 'text', 'Position', [0, 0, 200, 30]);
-        newText = sprintf('Iteration: %d', ceil( (j-200)/200 +1));
+        newText = sprintf('Bin: %d', ceil( (j-200)/200 +1));
         set(textboxHandle, 'String', newText);
-        pause(0.001)
+        pause(0.000001)
     end
 end
 figure;plot(nanmean(pow_stat2,1))

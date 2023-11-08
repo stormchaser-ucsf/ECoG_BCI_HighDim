@@ -1,4 +1,4 @@
-function [acc,train_permutations] = accuracy_imagined_data_Hand_B3_PCA(condn_data, iterations)
+function [acc,train_permutations] = accuracy_imagined_data_Hand_B3_PCA(condn_data, iterations,coeff,pcs)
 
 num_trials = length(condn_data);
 train_permutations = zeros(num_trials,iterations)';
@@ -27,6 +27,8 @@ for iter = 1:iterations % loop over 20 times
     D12=[];
     for i=1:length(train_data)
         temp = train_data(i).neural;
+        % project onto first 150 PCs
+        temp = (temp'*coeff(:,1:pcs))';
         if train_data(i).targetID == 1
             D1 = [D1 temp];
         elseif train_data(i).targetID == 2
@@ -95,6 +97,7 @@ for iter = 1:iterations % loop over 20 times
     acc = zeros(length(condn_data1));
     for i=1:length(test_data)
         features = test_data(i).neural;
+        features = (features'*coeff(:,1:pcs))';
         if ~isempty(features) && test_data(i).targetID<=length(condn_data1)
             out = net(features);
             out(out<0.4)=0; % thresholding

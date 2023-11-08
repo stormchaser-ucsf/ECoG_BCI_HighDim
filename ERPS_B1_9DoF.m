@@ -976,9 +976,6 @@ mean(corr_val(:))
 
 %% LOOKING AT THE PERFORMANCE OF BUILDING A LSTM ACROSS DAYS for 9DoF
 
-clc;clear
-close all
-
 % get all the data , build LSTM and see how well it does on computing
 % accuracy on held out days during fixed online control
 
@@ -989,20 +986,27 @@ cd(root_path)
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 addpath('C:\Users\nikic\Documents\MATLAB')
 load session_data_9DoF
-
+session_data
 % for only 6 DoF original:
 %foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
 
 foldernames = {'20230609','20230616','20230621','20230623','20230628','20230630',...
     '20230705','20230707','20230712','20230714','20230719','20230721',...
-    '20230726','20230728','20230809'};%
+    '20230726','20230728','20230809','20230818'};%
+% new 9DoF
+foldernames0 = {'20231020','20231025','20231027'};
 
+foldernames1={'20230816','20230823','20230825',...
+    '20230830','20230901','20230906'}; %get the 5D target data from here 
+
+foldernames=[foldernames foldernames0];
 
 datafiles_days={};
 k=1;jj=1;
 for i=1:length(foldernames)
     disp([i/length(foldernames)]);
     folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+    folderpath1 = fullfile(root_path, foldernames{i},'DiscreteArrow5D');
     D=dir(folderpath);
     imag_files_temp=[];
     online_files_temp=[];
@@ -1014,8 +1018,17 @@ for i=1:length(foldernames)
         filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
         if exist(filepath1)
             online_files_temp = [online_files_temp;findfiles('mat',filepath1)'];
-        end
+        end      
     end
+%     if i>16 % this is for getting data for the 5DoF case
+%         D=dir(folderpath1);
+%         for j=3:length(D)
+%             filepath2=fullfile(folderpath1,D(j).name,'BCI_Fixed');
+%             if exist(filepath2)
+%                 online_files_temp = [online_files_temp;findfiles('mat',filepath2)'];
+%             end
+%         end
+%     end
     %     if ~isempty(imag_files_temp)
     %         imag_files{k} = imag_files_temp;k=k+1;
     %     end
@@ -1025,6 +1038,11 @@ for i=1:length(foldernames)
     datafiles_days(i).date =  foldernames{i};
     datafiles_days(i).imagined =  imag_files_temp;
     datafiles_days(i).online =  online_files_temp;
+%     if i<=16
+%         datafiles_days(i).reduced = 1;
+%     else
+%         datafiles_days(i).reduced = 0;
+%     end
 
     %     imag_files{i} = imag_files_temp;
     %     online_files{i} = online_files_temp;
@@ -1059,12 +1077,14 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 
 % have to cycle through days 3 to 14 in terms of testing out model across
 % days
-testing_days=[3:15];
+testing_days=[3:19];
 idx = 1:length(datafiles_days);
 acc_sample_days_lstm=[];
 acc_trial_days_lstm=[];
 acc_sample_days_mlp=[];
 acc_trial_days_mlp=[];
+% load the pretrained RNN
+load('net_bilstm_2023_Nov.mat')
 for i=1:length(testing_days)
     test_days = testing_days(i);
     train_days = ones(size(idx));
@@ -1082,52 +1102,58 @@ for i=1:length(testing_days)
 
     % get training and testing samples
     clear XTrain XTest YTrain YTest
-    %[XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF(files,Params,lpFilt);
-    [XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF_reduced(files,Params,lpFilt);
+    [XTrain,XTest,YTrain,YTest] = get_lstm_features_8DoF(files,Params,lpFilt);
+    %[XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF_reduced(files,Params,lpFilt);
 
     % optional -> reduce the channel dimensions
-    load ch_per_bands
-    ch_band = ch_band{5};% Delta, Theta, Beta, LG, and HG
-    sig_ch_delta = ch_band{1};
-    sig_ch_hg = ch_band{5};
-
-    for ii=1:length(XTrain)
-        tmp=XTrain{ii};
-        tmp_hg = tmp(1:128,:);
-        tmp_hg = tmp_hg(sig_ch_hg,:);
-        tmp_lfo = tmp(129:256,:);
-        tmp_lfo = tmp_lfo(sig_ch_delta,:);
-        tmp =[tmp_hg;tmp_lfo];
-        XTrain{ii}=tmp;
-    end
-
-    for ii=1:length(XTest)
-        tmp=XTest{ii};
-        tmp_hg = tmp(1:128,:);
-        tmp_hg = tmp_hg(sig_ch_hg,:);
-        tmp_lfo = tmp(129:256,:);
-        tmp_lfo = tmp_lfo(sig_ch_delta,:);
-        tmp =[tmp_hg;tmp_lfo];
-        XTest{ii}=tmp;
-    end
-    
+%     load ch_per_bands
+%     ch_band = ch_band{5};% Delta, Theta, Beta, LG, and HG
+%     sig_ch_delta = ch_band{1};
+%     sig_ch_hg = ch_band{5};
+% 
+%     for ii=1:length(XTrain)
+%         tmp=XTrain{ii};
+%         tmp_hg = tmp(1:128,:);
+%         tmp_hg = tmp_hg(sig_ch_hg,:);
+%         tmp_lfo = tmp(129:256,:);
+%         tmp_lfo = tmp_lfo(sig_ch_delta,:);
+%         tmp =[tmp_hg;tmp_lfo];
+%         XTrain{ii}=tmp;
+%     end
+% 
+%     for ii=1:length(XTest)
+%         tmp=XTest{ii};
+%         tmp_hg = tmp(1:128,:);
+%         tmp_hg = tmp_hg(sig_ch_hg,:);
+%         tmp_lfo = tmp(129:256,:);
+%         tmp_lfo = tmp_lfo(sig_ch_delta,:);
+%         tmp =[tmp_hg;tmp_lfo];
+%         XTest{ii}=tmp;
+%     end
+%     
     
     % train the LSTM
-    net_bilstm = train_lstm(XTrain,XTest,YTrain,YTest,64,0.3,5);
+     layers= net_bilstm_2023_Nov.Layers(1:10);
+     layers = [layers
+        fullyConnectedLayer(8)% for 8DoF control
+        softmaxLayer
+        classificationLayer];
+    %net_bilstm = train_lstm(XTrain,XTest,YTrain,YTest,64,0.3,5,layers);
+    net_bilstm = train_lstm(XTrain,XTest,YTrain,YTest,[],[],[],layers);
 
     % test out on the held-out day
     files_test = datafiles_days(test_days).online;
     [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
-        = get_lstm_performance_9DoF_reduced(files_test,net_bilstm,Params,lpFilt,9);
+        = get_lstm_performance_8DoF(files_test,net_bilstm,Params,lpFilt,8);
     acc_sample_days_lstm(i,:,:) = acc_lstm_sample;
     acc_sample_days_mlp(i,:,:) = acc_mlp_sample;
     acc_trial_days_lstm(i,:,:) = acc_lstm_trial;
     acc_trial_days_mlp(i,:,:) = acc_mlp_trial;
 end
 
-save 9DoF_LSTM_vs_MLP ...
-     acc_sample_days_lstm acc_sample_days_mlp acc_trial_days_lstm ...
-     acc_trial_days_mlp  -v7.3
+% save 9DoF_LSTM_vs_MLP ...
+%      acc_sample_days_lstm acc_sample_days_mlp acc_trial_days_lstm ...
+%      acc_trial_days_mlp  -v7.3
 
 
 
@@ -1199,6 +1225,250 @@ set(gca,'FontSize',12)
 
 
 
+
+%% LOOKING AT THE PERFORMANCE OF BUILDING A LSTM ACROSS DAYS for 5DoF from reduced 9DoF
+
+% get all the data , build LSTM and see how well it does on computing
+% accuracy on held out days during fixed online control
+
+clc;clear
+
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+cd(root_path)
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+load session_data_9DoF
+
+% for only 6 DoF original:
+%foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
+
+foldernames = {'20230609','20230616','20230621','20230623','20230628','20230630',...
+    '20230705','20230707','20230712','20230714','20230719','20230721',...
+    '20230726','20230728','20230809','20230818'};%
+
+foldernames1={'20230816','20230823','20230825',...
+    '20230830','20230901','20230906','20230908'}; %get the 5D target data from here 
+
+foldernames=[foldernames foldernames1];
+
+datafiles_days={};
+k=1;jj=1;
+for i=1:length(foldernames)
+    disp([i/length(foldernames)]);
+    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+    folderpath1 = fullfile(root_path, foldernames{i},'DiscreteArrow5D');
+    D=dir(folderpath);
+    imag_files_temp=[];
+    online_files_temp=[];
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');
+        if exist(filepath)
+            imag_files_temp = [imag_files_temp;findfiles('mat',filepath)'];
+        end
+        filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        if exist(filepath1)
+            online_files_temp = [online_files_temp;findfiles('mat',filepath1)'];
+        end      
+    end
+    if i>16
+        D=dir(folderpath1);
+        for j=3:length(D)
+            filepath2=fullfile(folderpath1,D(j).name,'BCI_Fixed');
+            if exist(filepath2)
+                online_files_temp = [online_files_temp;findfiles('mat',filepath2)'];
+            end
+        end
+    end
+    %     if ~isempty(imag_files_temp)
+    %         imag_files{k} = imag_files_temp;k=k+1;
+    %     end
+    %     if ~isempty(online_files_temp)
+    %         online_files{jj} = online_files_temp;jj=jj+1;
+    %     end
+    datafiles_days(i).date =  foldernames{i};
+    datafiles_days(i).imagined =  imag_files_temp;
+    datafiles_days(i).online =  online_files_temp;
+    if i<=16
+        datafiles_days(i).reduced = 1;
+    else
+        datafiles_days(i).reduced = 0;
+    end
+
+    %     imag_files{i} = imag_files_temp;
+    %     online_files{i} = online_files_temp;
+end
+
+
+% PARAMS
+% filter bank hg
+Params=[];
+Params.Fs = 1000;
+Params.FilterBank(1).fpass = [70,77];   % high gamma1
+Params.FilterBank(end+1).fpass = [77,85];   % high gamma2
+Params.FilterBank(end+1).fpass = [85,93];   % high gamma3
+Params.FilterBank(end+1).fpass = [93,102];  % high gamma4
+Params.FilterBank(end+1).fpass = [102,113]; % high gamma5
+Params.FilterBank(end+1).fpass = [113,124]; % high gamma6
+Params.FilterBank(end+1).fpass = [124,136]; % high gamma7
+Params.FilterBank(end+1).fpass = [136,150]; % high gamma8
+Params.FilterBank(end+1).fpass = [30,36]; % lg1
+Params.FilterBank(end+1).fpass = [36,42]; % lg2
+Params.FilterBank(end+1).fpass = [42,50]; % lg3
+% compute filter coefficients
+for i=1:length(Params.FilterBank),
+    [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
+    Params.FilterBank(i).b = b;
+    Params.FilterBank(i).a = a;
+end
+% low pass filters
+lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
+    'PassbandFrequency',25,'PassbandRipple',0.2, ...
+    'SampleRate',1e3);
+
+% have to cycle through days 3 to 14 in terms of testing out model across
+% days
+testing_days=[3:length(datafiles_days)];
+idx = 1:length(datafiles_days);
+acc_sample_days_lstm=[];
+acc_trial_days_lstm=[];
+acc_sample_days_mlp=[];
+acc_trial_days_mlp=[];
+for i=1:length(testing_days)
+    test_days = testing_days(i);
+    train_days = ones(size(idx));
+    train_days(test_days)=0;
+    train_days = find(train_days>0);
+
+    % now get all the neural features to build the LSTM
+    files=[];
+    files_5dof=[];
+    for j=1:length(train_days)
+
+        % get all the imagined and online files
+        if datafiles_days(train_days(j)).reduced==1
+            files=[files;datafiles_days(train_days(j)).imagined];
+            files=[files;datafiles_days(train_days(j)).online];
+        elseif datafiles_days(train_days(j)).reduced ==0
+            files_5dof=[files_5dof;datafiles_days(train_days(j)).imagined];
+            files_5dof=[files_5dof;datafiles_days(train_days(j)).online];
+        end
+    end       
+
+    % get training and testing samples
+    clear XTrain XTest YTrain YTest
+    %[XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF(files,Params,lpFilt);
+    [XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF_reduced(files,Params,lpFilt);
+    [XTrain1,XTest1,YTrain1,YTest1] = get_lstm_features_5DoF(files_5dof,Params,lpFilt);
+
+    % optional -> reduce the channel dimensions
+%     load ch_per_bands
+%     ch_band = ch_band{5};% Delta, Theta, Beta, LG, and HG
+%     sig_ch_delta = ch_band{1};
+%     sig_ch_hg = ch_band{5};
+% 
+%     for ii=1:length(XTrain)
+%         tmp=XTrain{ii};
+%         tmp_hg = tmp(1:128,:);
+%         tmp_hg = tmp_hg(sig_ch_hg,:);
+%         tmp_lfo = tmp(129:256,:);
+%         tmp_lfo = tmp_lfo(sig_ch_delta,:);
+%         tmp =[tmp_hg;tmp_lfo];
+%         XTrain{ii}=tmp;
+%     end
+% 
+%     for ii=1:length(XTest)
+%         tmp=XTest{ii};
+%         tmp_hg = tmp(1:128,:);
+%         tmp_hg = tmp_hg(sig_ch_hg,:);
+%         tmp_lfo = tmp(129:256,:);
+%         tmp_lfo = tmp_lfo(sig_ch_delta,:);
+%         tmp =[tmp_hg;tmp_lfo];
+%         XTest{ii}=tmp;
+%     end
+%     
+    
+    % train the LSTM
+    net_bilstm = train_lstm(XTrain,XTest,YTrain,YTest,64,0.3,5);
+
+    % test out on the held-out day
+    files_test = datafiles_days(test_days).online;
+    [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
+        = get_lstm_performance_9DoF_reduced(files_test,net_bilstm,Params,lpFilt,9);
+    acc_sample_days_lstm(i,:,:) = acc_lstm_sample;
+    acc_sample_days_mlp(i,:,:) = acc_mlp_sample;
+    acc_trial_days_lstm(i,:,:) = acc_lstm_trial;
+    acc_trial_days_mlp(i,:,:) = acc_mlp_trial;
+end
+
+% save 9DoF_LSTM_vs_MLP ...
+%      acc_sample_days_lstm acc_sample_days_mlp acc_trial_days_lstm ...
+%      acc_trial_days_mlp  -v7.3
+
+
+
+acc_lstm_sample = squeeze(mean(acc_trial_days_lstm(10:12,:,:),1));
+acc_mlp_sample = squeeze(mean(acc_trial_days_mlp(10:12,:,:),1));
+
+
+% plotting the success of individual actions
+tmp = [diag(acc_lstm_sample) diag(acc_mlp_sample)];
+figure;
+hold on
+for i=1:9
+    idx = i:9:size(tmp,1);
+    decodes = tmp(idx,:);
+    disp(decodes)
+    h=bar(2*i-0.25,mean(decodes(:,1)));
+    h1=bar(2*i+0.25,mean(decodes(:,2)));
+    h.BarWidth=0.4;
+    h.FaceColor=[0.2 0.2 0.7];
+    h1.BarWidth=0.4;
+    h1.FaceColor=[0.7 0.2 0.2];
+    h.FaceAlpha=0.85;
+    h1.FaceAlpha=0.85;
+
+    %     s=scatter(ones(3,1)*2*i-0.25+0.05*randn(3,1),decodes(:,1),'LineWidth',2);
+    %     s.CData = [0.2 0.2 0.7];
+    %     s.SizeData=50;
+    %
+    %     s=scatter(ones(3,1)*2*i+0.25+0.05*randn(3,1),decodes(:,2),'LineWidth',2);
+    %     s.CData = [0.7 0.2 0.2];
+    %     s.SizeData=50;
+end
+xticks([2:2:18])
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+ylabel('Decoding Accuracy')
+legend('LSTM','MLP')
+set(gcf,'Color','w')
+set(gca,'FontSize',14)
+set(gca,'LineWidth',1)
+title(datafiles_days(test_days).date)
+
+figure;imagesc(acc_lstm_sample)
+colormap bone
+title(['PnP LSTM simulated acc - ' num2str(mean(diag(acc_lstm_sample))*100)])
+xticks(1:9)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+yticks(1:9)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+
+
+figure;imagesc(acc_mlp_sample)
+colormap bone
+title(['MLP acc - ' num2str(mean(diag(acc_mlp_sample))*100)])
+xticks(1:9)
+xticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+yticks(1:9)
+yticklabels({'Right Thumb','Left Leg','Left Thumb','Rt. Bicep','Lips','Tongue','Both Middle',...
+    'Rot. Rt Wrist','Rot. Lt Wrist'})
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
 
 
 

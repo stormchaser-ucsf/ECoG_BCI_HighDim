@@ -68,8 +68,11 @@ for iter = 1:iterations % loop over 20 times
     T(aa(1):aa(end),7)=1;
 
     % train MLP
-    net = patternnet([64 64 64 ]) ;
+    net = patternnet([120]) ;
     net.performParam.regularization=0.2;
+    net.divideParam.trainRatio = 0.875;
+    net.divideParam.valRatio = 0.125;
+%     net.divideParam.testRatio = 0;
     net = train(net,N,T');
 
     % test it out on the held out trials using a mode filter
@@ -80,7 +83,8 @@ for iter = 1:iterations % loop over 20 times
             out = net(features);
             out(out<0.4)=0; % thresholding
             [prob,idx] = max(out); % getting the decodes
-            decodes = mode_filter(idx); % running it through a 5 sample mode filter
+            %decodes = mode_filter(idx,7); % running it through a 5 sample mode filter
+            decodes = idx;
             decodes_sum=[];
             for ii=1:7
                 decodes_sum(ii) = sum(decodes==ii);

@@ -1,4 +1,4 @@
-function net = train_lstm(XTrain,XTest,YTrain,YTest,numHiddenUnits1,drop1,num_classes)
+function net = train_lstm(XTrain,XTest,YTrain,YTest,numHiddenUnits1,drop1,num_classes,layers)
 
 
 
@@ -7,26 +7,26 @@ function net = train_lstm(XTrain,XTest,YTrain,YTest,numHiddenUnits1,drop1,num_cl
 
 % specify lstm structure
 inputSize = size(XTrain{1},1);
-%numHiddenUnits1 = [  90 120 250 128 325];
-%drop1 = [ 0.2 0.2 0.3  0.3 0.4];
+numHiddenUnits1 = [  90 120 250 128 325];
+drop1 = [ 0.2 0.2 0.3  0.3 0.4];
 numClasses = num_classes;
-%for i=3%1:length(drop1)
-numHiddenUnits=numHiddenUnits1;
-drop=drop1;
-layers = [ ...
-    sequenceInputLayer(inputSize)
-    bilstmLayer(numHiddenUnits,'OutputMode','sequence','Name','lstm_1')
-    dropoutLayer(drop)
-    layerNormalizationLayer
-    gruLayer(round(numHiddenUnits/2),'OutputMode','last','Name','lstm_2')
-    dropoutLayer(drop)
-    %layerNormalizationLayer
-    fullyConnectedLayer(25)
-    leakyReluLayer
-    batchNormalizationLayer
-    fullyConnectedLayer(numClasses)
-    softmaxLayer
-    classificationLayer];
+% %for i=3%1:length(drop1)
+% numHiddenUnits=numHiddenUnits1;
+% drop=drop1;
+% layers = [ ...
+%     sequenceInputLayer(inputSize)
+%     bilstmLayer(numHiddenUnits,'OutputMode','sequence','Name','lstm_1')
+%     dropoutLayer(drop)
+%     layerNormalizationLayer
+%     gruLayer(round(numHiddenUnits/2),'OutputMode','last','Name','lstm_2')
+%     dropoutLayer(drop)
+%     %layerNormalizationLayer
+%     fullyConnectedLayer(25)
+%     leakyReluLayer
+%     batchNormalizationLayer
+%     fullyConnectedLayer(numClasses)
+%     softmaxLayer
+%     classificationLayer];
 
 
 

@@ -4267,7 +4267,11 @@ ov_acc = a.overall_trial_accuracy
 ov_acc = (a.overall_trial_accuracy + b.overall_trial_accuracy)/2;
 mean(diag(ov_acc))
 
+% permutation test on bit rates
+br1=a.brh;
+br2=b.brh;
 
+[p,h,stats]=ranksum(br1,br2);
 
 %% %% BLOCK BY BLOCK BIT RATE CALCULATIONS ACROSS DAYS 9DOF
 %%%%(MAIN)

@@ -1,8 +1,9 @@
-function [trial_data] = load_data_for_MLP_TrialLevel_B3(files,ecog_grid)
+function [trial_data,coeff,score,latent] = load_data_for_MLP_TrialLevel_B3(files,ecog_grid,trial_type)
 %function [condn_data] = load_data_for_MLP(files)
 
 
 trial_data=[];
+tmp_data=[];
 for ii=1:length(files)
     disp(ii)
     file_loaded=1;
@@ -16,6 +17,12 @@ for ii=1:length(files)
         temp = cell2mat(features);
         kinax = find(TrialData.TaskState==3);
         temp = cell2mat(features(kinax));
+
+        kinax1 = find(TrialData.TaskState==1);
+        temp_state1 = cell2mat(features(kinax1));
+
+        % relative to state 1:
+        %temp = temp - mean(temp_state1,2);
 
 
         % get delta, beta and hG removing bad channels
@@ -56,8 +63,15 @@ for ii=1:length(files)
 
         trial_data(ii).neural = temp;
         trial_data(ii).targetID = TrialData.TargetID;
+        trial_data(ii).trial_type = trial_type;
+        % store for PCA
+        tmp_data = [tmp_data temp];
     end
 end
+
+% return PCs
+[coeff,score,latent] = pca(tmp_data','Centered','off');
+
 
 end
 

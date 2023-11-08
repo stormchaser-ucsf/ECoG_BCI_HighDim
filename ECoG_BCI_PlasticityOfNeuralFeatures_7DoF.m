@@ -1040,19 +1040,20 @@ figure;imagesc(recon_data)
 recon_data = flipud(recon_data)';
 recon_data = recon_data(:);
 % plotting on brain as heat map
+figure;
 c_h = ctmr_gauss_plot(cortex,elecmatrix(1:128,:),recon_data(:),'lh',1,1,1);
 e_h = el_add(elecmatrix([1:length(ch)],:), 'color', 'w', 'msize',2);
 % plotting electrode sizes
 val = linspace(min(recon_data),max(recon_data),128);
 sz = linspace(1,10,128);
 figure;
-c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh');
+c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh',1,1,1);
 for j=1:length(recon_data)
     [aa,bb] = min(abs(val-recon_data(j)));
     ms = sz(bb)+1;
     e_h = el_add(elecmatrix(j,:), 'color', 'b','msize',ms);
 end
-
+set(gcf,'Color','w')
 
 
 close all
@@ -2227,7 +2228,7 @@ figure;boxplot([acc_bins_ratio(1:4)' acc_bins_ratio(end-3:end)'])
 % first four days: build AE on imagined, then feed in data from online
 
 
-%% (MAIN) looking at decoding performance from imagined -> online -> batch
+%% (MAIN) B1 looking at decoding performance from imagined -> online -> batch
 % across days
 
 clc;clear;
@@ -2451,6 +2452,92 @@ glm = fitglm(data,'acc ~ 1 + experiment');
 [h p tb st] = ttest(tmp,tmp2)
 [h p tb st] = ttest(tmp1,tmp2)
 
+[p,h,stats]=ranksum(tmp,tmp1);
+[p,h,stats]=ranksum(tmp,tmp2);
+
+
+%%%%% IMPORTANT %%%%
+% correlating perfomance to neural variance and mahab
+mahab_dist=[7.44937	25.0954	46.8808
+    8.98259	23.0811	43.5335
+    8.53827	27.0567	34.1529
+    5.63418	30.2603	36.0458
+    7.84022	40.0723	50.1397
+    10.5456	44.6843	50.8638
+    8.78371	36.7279	49.353
+    6.72437	32.8186	39.9
+    9.00313	38.3491	53.8316
+    11.4657	44.171	61.1524
+    ];
+
+%[p,h]=ranksum(mahab_dist(:,2),mahab_dist(:,3))
+[p,h,stats]=signrank(mahab_dist(:,3),mahab_dist(:,2),'method','exact')
+
+neural_var=[30.857	6.23092	4.2398
+    24.417	6.82874	2.97929
+    9.04406	3.71701	0.861332
+    27.5913	4.89941	4.2908
+    56.641	8.15226	7.53884
+    45.6299	8.2134	6.6176
+    47.2558	11.765	8.78324
+    49.3863	9.94427	8.23726
+    47.2904	5.89819	4.20248
+    46.8797	6.5413	4.60668
+    ];
+
+[p,h,stats]=signrank(neural_var(:,2),neural_var(:,1))
+
+% permutation test
+stat_val = abs(mean(neural_var(:,1)) - mean(neural_var(:,2)));
+stat_boot=[];
+stat_vec = [neural_var(:,1);neural_var(:,2)];
+stat_vec= stat_vec - mean(stat_vec);
+for i=1:5000
+    idx = randperm(numel(stat_vec));
+    a1 = stat_vec(idx(1:70));
+    a2 = stat_vec(idx(71:140));
+    stat_boot(i) =  abs(mean(a1)-mean(a2));
+end
+figure;hist(stat_boot)
+vline(stat_val,'r')
+title(['pval ' num2str(1-sum(stat_val>stat_boot)/length(stat_boot))])
+xlabel('OL minus CL1, neural variance')
+title('Permutation test');
+ylabel('Frequency')
+box off
+
+neural_var=neural_var(:);
+
+decoding_acc = [tmp' tmp1' tmp2'];
+decoding_acc = decoding_acc(:);
+
+figure;plot((neural_var),(decoding_acc),'.')
+
+figure;
+hold on
+col={'r','g','b'};k=1;
+for i=1:10:30
+    plot((neural_var(i:i+9)),(decoding_acc(i:i+9)),'.','MarkerSize',20,'color',col{k});
+    k=k+1;
+end
+
+% 3D plot
+figure;
+hold on
+col={'r','g','b'};k=1;
+for i=1:10:30
+    plot3(neural_var(i:i+9),neural_var1(i:i+9),(decoding_acc(i:i+9)),'.',...
+        'MarkerSize',30,'color',col{k});
+    k=k+1;
+end
+xlabel('Mahalanobis Distance')
+ylabel('Neural variance')
+zlabel('Decoding Accuracy')
+legend({'Open loop','CL1','CL2'})
+
+
+
+
 % using a GLM for each action across days
 acc=[];
 days_acc=[];
@@ -2482,16 +2569,16 @@ a0=data.acc(data.experiment==1);
 a1=data.acc(data.experiment==2);
 a2=data.acc(data.experiment==3);
 
-a1 = (median(acc_online_days,1))';
-a2 = (median(acc_batch_days,1))';
-stat = median(a2)-median(a1);
+a1 = (mean(acc_online_days,1))';
+a2 = (mean(acc_batch_days,1))';
+stat = mean(a2)-mean(a1);
 boot=[];
 a=[a1;a2];
 for i=1:1000
     idx = randperm(length(a));
     a11 = a(idx(1:10));
     a22 = a(idx(11:end));
-    boot(i) = median(a11) - median(a22);
+    boot(i) = mean(a11) - mean(a22);
 end
 figure;hist((boot))
 vline(stat)
@@ -3476,18 +3563,21 @@ cd(root_path)
 
 % IMAGINED DATA FOLDER IS CENTER OUT AND ONLINE DATA IS IN DISCRETE ARROW
 
-% day 0 %%%% GET THE DATA AGAIN FROM THE PC AS IT HAS NOT BEEN SAVED
+% day 1 %%%% GET THE DATA AGAIN FROM THE PC AS IT HAS NOT BEEN SAVED
 k=1;
 session_data(k).Day = '20230223';
-session_data(k).folders = {'125028','125649','130309','130627',...
-    '133358','133843','134055',...
-    '140223','140438'};
-session_data(k).folder_type={'I','I','I','I','O','O','O',...
-    'B','B'};
-session_data(k).AM_PM = {'am','am','am','am','am','am','am','am','am'};
+session_data(k).folders = {'125028','125649','130309','130627','131112',...
+    '133039','133358','133843','134055','134525',...
+    '135550','135845','140223','140438'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O','O',...
+    'B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am','am',...
+    'am','am','am','am'};
 
 
-%day1
+%day2
 k=2;
 session_data(k).Day = '20230301';
 session_data(k).folders = {'113743','114316','114639','114958','120038','120246',...
@@ -3495,7 +3585,7 @@ session_data(k).folders = {'113743','114316','114639','114958','120038','120246'
 session_data(k).folder_type={'I','I','I','I','O','O','O','O','B','B','B','B','B'};
 session_data(k).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am','am'};
 
-%day2
+%day3
 k=3;
 session_data(k).Day = '20230302';
 session_data(k).folders = {'122334','122931','123406','124341','125002',...
@@ -3505,7 +3595,7 @@ session_data(k).folder_type={'I','I','I','I','I','O','O','O','O','O',...
     'B','B','B','B'};
 session_data(k).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am','am','am'};
 
-%day3
+%day4
 k=4;
 session_data(k).Day = '20230308';
 session_data(k).folders = {'114109','114632','114940','115300','115621',...
@@ -3515,7 +3605,7 @@ session_data(k).folder_type={'I','I','I','I','I','O','O','O','O','O',...
     'B','B','B','B','B'};
 session_data(k).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am','am','am','am'};
 
-%day4
+%day5
 k=5;
 session_data(k).Day = '20230309';
 session_data(k).folders = {'135628','140326','140904','141504','142051',...
@@ -3526,7 +3616,112 @@ session_data(k).folder_type={'I','I','I','I','I','O','O','O','O','O',...
 session_data(k).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
 
 
+%day6
+k=6;
+session_data(k).Day = '20230315';
+session_data(k).folders = {'114014','114328','114637','114946',...
+    '115850','120057','120307','120613',...
+    '121138','121335','121544'};
+session_data(k).folder_type={'I','I','I','I',...
+    'O','O','O','O'...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
 
+%day7
+k=7;
+session_data(k).Day = '20230316';
+session_data(k).folders = {'115713','120250','120610','121013',...
+    '121753','122215','122449',...
+    '123254','123706','123924'};
+session_data(k).folder_type={'I','I','I','I',...
+    'O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am',...
+    'am','am','am',...
+    'am','am','am'};
+
+%day8
+k=8;
+session_data(k).Day = '20230322';
+session_data(k).folders = {'120714','121243','121611','121931',...
+    '122703','123008','123225',...
+    '123738','124014','124236'};
+session_data(k).folder_type={'I','I','I','I',...
+    'O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am',...
+    'am','am','am',...
+    'am','am','am'};
+
+%day9
+k=9;
+session_data(k).Day = '20230323';
+session_data(k).folders = {'121940','122551','123155','123616','124027',...
+    '124808','125147','130225','130821',...
+    '131616','132215'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am'};
+
+
+%day10
+k=10;
+session_data(k).Day = '20230329';
+session_data(k).folders = {'113849','114315','114721','115156','115658',...
+    '120445','120854','121324','121821',...
+    '122522','123025'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am'};
+
+
+%day11
+k=11;
+session_data(k).Day = '20230330';
+session_data(k).folders = {'122117','123029','124354','125220','125810',...
+    '130524','131124','131630','132104',...
+    '132647','133231'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am'};
+
+
+%day12 also covert mime 20231101
+k=12;
+session_data(k).Day = '20231101';
+session_data(k).folders = {'150146','150711','151304','151907','152512',...
+    '153413','153959','154552','155027',...
+    '155816','160355','160855'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
+
+%day13 also covert mime
+k=13;
+session_data(k).Day = '20231103';
+session_data(k).folders = {'144108','144832','145350','145951','151106',...
+    '152228','152729','153240','153723',...
+    '154260','154658','155156'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
 
 
 save session_data_B3 session_data -v7.3
@@ -4497,7 +4692,7 @@ addpath 'C:\Users\nikic\Documents\MATLAB'
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=5;
+iterations=50;
 plot_true=false;
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -4521,16 +4716,23 @@ for i=1:length(session_data)
 
     %load the data
     load('ECOG_Grid_8596_000067_B3.mat')
-    condn_data = load_data_for_MLP_TrialLevel_B3(files,ecog_grid);
+    condn_data = load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0);
 
     % get cross-val classification accuracy
     [acc_imagined,train_permutations] = accuracy_imagined_data(condn_data, iterations);
     acc_imagined=squeeze(nanmean(acc_imagined,1));
+    disp(mean(diag(acc_imagined)))
     if plot_true
         figure;imagesc(acc_imagined)
         colormap bone
         clim([0 1])
         set(gcf,'color','w')
+        colorbar
+        xticks(1:7)
+        yticks(1:7)
+        xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+        yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+        title(['OL Acc of ' num2str(mean(diag(acc_imagined)))])
     end
     acc_imagined_days(:,i) = diag(acc_imagined);
 
@@ -4552,6 +4754,11 @@ for i=1:length(session_data)
         colormap bone
         clim([0 1])
         set(gcf,'color','w')
+        xticks(1:7)
+        yticks(1:7)
+        xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+        yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+        title(['CL1 Acc of ' num2str(mean(diag(acc_online)))])
     end
     acc_online_days(:,i) = diag(acc_online);
 
@@ -4573,20 +4780,26 @@ for i=1:length(session_data)
         colormap bone
         clim([0 1])
         set(gcf,'color','w')
+        xticks(1:7)
+        yticks(1:7)
+        xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+        yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+        title(['CL2 Acc of ' num2str(mean(diag(acc_batch)))])
     end
     acc_batch_days(:,i) = diag(acc_batch);
 
 end
 
-load ('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\b1_acc_rel_imagined_prop.mat')
-save hDOF_6days_accuracy_results_New_B2 -v7.3
-%save hDOF_10days_accuracy_results -v7.3
+%load ('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\b1_acc_rel_imagined_prop.mat')
+%save hDOF_6days_accuracy_results_New_B2 -v7.3
+save hDOF_11days_accuracy_results_B3 -v7.3
+%save hDOF_11days_accuracy_results_B3_corrected -v7.3 % not good
 
 
 %acc_online_days = (acc_online_days + acc_batch_days)/2;
 figure;
 ylim([0.0 1])
-xlim([0.5 4.5])
+xlim([0.5 11.5])
 hold on
 plot(nanmean(acc_imagined_days,1))
 plot(nanmean(acc_online_days,1),'r')
@@ -4601,13 +4814,18 @@ tmp = [median(acc_imagined_days,1)' median(acc_online_days,1)' ...
 
 figure;boxplot(acc_imagined_days)
 ylim([0.2 1])
-xlim([0.5 10.5])
+xlim([0.5 11.5])
 hold on
 boxplot(acc_batch_days,'Colors','k')
 a = get(get(gca,'children'),'children');
 
 figure;
 boxplot([acc_imagined_days(:) acc_online_days(:) acc_batch_days(:)])
+
+
+acc_imagined_days=acc_imagined_days(:,1:end);
+acc_online_days=acc_online_days(:,1:end);
+acc_batch_days=acc_batch_days(:,1:end);
 
 m1 = (acc_imagined_days(:));
 m1b = sort(bootstrp(1000,@mean,m1));
@@ -4641,7 +4859,7 @@ for i=1:size(acc_batch_days,2)
     plot(3+0.1*randn(1),m33(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',5,'Color',[cmap(end,:) .5])
 end
 xlim([.5 3.5])
-ylim([0.75 1])
+ylim([0.7 1])
 xticks(1:3)
 xticklabels({'Imagined','Online','Batch'})
 set(gcf,'Color','w')
@@ -4653,11 +4871,18 @@ h.LineWidth=1;
 xlabel('Decoder Type')
 ylabel('Accuracy')
 
+disp([mean(acc_imagined_days(:)) mean(acc_online_days(:)) mean(acc_batch_days(:))])
+
 tmp = [ m11' m22' m33'];
 figure;boxplot(tmp)
 
 tmp = [ m1 m2 m3];
 figure;boxplot(tmp)
+
+% mann whitent U test
+[P,H,STATS] = ranksum(mean(acc_batch_days,1),mean(acc_online_days,1))
+[P,H,STATS] = ranksum(mean(acc_imagined_days,1),mean(acc_online_days,1))
+[P,H,STATS] = ranksum(mean(acc_batch_days,1),mean(acc_imagined_days,1))
 
 % regression lines for mahab distances in latent space
 imag = [0.732087
@@ -4681,22 +4906,22 @@ batch=[1.58127
     ]; % days 12 thru 5
 
 % PLOT REGRESSION LINES
-imag = tmp(:,1);
-online = tmp(:,2);
-batch = tmp(1:4,3);
+imag = tmp(2:end,1);
+online = tmp(2:end,2);
+batch = tmp(2:end,3);
 figure;
 hold on
-days=1:4;
+days=1:length(imag)
 x=[ones(length(days),1) days'];
 %imag
-plot(days,imag(2:5),'.','MarkerSize',20)
-y=imag(2:5);
+plot(days,imag,'.','MarkerSize',20)
+y=imag;
 [B,BINT,R,RINT,STATS1] = regress(y,x);
 yhat=x*B;
 plot(days,yhat,'b','LineWidth',1)
 %online
-plot(days,online(2:5),'.k','MarkerSize',20)
-y=online(2:5);
+plot(days,online,'.k','MarkerSize',20)
+y=online;
 [B,BINT,R,RINT,STATS2] = regress(y,x);
 yhat=x*B;
 plot(days,yhat,'k','LineWidth',1)
@@ -4708,11 +4933,9 @@ yhat=x*B;
 plot(days,yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
-xlim([.5 4.5])
-xticks(1:4)
-xticklabels(1:4)
-ylim([0 3.5])
-yticks([0:3])
+xlim([.5 11.5])
+xticks(1:1)
+xticklabels(1:11)
 
 
 % PLOT REGRESSION LINES equal size in tmp
@@ -4776,7 +4999,7 @@ plot(days,yhat,'r','LineWidth',1)
 % beautify
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
-xticks([1:4])
+xticks([1:11])
 
 
 
@@ -4812,6 +5035,93 @@ yticks([5:5:35])
 ylim([0 1])
 
 
+%%%%% IMPORTANT %%%%
+% correlating perfomance to neural variance and mahab
+mahab_dist=[15.0768	23.0341	25.5969
+    21.0006	35.7938	36.6155
+    19.838	32.3876	36.9021
+    23.3012	38.4087	36.7424
+    24.9293	39.2602	50.2872
+    17.9506	27.7369	35.1501
+    25.1043	40.5396	40.0646
+    23.7339	39.6258	38.6774
+    26.754	39.9261	58.23
+    26.0079	39.4577	53.3721
+    21.0177	39.0024	47.8239
+    ];
+
+%[p,h]=ranksum(mahab_dist(:,2),mahab_dist(:,3))
+[p,h,stats]=signrank(mahab_dist(:,3),mahab_dist(:,2),'method','exact')
+
+neural_var=[987.905	546.457	435.817
+    1032.13	564.041	489.257
+    1337.76	781.075	639.571
+    1637.73	795.645	769.213
+    1371.44	890.384	599.882
+    1189.63	790.712	752.482
+    1181.93	472.442	516.443
+    1304.32	751.878	684.07
+    1269.3	664.604	434.364
+    1489.88	791.045	531.593
+    1158.13	522.424	402.161
+    ];
+
+[p,h,stats]=signrank(neural_var(:,1),neural_var(:,2))
+[p,h,stats]=signrank(neural_var(:,1),neural_var(:,3))
+[p,h,stats]=signrank(neural_var(:,3),neural_var(:,2))
+
+% permutation test
+stat_val = abs(mean(neural_var(:,1)) - mean(neural_var(:,2)));
+stat_boot=[];
+stat_vec = [neural_var(:,1);neural_var(:,2)];
+stat_vec= stat_vec - mean(stat_vec);
+for i=1:5000
+    idx = randperm(numel(stat_vec));
+    a1 = stat_vec(idx(1:70));
+    a2 = stat_vec(idx(71:140));
+    stat_boot(i) =  abs(mean(a1)-mean(a2));
+end
+figure;hist(stat_boot)
+vline(stat_val,'r')
+title(['pval ' num2str(1-sum(stat_val>stat_boot)/length(stat_boot))])
+xlabel('OL minus CL1, neural variance')
+title('Permutation test');
+ylabel('Frequency')
+box off
+
+neural_var=neural_var(:);
+mahab_dist=mahab_dist(:);
+
+
+tmp = [mean(acc_imagined_days,1)' mean(acc_online_days,1)' ...
+    mean(acc_batch_days,1)'];
+
+decoding_acc = tmp(:);
+
+figure;plot((neural_var),(decoding_acc),'.','MarkerSize',20)
+figure;plot((mahab_dist),(decoding_acc),'.','MarkerSize',20)
+
+figure;
+hold on
+col={'r','g','b'};k=1;
+for i=1:11:33
+    plot((neural_var(i:i+10)),(decoding_acc(i:i+10)),'.','MarkerSize',20,'color',col{k});
+    k=k+1;
+end
+
+% 3D plot
+figure;
+hold on
+col={'r','g','b'};k=1;
+for i=1:11:33
+    plot3(mahab_dist(i:i+10),neural_var(i:i+10),(decoding_acc(i:i+10)),'.',...
+        'MarkerSize',30,'color',col{k});
+    k=k+1;
+end
+xlabel('Mahalanobis Distance')
+ylabel('Neural variance')
+zlabel('Decoding Accuracy')
+legend({'Open loop','CL1','CL2'})
 
 
 
@@ -4847,9 +5157,9 @@ sum(boot>stat)/length(boot)
 
 
 % get the accuracies relative to imagined movement within that day
-a0 = mean(acc_imagined_days(:,2:5),1);
-a1 = mean(acc_online_days(:,2:5),1);
-a2 = mean(acc_batch_days(:,2:5),1);
+a0 = mean(acc_imagined_days(:,1:end),1);
+a1 = mean(acc_online_days(:,1:end),1);
+a2 = mean(acc_batch_days(:,1:end),1);
 figure;
 plot(a0);
 hold on
@@ -4857,16 +5167,16 @@ plot(a1);
 plot(a2)
 ylim([0 1])
 
-a1 = (a1-a0)./a0;
-a2 = (a2-a0)./a0;
+a1 = (a1-a0)%./a0;
+a2 = (a2-a0)%./a0;
 figure;boxplot([a1' a2'])
 hline(0)
 
-b2_acc_rel_imagined = [a1' a2'];
+b3_acc_rel_imagined = [a1' a2'];
 
-acc_rel_imagined = [b1_acc_rel_imagined_prop ;b2_acc_rel_imagined];
+acc_rel_imagined = [b1_acc_rel_imagined_prop ;b3_acc_rel_imagined];
 figure;
-boxplot(acc_rel_imagined);
+boxplot(acc_rel_imagined*100);
 a = get(get(gca,'children'),'children');   % Get the handles of all the objects
 t = get(a,'tag');   % List the names of all the objects
 box1 = a(5);   % The 7th object is the first box
@@ -4877,6 +5187,13 @@ line1 = a(3);   % The 7th object is the first box
 set(line1, 'Color', 'm');   % Set the color of the first box to green
 line1 = a(4);   % The 7th object is the first box
 set(line1, 'Color', 'm');   % Set the color of the first box to green
+hline(0,'r')
+ylabel('Accuracy Improvements (%)')
+xticks(1:2)
+xticklabels({'CL1','CL2'})
+set(gca,'FontSize',14)
+set(gcf,'Color','w')
+box off
 
 
 
@@ -4899,9 +5216,12 @@ hold on
 hold on
 scatter(ones(10,1)+0.07*randn(10,1),b1_acc_rel_imagined_prop(:,1),'or')
 scatter(2*ones(10,1)+0.07*randn(10,1),b1_acc_rel_imagined_prop(:,2),'r')
-%B2
-scatter(ones(4,1)+0.07*randn(4,1),b2_acc_rel_imagined(:,1),'ob')
-scatter(2*ones(4,1)+0.07*randn(4,1),b2_acc_rel_imagined(:,2),'ob')
+%B3
+scatter(ones(size(b3_acc_rel_imagined,1),1)+...
+    0.07*randn(size(b3_acc_rel_imagined,1),1),b3_acc_rel_imagined(:,1),'ob')
+scatter(2*ones(size(b3_acc_rel_imagined,1),1)+...
+    0.07*randn(size(b3_acc_rel_imagined,1),1),b3_acc_rel_imagined(:,2),'ob')
+
 
 cmap = brewermap(6,'Blues');
 x=1:2;
@@ -4919,9 +5239,11 @@ set(gcf,'Color','w')
 
 
 [h p tb st] = ttest(acc_rel_imagined(:,1),acc_rel_imagined(:,2))
+[P,H,STATS] = signrank(acc_rel_imagined(:,2))
+[P,H,STATS] = ranksum(acc_rel_imagined(:,1),acc_rel_imagined(:,2))
 
 % saving all data
-save acc_relative_imagined_prop_B1B2 -v7.3
+save acc_relative_imagined_prop_B1B3 -v7.3
 
 % using a mixed effect model
 acc_improv=[];
@@ -4935,8 +5257,8 @@ for i=1:size(b1_acc_rel_imagined_prop,2)
     subject=[subject;1*ones(size(tmp))];
 end
 %b2
-for i=1:size(b2_acc_rel_imagined,2)
-    tmp=b2_acc_rel_imagined(:,i);
+for i=1:size(b3_acc_rel_imagined,2)
+    tmp=b3_acc_rel_imagined(:,i);
     %     if i==1
     %         tmp=tmp([1 3 4]);
     %     end
@@ -5114,10 +5436,46 @@ save mahab_dist_full_B3 -v7.3
 
 figure;boxplot([mahab_full_imagined mahab_full_online mahab_full_batch])
 
-figure;plot(1:4,median(mahab_full_imagined));
+
+X= [ ones(11,1) [1:11]'];
+figure;plot(1:11,mean(mahab_full_imagined),'.','MarkerSize',20);
 hold on
-plot(1:4,median(mahab_full_online),'r')
-plot(1:4,median(mahab_full_batch),'k')
+plot(1:11,mean(mahab_full_online),'r')
+plot(1:11,mean(mahab_full_batch),'k')
+
+% plotting the regression for Mahab distance increases as a function of day
+tmp=[mean(mahab_full_imagined)' mean(mahab_full_online)' mean(mahab_full_batch)'];
+figure;
+xlim([0 12])
+hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:11,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+[B1,BINT,R,RINT,STATS1] = regress(y,x);
+yhat = x*B1;
+plot(1:11,yhat,'b','LineWidth',1)
+% online
+plot(1:11,tmp(:,2),'.k','MarkerSize',20)
+y = tmp(:,2);
+[B2,BINT,R,RINT,STATS2] = regress(y,x);
+yhat = x*B2;
+plot(1:11,yhat,'k','LineWidth',1)
+% batch
+plot(1:11,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+[B3,BINT,R,RINT,STATS3] = regress(y,x);
+yhat = x*B3;
+plot(1:11,yhat,'r','LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xticks([1:11])
+xlabel('Days')
+ylabel('Mahab Distance')
+title('B3 original high dimensional data')
+legend({'','OL','','CL1','','CL2'})
+
+
 
 figure;
 plot(mean(dist_online_total'))
@@ -5395,7 +5753,7 @@ end
 
 % histogram of the errors in decoded velocities with the ideal velocity
 figure;rose(err_vel)
-figure;hist(err_vel*180/pi)
+figure;hist(err_vel*180/pi,20)
 vline(45)
 
 % circular statistics test
@@ -5403,6 +5761,39 @@ addpath(genpath('C:\Users\nikic\Documents\MATLAB\CircStat2012a'))
 mu = circ_mean(err_vel') % get the mean
 [pval, z] = circ_rtest(err_vel); % is it uniformly distributed
 [h mu ul ll]  = circ_mtest(err_vel', 0) % does it have a specific mean
+[ll mu ul]*180/pi
+pval = circ_medtest(err_vel',0)
+
+
+%%%%%%% USING CHAT GPT %%%%
+
+% Set of angles in radians
+angles = err_vel';
+
+% Reference direction (null hypothesis)
+mu_0 = 0; % You can set this to your desired reference direction
+
+% Compute the circular mean
+mu = circ_mean(angles);
+
+% Perform the one-sample test and get the p-value
+p_value = circ_test(angles - mu_0);
+
+% Display the results
+fprintf('Circular mean: %f\n', mu);
+fprintf('P-value: %f\n', p_value);
+
+% Compare with significance level
+alpha = 0.05; % Set your desired significance level
+if p_value < alpha
+    fprintf('Reject the null hypothesis: The mean direction is significantly different.\n');
+else
+    fprintf('Fail to reject the null hypothesis: The mean direction is not significantly different.\n');
+end
+
+
+%%%%%%%%%%%
+
 
 
 %grid off
@@ -6146,7 +6537,7 @@ b2_var_effsize = b2_var(1)./b2_var(2:3);
 sum(b2_var_effsize + b1_var_effsize)/4
 sum(b1_mean_effsize + b2_mean_effsize)/4
 
-%% STATS OF THE REAL ROBOT TASKS
+%% STATS OF THE REAL ROBOT TASKS (MAIN)
 
 
 clc;clear
@@ -6266,7 +6657,7 @@ box off
 % plot the accuracy
 acc=successRate;
 figure;hold on
-plot(acc,'ok','MarkerSize',15)
+plot(acc(1:8),'ok','MarkerSize',15)
 plot(acc,'k','LineWidth',1)
 xlim([0 10])
 xticks(1:9)
@@ -6278,6 +6669,9 @@ set(gca,'FontSize',12)
 xlabel('Days - PnP')
 ylabel('Accuracy')
 box off
+
+X=[ones(8,1) (1:8)'];
+[B,BINT,R,RINT,STATS] = regress(acc(1:8)',X);
 
 
 % compare performance in first month to rest of session
@@ -6972,5 +7366,28 @@ end
 mean(corr_val(:))
 
 
+%% plotting robot trajectories for B3
 
+clc;clear
+filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\20231101\Robot3D';
+cd(filepath)
+
+
+folders={'161817','162148','162555'};
+figure;hold on
+cmap=turbo(6);
+for i=3%length(folders)
+    foldername = fullfile(filepath,folders{i},'BCI_Fixed');
+    files=findfiles('',foldername)';
+    for j=1:length(files)
+        load(files{j});
+        kin=TrialData.CursorState(1:3,:);
+        tid=TrialData.TargetID;
+        %if size(kin,2)*(1/5) <15
+            plot3(kin(1,:),kin(2,:),kin(3,:),'color',cmap(tid,:),'LineWidth',2)
+        %end
+    end
+end
+axis tight
+grid on
 
