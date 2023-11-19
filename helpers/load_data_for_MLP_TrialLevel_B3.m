@@ -57,9 +57,11 @@ for ii=1:length(files)
         %         end
         %         temp=new_temp;
         %
-%         for i=1:size(temp,2)
-%             temp(:,i) = temp(:,i)./norm(temp(:,i));
-%         end
+
+        % 2-norm
+        for i=1:size(temp,2)
+            temp(:,i) = temp(:,i)./norm(temp(:,i));
+        end
 
         trial_data(ii).neural = temp;
         trial_data(ii).targetID = TrialData.TargetID;
@@ -70,7 +72,7 @@ for ii=1:length(files)
 end
 
 % return PCs
-[coeff,score,latent] = pca(tmp_data','Centered','off');
+%[coeff,score,latent] = pca(tmp_data','Centered','off');
 
 
 end

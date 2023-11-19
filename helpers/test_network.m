@@ -1,4 +1,4 @@
-function [cv_perf] = test_network(net,condn_data_overall,test_idx)
+function [cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx)
 
 
 XTest=[];
@@ -13,10 +13,16 @@ YTest=categorical((YTest));
 
 out=predict(net,XTest);
 decodes=[];
+conf_matrix=zeros(7);
 for i=1:size(out,1)
     [aa bb]=max(out(i,:));
     decodes=[decodes;bb];
+    conf_matrix(double(YTest(i)),bb)=conf_matrix(double(YTest(i)),bb)+1;
 end
 decodes=categorical(decodes);
 cv_perf = sum(decodes==YTest)/length(decodes);
+for i=1:size(conf_matrix,2)
+    conf_matrix(i,:) = conf_matrix(i,:)./sum(conf_matrix(i,:));
+end
+
 end

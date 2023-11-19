@@ -87,7 +87,7 @@ for iter = 1:iterations % loop over 20 times
     end
 
     % train MLP
-    net = patternnet([64 64 ]) ;
+    net = patternnet([120]) ;
     net.performParam.regularization=0.2;
     net = train(net,N,T','UseParallel','yes');
 

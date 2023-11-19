@@ -7,13 +7,14 @@ function layers = get_layers2(j,k,input_size)
 
 
 layers = [ ...
-    featureInputLayer(input_size)    
-    fullyConnectedLayer(j)    
-    reluLayer
-    dropoutLayer(0.3)
-    fullyConnectedLayer(k)    
-    reluLayer    
-    dropoutLayer(0.3)    
+    featureInputLayer(input_size)
+    dropoutLayer(0.4)
+    fullyConnectedLayer(j)
+    leakyReluLayer
+    dropoutLayer(0.4)
+    fullyConnectedLayer(k)
+    leakyReluLayer
+    dropoutLayer(0.4)
     fullyConnectedLayer(7)
     softmaxLayer
     classificationLayer
@@ -21,3 +22,7 @@ layers = [ ...
 
 
 end
+
+
+
+

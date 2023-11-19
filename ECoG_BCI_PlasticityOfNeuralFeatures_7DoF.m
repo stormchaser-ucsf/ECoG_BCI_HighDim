@@ -3724,6 +3724,86 @@ session_data(k).AM_PM = {'am','am','am','am','am',...
     'am','am','am'};
 
 
+%day14 also covert mime
+k=14;
+session_data(k).Day = '20231106';
+session_data(k).folders = {'144344','145053','145532','150023','150448','151002',...
+    '151624','152019','152328','152655',...
+    '153433','153749','154154'};
+session_data(k).folder_type={'I','I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
+
+%day15 also covert mime
+k=15;
+session_data(k).Day = '20231108';
+session_data(k).folders = {'144602','145219','145634','150123','150607','151039',...
+    '151604','151958','152305','152758',...
+    '153316','153542','153815'};
+session_data(k).folder_type={'I','I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am','am'...
+    'am','am','am','am',...
+    'am','am','am'};
+
+%day16 also covert mime
+k=16;
+session_data(k).Day = '20231110';
+session_data(k).folders = {'151210','152025','152352','152755','153205',...
+    '153829','154338','154618','154906',...
+    '155654','155935','160204'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
+
+%day17 also covert mime
+k=17;
+session_data(k).Day = '20231113';
+session_data(k).folders = {'143300','143901','144235','144645','145013',...
+    '145733','150011','150507','150818',...
+    '151337','151628','151931'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
+
+
+%day18 also covert mime
+k=18;
+session_data(k).Day = '20231115';
+session_data(k).folders = {'144845','145418','145745','150314','150646',...
+    '151230','151519','151819','152110',...
+    '152707','152950','153216'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
+
+
+%day19 also covert mime
+k=19;
+session_data(k).Day = '20231117';
+session_data(k).folders = {'151638','152330','152731','153105','153525',...
+    '154040','154341','154645','155001',...
+    '155407','155657','160025'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
+
 save session_data_B3 session_data -v7.3
 
 %% PLASTICITY AND AE FRAMEWORK FOR B2 ARROW DATA (MAIN)
@@ -4692,7 +4772,7 @@ addpath 'C:\Users\nikic\Documents\MATLAB'
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=50;
+iterations=10;
 plot_true=false;
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -4748,7 +4828,7 @@ for i=1:length(session_data)
     end
 
     % get the classification accuracy
-    acc_online = accuracy_online_data(files);
+    [acc_online,acc_online_bin] = accuracy_online_data(files);
     if plot_true
         figure;imagesc(acc_online)
         colormap bone
@@ -5437,36 +5517,36 @@ save mahab_dist_full_B3 -v7.3
 figure;boxplot([mahab_full_imagined mahab_full_online mahab_full_batch])
 
 
-X= [ ones(11,1) [1:11]'];
-figure;plot(1:11,mean(mahab_full_imagined),'.','MarkerSize',20);
+X= [ ones(size(mahab_full_imagined,2),1) [1:size(mahab_full_imagined,2)]'];
+figure;plot(1:size(mahab_full_imagined,2),mean(mahab_full_imagined),'.','MarkerSize',20);
 hold on
-plot(1:11,mean(mahab_full_online),'r')
-plot(1:11,mean(mahab_full_batch),'k')
+plot(1:size(mahab_full_imagined,2),mean(mahab_full_online),'r')
+plot(1:size(mahab_full_imagined,2),mean(mahab_full_batch),'k')
 
 % plotting the regression for Mahab distance increases as a function of day
 tmp=[mean(mahab_full_imagined)' mean(mahab_full_online)' mean(mahab_full_batch)'];
 figure;
-xlim([0 12])
+xlim([0 15])
 hold on
 x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 % imag
-plot(1:11,tmp(:,1),'.b','MarkerSize',20)
+plot(1:15,tmp(:,1),'.b','MarkerSize',20)
 y = tmp(:,1);
 [B1,BINT,R,RINT,STATS1] = regress(y,x);
 yhat = x*B1;
-plot(1:11,yhat,'b','LineWidth',1)
+plot(1:15,yhat,'b','LineWidth',1)
 % online
-plot(1:11,tmp(:,2),'.k','MarkerSize',20)
+plot(1:15,tmp(:,2),'.k','MarkerSize',20)
 y = tmp(:,2);
 [B2,BINT,R,RINT,STATS2] = regress(y,x);
 yhat = x*B2;
-plot(1:11,yhat,'k','LineWidth',1)
+plot(1:15,yhat,'k','LineWidth',1)
 % batch
-plot(1:11,tmp(:,3),'.r','MarkerSize',20)
+plot(1:15,tmp(:,3),'.r','MarkerSize',20)
 y = tmp(:,3);
 [B3,BINT,R,RINT,STATS3] = regress(y,x);
 yhat = x*B3;
-plot(1:11,yhat,'r','LineWidth',1)
+plot(1:15,yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
 xticks([1:11])

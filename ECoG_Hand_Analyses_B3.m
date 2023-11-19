@@ -179,14 +179,14 @@ for i=1:length(session_data) % 20230518 has the best hand data performance
     folders = session_data(i).folders(online_idx);
     day_date = session_data(i).Day;
     files=[];
-    for ii=1:length(folders)
+    for ii=6:length(folders)
         folderpath = fullfile(root_path, day_date,'HandOnline',folders{ii},'BCI_Fixed');
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
 
     % get the classification accuracy
-    acc_online = accuracy_online_data_Hand(files,12);
+    [acc_online,acc_online_bin] = accuracy_online_data_Hand(files,12);
     if plot_true
         figure;imagesc(acc_online)
         colormap bone
@@ -207,14 +207,14 @@ for i=1:length(session_data) % 20230518 has the best hand data performance
     folders = session_data(i).folders(batch_idx);
     day_date = session_data(i).Day;
     files=[];
-    for ii=7:9%length(folders)
+    for ii=6:length(folders)
         folderpath = fullfile(root_path, day_date,'HandOnline',folders{ii},'BCI_Fixed');
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
 
     % get the classification accuracy
-    [acc_batch,acc_bin,trial_len] = accuracy_online_data_Hand(files,12);
+    [acc_batch,acc_batch_bin,trial_len] = accuracy_online_data_Hand(files,12);
     if plot_true
         figure;imagesc(acc_batch)
         colormap bone

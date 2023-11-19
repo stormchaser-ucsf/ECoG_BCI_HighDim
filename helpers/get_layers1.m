@@ -5,9 +5,10 @@ function layers = get_layers1(j,input_size)
 % using custom layers
 layers = [ ...
     featureInputLayer(input_size)        
-    fullyConnectedLayer(j)    
-    reluLayer
-    dropoutLayer(0.3)
+    dropoutLayer(0.4)
+    fullyConnectedLayer(j)            
+    leakyReluLayer
+    dropoutLayer(0.4)
     fullyConnectedLayer(7)
     softmaxLayer
     classificationLayer

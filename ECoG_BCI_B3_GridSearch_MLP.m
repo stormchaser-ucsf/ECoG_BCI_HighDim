@@ -10,7 +10,7 @@ addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 load session_data_B3
 addpath 'C:\Users\nikic\Documents\MATLAB'
 condn_data={};
-for i=1:length(session_data)
+for i=1:11%length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
@@ -44,7 +44,7 @@ for i=1:length(session_data)
     condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,1) ];
 
     %%%%%% load batch data
-    folders = session_data(i).folders(online_idx);
+    folders = session_data(i).folders(batch_idx);
     day_date = session_data(i).Day;
     files=[];
     for ii=1:length(folders)
@@ -56,7 +56,7 @@ for i=1:length(session_data)
 end
 
 % make them all into one giant struct
-tmp=cell2mat(condn_data(i));
+tmp=cell2mat(condn_data(1));
 condn_data_overall=tmp;
 for i=2:length(condn_data)
     tmp=cell2mat(condn_data(i));
@@ -170,15 +170,15 @@ for iter=1:5
             end
         end
     end
-    save B3_MLP_NN_Param_Optim cv_acc3 -v7.3
+    save B3_MLP_NN_Param_Optim_V2 cv_acc3 -v7.3
 end
 
 
-% getting decoding accuracies for zero layer
+%% getting decoding accuracies for zero layer
 i3=85;
-load B3_MLP_NN_Param_Optim
+load B3_MLP_NN_Param_Optim_V2
 cv_acc3(i3).layers=[0];
-for iter=1:15
+for iter=1:10
     % split into training and testing trials, 15% test, 15% val, 70% test
     test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
     test_idx=test_idx(:);
@@ -203,7 +203,7 @@ for iter=1:15
     cv_acc3(i3).cv_perf = [ cv_acc3(i3).cv_perf cv_perf];
 end
 
-
+%% PLOTTING RESULTS 
 
 % plotting just mean
 acc=[];acc1=[];
@@ -277,11 +277,11 @@ for i=1:5
 end
 
 
-% having identified the fact that 1 layer is good, now going after the
+%% having identified the fact that 1 layer is good, now going after the
 % number of units, in steps of 10 from 100 to 250
 num_units = [32 64 90:15:250];
 cv_singleLayer={};
-for iter=8:12
+for iter=1:10
     test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
     test_idx=test_idx(:);
     I = ones(length(condn_data_overall),1);
