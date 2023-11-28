@@ -1,63 +1,56 @@
-% getting the temporal data for a RNN/LSTM based decoder
+%% STEP 1: getting the temporal data for a RNN/LSTM based decoder
 
 
 clc;clear
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
 addpath('C:\Users\nikic\Documents\MATLAB')
-
-% for only 6 DoF original:
-%foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
-
-% foldernames = {'20230301','20230302','20230308','20230309','20230315','20230316',...
-%     '20230322','20230323','20230329','20230330','20230405','20230406','20230412',...
-%     '20230419','20230420','20230426'};
-
-foldernames = {'20220929','20220930'};
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
+load session_data_B3
+
 
 imag_files={};
 online_files={};
 k=1;jj=1;
-for i=1:length(foldernames)
-    disp([i/length(foldernames)]);
-    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
-    D=dir(folderpath);
-%     if i==19 % this is 20210917
-%         idx = [1 2 5:8 9:10];
-%         D = D(idx);
-%     elseif i==25
-%         idx=[1:2 4:length(D)];
-%         D=D(idx);
-%     elseif i==29
-%         idx= [1:2 8:9];
-%         D=D(idx);
-%     elseif i==33
-%         idx= [1:2 3:5 7:16];
-%         D=D(idx);
-%     elseif i==55
-%         D=D([1 2 4:end]);
-%     end
-    imag_files_temp=[];
-    online_files_temp=[];
-    for j=3:length(D)
-        filepath=fullfile(folderpath,D(j).name,'Imagined');
-        if exist(filepath)
-            imag_files_temp = [imag_files_temp;findfiles('mat',filepath)'];
-        end
-        filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
-        if exist(filepath1)
-            online_files_temp = [online_files_temp;findfiles('mat',filepath1)'];
-        end
+%day12 onwards is covert mime
+for i=12:length(session_data)
+    disp([i/length(session_data)]);
+
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+    online_idx = [online_idx batch_idx];
+
+    % getting imagined files
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
     end
-    if ~isempty(imag_files_temp)
-        imag_files{k} = imag_files_temp;k=k+1;
+    if ~isempty(files)
+        imag_files{k} = files;k=k+1;
     end
-    if ~isempty(online_files_temp)
-        online_files{jj} = online_files_temp;jj=jj+1;
+
+    % getting online files
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
     end
-    %     imag_files{i} = imag_files_temp;
-    %     online_files{i} = online_files_temp;
+    if ~isempty(files)
+        online_files{jj} = files;jj=jj+1;
+    end
 end
 
 % GETTING DATA FROM IMAGINED CONTROL IN THE ARROW TASK
@@ -87,7 +80,7 @@ for i=1:length(imag_files)
         if file_loaded
             idx0 = find(TrialData.TaskState==2) ;
             idx = find(TrialData.TaskState==3) ;
-            idx=[idx0 idx];
+            idx=[idx0 idx]; % want both as data is segmented 300ms after state 2 start
             raw_data = cell2mat(TrialData.BroadbandData(idx)');
             idx1 = find(TrialData.TaskState==4) ;
             raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
@@ -104,12 +97,12 @@ for i=1:length(imag_files)
                 data_seg = raw_data;
             elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
                 %bins =1:400:s; % originally only for state 3
-                bins = 250:500:s;
-                jitter = round(100*rand(size(bins)));
+                bins = 200:400:s;
+                jitter = round(100*rand(size(bins)));% add 1 here to avoid zero index errors if bins start at 0          
                 bins=bins+jitter;
                 raw_data = [raw_data;raw_data4];
                 for k=1:length(bins)-1
-                    tmp = raw_data(bins(k)+[0:999],:);
+                    tmp = raw_data(bins(k)+[0:799],:);
                     data_seg = cat(2,data_seg,tmp);
                 end
             end
@@ -147,10 +140,9 @@ for i=1:length(imag_files)
 end
 
 
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-save lstm_7DoF_imag_data_with_state2 D1i D2i D3i D4i D5i D6i D7i -v7.3
-
-clearvars -except online_files foldernames files_not_loaded
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+save lstm_7DoF_imag_data_B3_CovertAction D1i D2i D3i D4i D5i D6i D7i -v7.3
+clearvars -except online_files session_data files_not_loaded
 
 % GETTING DATA FROM ONLINE BCI CONTROL IN THE ARROW TASK
 % essentially getting 600ms epochs
@@ -168,6 +160,7 @@ D4f={};
 D5f={};
 D6f={};
 D7f={};
+sizes=[];
 for i=1:length(online_files)
     files = online_files{i};
     disp(i/length(online_files))
@@ -183,22 +176,28 @@ for i=1:length(online_files)
         if file_loaded
             idx0 = find(TrialData.TaskState==2) ;
             idx = find(TrialData.TaskState==3) ;
-            idx=[idx0 idx];
+            idx=[idx0 idx]; % want both as data is segmented 300ms after state 2 start
             raw_data = cell2mat(TrialData.BroadbandData(idx)');
+            raw_data2 = cell2mat(TrialData.BroadbandData(idx0)');
             idx1 = find(TrialData.TaskState==4) ;
             raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
             id = TrialData.TargetID;
             s = size(raw_data,1);
             data_seg={};
-            if s<800 % for really quick decisions just pad data from state 4
-                len = 800-s;
-                tmp = raw_data4(1:len,:);
-                raw_data = [raw_data;tmp];
+            sizes=[sizes s];
+            if s<850 % for really quick decisions just pad data from state 2
+                len = 850-s;
+                %tmp = raw_data4(1:len,:);
+                %raw_data = [raw_data;tmp];                
+                tmp=raw_data2(end-(1000-s-1):end,:);
+                raw_data = [tmp;raw_data];
                 data_seg = raw_data;
-            elseif s>800 && s<1000 % if not so quick, prune to data to 600ms
-                raw_data = raw_data(1:1000,:);
-                data_seg = raw_data;
-            elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
+
+            %elseif s>800 && s<1000 % if not so quick, prune to data to 600ms
+            %    raw_data = raw_data(1:1000,:);
+            %    data_seg = raw_data;
+            %elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
+            else
                 % old for state 3 alone
                 %                 bins =1:400:s;
                 %                 raw_data = [raw_data;raw_data4];
@@ -212,13 +211,13 @@ for i=1:length(online_files)
                 %                 end
 
                 % new for state 2 and 3
-                bins =250:500:s;
-                jitter = round(100*rand(size(bins)));
+                bins = 200:400:s;
+                jitter = round(100*rand(size(bins)));% add 1 here to avoid zero index errors if bins start at 0
                 bins=bins+jitter;
                 raw_data = [raw_data;raw_data4];
                 for k=1:length(bins)-1
                     try
-                        tmp = raw_data(bins(k)+[0:999],:);
+                        tmp = raw_data(bins(k)+[0:799],:);
                     catch
                         tmp=[];
                     end
@@ -259,9 +258,9 @@ for i=1:length(online_files)
 
 end
 
-
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-save lstm_7DoF_online_data_with_state2 D1 D2 D3 D4 D5 D6 D7 -v7.3
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+save lstm_7DoF_online_data_B3_CovertAction D1 D2 D3 D4 D5 D6 D7 -v7.3
+save files_not_loaded_CovertAction files_not_loaded
 
 
 %% BUILDIN THE DECODER USIGN IMAGINED PLUS ONLINE DATA
@@ -271,9 +270,12 @@ clear;clc
 Y=[];
 addpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers')
 condn_data_new=[];jj=1;
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd(root_path)
+load('ECOG_Grid_8596_000067_B3.mat')
+chmap=ecog_grid;
 
-load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20211001\Robot3DArrow\103931\BCI_Fixed\Data0001.mat')
-chmap = TrialData.Params.ChMap;
 
 % low pass filter of raw
 lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
@@ -286,9 +288,6 @@ bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
     'SampleRate',1e3);
 %lpFilt=bpFilt;
 
-% loading chmap file
-load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20210526\Robot3DArrow\112357\Imagined\Data0005.mat')
-chmap = TrialData.Params.ChMap;
 
 % log spaced hg filters
 Params=[];
@@ -312,14 +311,12 @@ for i=1:length(Params.FilterBank),
     Params.FilterBank(i).a = a;
 end
 
-% preallocate
-condn_data_new = zeros(100,256,5e4);
 
-len=1000;
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-load('lstm_7DoF_online_data_with_state2','D1');
-load('lstm_7DoF_imag_data_with_state2','D1i');
-condn_data1 = zeros(len,128,length(D1)+length(D1i));
+len=800;
+cd(root_path)
+load('lstm_7DoF_online_data_B3_CovertAction','D1');
+load('lstm_7DoF_imag_data_B3_CovertAction','D1i');
+condn_data1 = zeros(len,256,length(D1)+length(D1i));
 k=1;
 for i=1:length(D1)
     %disp(k)
@@ -347,16 +344,16 @@ for ii=1:size(condn_data1,3)
 
     tmp = squeeze(condn_data1(:,:,ii));
 
-    tmp = extract_lstm_features(tmp,Params,lpFilt,chmap);
+    tmp = extract_lstm_features_B3(tmp,Params,lpFilt,chmap);
 
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
 end
 
-load('lstm_7DoF_online_data_with_state2','D2');
-load('lstm_7DoF_imag_data_with_state2','D2i');
-condn_data2 = zeros(len,128,length(D2)+length(D2i));
+load('lstm_7DoF_online_data_B3_CovertAction','D2');
+load('lstm_7DoF_imag_data_B3_CovertAction','D2i');
+condn_data2 = zeros(len,256,length(D2)+length(D2i));
 k=1;
 for i=1:length(D2)
     %disp(k)
@@ -384,16 +381,16 @@ for ii=1:size(condn_data2,3)
 
     tmp = squeeze(condn_data2(:,:,ii));
 
-    tmp = extract_lstm_features(tmp,Params,lpFilt,chmap);
+    tmp = extract_lstm_features_B3(tmp,Params,lpFilt,chmap);
 
     % store
     condn_data_new(:,:,jj) = tmp;
     jj=jj+1;
 end
 
-load('lstm_7DoF_online_data_with_state2','D3');
-load('lstm_7DoF_imag_data_with_state2','D3i');
-condn_data3 = zeros(len,128,length(D3)+length(D3i));
+load('lstm_7DoF_online_data_B3_CovertAction','D3');
+load('lstm_7DoF_imag_data_B3_CovertAction','D3i');
+condn_data3 = zeros(len,256,length(D3)+length(D3i));
 k=1;
 for i=1:length(D3)
     %disp(k)
@@ -421,7 +418,7 @@ for ii=1:size(condn_data3,3)
 
     tmp = squeeze(condn_data3(:,:,ii));
 
-    tmp = extract_lstm_features(tmp,Params,lpFilt,chmap);
+    tmp = extract_lstm_features_B3(tmp,Params,lpFilt,chmap);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -430,9 +427,9 @@ end
 
 
 
-load('lstm_7DoF_online_data_with_state2','D4');
-load('lstm_7DoF_imag_data_with_state2','D4i');
-condn_data4 = zeros(len,128,length(D4)+length(D4i));
+load('lstm_7DoF_online_data_B3_CovertAction','D4');
+load('lstm_7DoF_imag_data_B3_CovertAction','D4i');
+condn_data4 = zeros(len,256,length(D4)+length(D4i));
 k=1;
 for i=1:length(D4)
     %disp(k)
@@ -460,7 +457,7 @@ for ii=1:size(condn_data4,3)
 
     tmp = squeeze(condn_data4(:,:,ii));
 
-    tmp = extract_lstm_features(tmp,Params,lpFilt,chmap);
+    tmp = extract_lstm_features_B3(tmp,Params,lpFilt,chmap);
 
 
     % store
@@ -469,9 +466,9 @@ for ii=1:size(condn_data4,3)
 end
 
 
-load('lstm_7DoF_online_data_with_state2','D5');
-load('lstm_7DoF_imag_data_with_state2','D5i');
-condn_data5 = zeros(len,128,length(D5)+length(D5i));
+load('lstm_7DoF_online_data_B3_CovertAction','D5');
+load('lstm_7DoF_imag_data_B3_CovertAction','D5i');
+condn_data5 = zeros(len,256,length(D5)+length(D5i));
 k=1;
 for i=1:length(D5)
     %disp(k)
@@ -500,7 +497,7 @@ for ii=1:size(condn_data5,3)
     tmp = squeeze(condn_data5(:,:,ii));
 
 
-    tmp = extract_lstm_features(tmp,Params,lpFilt,chmap);
+    tmp = extract_lstm_features_B3(tmp,Params,lpFilt,chmap);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -509,9 +506,9 @@ end
 
 
 
-load('lstm_7DoF_online_data_with_state2','D6');
-load('lstm_7DoF_imag_data_with_state2','D6i');
-condn_data6 = zeros(len,128,length(D6)+length(D6i));
+load('lstm_7DoF_online_data_B3_CovertAction','D6');
+load('lstm_7DoF_imag_data_B3_CovertAction','D6i');
+condn_data6 = zeros(len,256,length(D6)+length(D6i));
 k=1;
 for i=1:length(D6)
     %disp(k)
@@ -539,7 +536,7 @@ for ii=1:size(condn_data6,3)
 
     tmp = squeeze(condn_data6(:,:,ii));
 
-    tmp = extract_lstm_features(tmp,Params,lpFilt,chmap);
+    tmp = extract_lstm_features_B3(tmp,Params,lpFilt,chmap);
 
     % store
     condn_data_new(:,:,jj) = tmp;
@@ -548,9 +545,9 @@ end
 
 
 
-load('lstm_7DoF_online_data_with_state2','D7');
-load('lstm_7DoF_imag_data_with_state2','D7i');
-condn_data7 = zeros(len,128,length(D7)+length(D7i));
+load('lstm_7DoF_online_data_B3_CovertAction','D7');
+load('lstm_7DoF_imag_data_B3_CovertAction','D7i');
+condn_data7 = zeros(len,256,length(D7)+length(D7i));
 k=1;
 for i=1:length(D7)
     %disp(k)
@@ -578,7 +575,7 @@ for ii=1:size(condn_data7,3)
 
     tmp = squeeze(condn_data7(:,:,ii));
 
-    tmp = extract_lstm_features(tmp,Params,lpFilt,chmap);
+    tmp = extract_lstm_features_B3(tmp,Params,lpFilt,chmap);
 
 
     % store
@@ -586,56 +583,50 @@ for ii=1:size(condn_data7,3)
     jj=jj+1;
 end
 
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-save decimated_lstm_data_below25Hz condn_data_new Y -v7.3
-%save downsampled_lstm_data_below25Hz condn_data_new Y -v7.3
-%save decimated_lstm_data_below25Hz_WithState2_with_lg condn_data_new Y -v7.3
-%load decimated_lstm_data_below25Hz_WithState2
-
-% set aside training and testing data in a cell format
-%clear condn_data  condn_data7
+% save the data
+save decimated_lstm_data_below25Hz_B3 condn_data_new Y -v7.3
 
 % get rid of artifacts, any channel with activity >15SD, set it to near zero
 for i=1:size(condn_data_new,3)
-    xx=squeeze(condn_data_new(:,1:128,i));
+    xx=squeeze(condn_data_new(:,1:253,i));
     I = abs(xx)>15;
     I = sum(I);
     [aa bb]=find(I>0);
-    xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
-    condn_data_new(:,1:128,i)=xx;
+    xx(:,bb) = 1e-15*randn(size(xx(:,bb)));
+    condn_data_new(:,1:253,i)=xx;
 
-    xx=squeeze(condn_data_new(:,129:256,i));
+    xx=squeeze(condn_data_new(:,254:506,i));
     I = abs(xx)>15;
     I = sum(I);
     [aa bb]=find(I>0);
-    xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
-    condn_data_new(:,129:256,i)=xx;
-
-    %     xx=squeeze(condn_data_new(:,257:384,i));
-    %     I = abs(xx)>15;
-    %     I = sum(I);
-    %     [aa bb]=find(I>0);
-    %     xx(:,bb) = 1e-5*randn(size(xx(:,bb)));
-    %     condn_data_new(:,257:384,i)=xx;
+    xx(:,bb) = 1e-15*randn(size(xx(:,bb)));
+    condn_data_new(:,254:506,i)=xx; 
 end
 
 % normalize the data to be between 0 and 1
 for i=1:size(condn_data_new,3)
     tmp=squeeze(condn_data_new(:,:,i));
-    tmp1=tmp(:,1:128);
+    tmp1=tmp(:,1:253);
     tmp1 = (tmp1 - min(tmp1(:)))/(max(tmp1(:))-min(tmp1(:)));
 
-    tmp2=tmp(:,129:256);
-    tmp2 = (tmp2 - min(tmp2(:)))/(max(tmp2(:))-min(tmp2(:)));
-
-    %     tmp3=tmp(:,257:384);
-    %     tmp3 = (tmp3 - min(tmp3(:)))/(max(tmp3(:))-min(tmp3(:)));
-
-    %tmp = [tmp1 tmp2 tmp3];
+    tmp2=tmp(:,254:506);
+    tmp2 = (tmp2 - min(tmp2(:)))/(max(tmp2(:))-min(tmp2(:)));   
+    
     tmp = [tmp1 tmp2 ];
     condn_data_new(:,:,i)=tmp;
 end
 
+
+% normalize the data to 2-norm
+for i=1:size(condn_data_new,3)
+    tmp=squeeze(condn_data_new(:,:,i));
+    tmp1=tmp(:,1:253);
+    tmp1=tmp1./norm(tmp1(:));
+    tmp2=tmp(:,254:506);
+    tmp2=tmp2./norm(tmp2(:));
+    tmp = [tmp1 tmp2];    
+    condn_data_new(:,:,i)=tmp;
+end
 
 % plot the mean of random samples in lfo range
 mean_val=[];
@@ -647,50 +638,6 @@ for i = 1:size(condn_data_new,3)
 end
 figure;hist(mean_val)
 
-%
-% % plotting for presentation
-% tmp=squeeze(condn_data_new(:,:,1245));
-% figure;
-% imagesc(tmp(:,1:128)')
-% caxis([0 .5])
-% figure;%hg
-% offset = 0:.1:127*.1;
-% tmp1=tmp(:,1:128)+offset;
-% tt=(1:80)*(1/100);
-% plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
-% axis tight
-% set(gcf,'Color','w')
-% set(gca,'FontSize',14)
-% xlabel('Time in sec')
-% ylabel('hG norm')
-% box off
-% yticks ''
-%
-% figure;%lmp
-% offset = 0:.2:127*.2;
-% tmp1=tmp(:,129:256)+offset;
-% tt=(1:80)*(1/100);
-% plot(tt,tmp1(:,1:15),'k','LineWidth',1,'Color',[.2 .3 .9])
-% axis tight
-% set(gcf,'Color','w')
-% set(gca,'FontSize',14)
-% xlabel('Time in sec')
-% ylabel('LPF norm')
-% box off
-% yticks ''
-
-
-
-% normalize the data to 2-norm
-for i=1:size(condn_data_new,3)
-    tmp=squeeze(condn_data_new(:,:,i));
-    tmp1=tmp(:,1:128);
-    tmp1=tmp1./norm(tmp1(:));
-    tmp2=tmp(:,129:256);
-    tmp2=tmp2./norm(tmp2(:));
-    tmp = [tmp1 tmp2];    
-    condn_data_new(:,:,i)=tmp;
-end
 
 % a random split into trainin and testing
 idx = randperm(size(condn_data_new,3),round(0.85*size(condn_data_new,3)));
@@ -712,46 +659,6 @@ for i=1:size(condn_data_new,3)
     end
 end
 
-% 
-% % splitting training into balanced classes and throwing the rest into
-% % testing
-% indices={};
-% for i=1:length(unique(Y))
-%     idx = find(Y==i);
-%     indices(i).idx=idx;
-%     indices(i).len = length(idx);
-% end
-% %min_length = prop*min([indices.len]);
-% min_length = 5600;
-% idx_train=[];
-% idx_test=[];
-% for i=1:length(unique(Y))
-%     idx = indices(i).idx;
-%     a = randperm(length(idx),min_length);
-%     b = ones(size(idx));
-%     b(a)=0;
-%     b=(find(b==1))';
-% 
-%     idx_train = [idx_train; idx((a))];
-%     idx_test = [idx_test; idx((b))];
-% end
-% length(idx_train)/(length(idx_train)+length(idx_test))
-% 
-% XTrain={};
-% YTrain=[];
-% for i=1:length(idx_train)
-%     tmp = squeeze(condn_data_new(:,:,idx_train(i)));
-%     XTrain = cat(1,XTrain,tmp');
-%     YTrain = [YTrain Y(idx_train(i))];
-% end
-% 
-% XTest={};
-% YTest=[];
-% for i=1:length(idx_test)
-%     tmp = squeeze(condn_data_new(:,:,idx_test(i)));
-%     XTest = cat(1,XTest,tmp');
-%     YTest = [YTest Y(idx_test(i))];
-% end
 
 
 % shuffle
@@ -762,8 +669,7 @@ YTrain = YTrain(idx);
 YTrain = categorical(YTrain');
 YTest = categorical(YTest');
 
-% data augmentation: introduce random noise plus some mean shift to each
-% channel for about 50k samples
+% data augmentation: introduce random noise plus mean shift to channels
 aug_idx = randperm(length(XTrain));
 for i=1:length(aug_idx)
     disp(i)
@@ -771,7 +677,7 @@ for i=1:length(aug_idx)
     t_id=categorical(YTrain(aug_idx(i)));
 
     % hG
-    tmp1 = tmp(:,1:128);
+    tmp1 = tmp(:,1:253);
     % add variable noise
     %var_noise=randsample(400:1200,size(tmp1,2))/1e3;
     var_noise=0.7;
@@ -786,11 +692,12 @@ for i=1:length(aug_idx)
     flip_sign(flip_sign<=0.5)=-1;
     add_mean=add_mean.*flip_sign+m;
     tmp1m = tmp1n + add_mean;
+    tmp1m=tmp1m./norm(tmp1m(:));
     %tmp1m = (tmp1m-min(tmp1m(:)))/(max(tmp1m(:))-min(tmp1m(:)));
     %  figure;plot(tmp1(:,3));hold on;plot(tmp1m(:,3))
 
     % lmp
-    tmp2 = tmp(:,129:256);
+    tmp2 = tmp(:,254:506);
     % add variable noise
     var_noise=0.7;
     %var_noise=randsample(400:1200,size(tmp2,2))/1e3;
@@ -805,22 +712,9 @@ for i=1:length(aug_idx)
     flip_sign(flip_sign<=0.5)=-1;
     add_mean=add_mean.*flip_sign+m;
     tmp2m = tmp2n + add_mean;
+    tmp2m=tmp2m./norm(tmp2m(:));
     % tmp2m = (tmp2m-min(tmp2m(:)))/(max(tmp2m(:))-min(tmp2m(:)));
 
-    %     %lg
-    %     tmp3 = tmp(:,257:384);
-    %     % add noise var
-    %     add_noise=randn(size(tmp3)).*std(tmp3).*.795;
-    %     tmp3n = tmp3 + add_noise;
-    %     % add mean offset by 20%
-    %     m=mean(tmp3);
-    %     add_mean =  m*.2;
-    %     flip_sign = rand(size(add_mean));
-    %     flip_sign(flip_sign>0.5)=1;
-    %     flip_sign(flip_sign<=0.5)=-1;
-    %     add_mean=add_mean.*flip_sign+m;
-    %     tmp3m = tmp3n + add_mean;
-    %     tmp3m = (tmp3m-min(tmp3m(:)))/(max(tmp3m(:))-min(tmp3m(:)));
 
     %tmp=[tmp1m tmp2m tmp3m]';
     tmp=[tmp1m tmp2m]';
@@ -881,9 +775,9 @@ end
 %clear condn_data_new
 
 % specify lstm structure
-inputSize = 256;
+inputSize = 506;
 numHiddenUnits1 = [  90 120 250 128 325];
-drop1 = [ 0.2 0.2 0.3  0.3 0.4];
+drop1 = [ 0.2 0.2 0.4  0.3 0.4];
 numClasses = 7;
 for i=3%1:length(drop1)
     numHiddenUnits=numHiddenUnits1(i);
@@ -927,18 +821,9 @@ for i=3%1:length(drop1)
     % train the model
     net = trainNetwork(XTrain,YTrain,layers,options);
 end
-%
-% net_800 =net;
-% save net_800 net_800
 
-%net_bilstm_lg = net;
-%save net_bilstm_lg net_bilstm_lg
-
-%net_bilstmhg=net; % this has more noise variance in the data augmentation
-%save net_bilstmhg net_bilstmhg
-
-net_bilstm_20220929 = net;
-save net_bilstm_20220929 net_bilstm_20220929
+net_bilstm_B3_CovertAction = net;
+save net_bilstm_B3_CovertAction net_bilstm_B3_CovertAction
 
 net1=net;
 

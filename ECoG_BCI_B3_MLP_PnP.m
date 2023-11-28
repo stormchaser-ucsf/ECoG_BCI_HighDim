@@ -79,8 +79,9 @@ train_idx = find(I~=0);train_idx=train_idx(:);
 options.Plots='training-progress';
 
 % build a MLP decoder, single hidden layer and 120 units
-layers = get_layers1(120,759);
-%layers = get_layers2(120,120,759);
+%layers = get_layers1(120,size(XTrain,2));
+%layers = get_layers2(120,64,759);
+layers = get_layers(120,64,64,759);
 
 % train the MLP
 net = trainNetwork(XTrain,YTrain,layers,options);
@@ -89,13 +90,15 @@ net = trainNetwork(XTrain,YTrain,layers,options);
 net_mlp_v0 = net;
 save net_mlp_v0 net_mlp_v0
 
+% save data temporarily
+condn_data_first11=condn_data;
 
 %% batch update with more recent data collected on covert miming
 
 
 condn_data={};
 load('ECOG_Grid_8596_000067_B3.mat')
-for i=12:18%all the original data without covert mime
+for i=12:19%all the original data without covert mime
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
@@ -158,7 +161,7 @@ train_idx = find(I~=0);train_idx=train_idx(:);
 
 % training options for NN MLP
 [options,XTrain,YTrain] = ...
-    get_options(condn_data_overall,test_idx,train_idx,1e-4);
+    get_options(condn_data_overall,test_idx,train_idx,7.5e-4);
 options.Plots='training-progress';
 
 % batch update the MLP
@@ -167,12 +170,15 @@ load net_mlp_v0
 layers = net_mlp_v0.Layers;
 net_mlp_v0 = trainNetwork(XTrain,YTrain,layers,options);
 
+% net_PnP = net_mlp_v0;
+% save net_PnP net_PnP
 
 %% test performance on held out days
 
 
 condn_data={};
-for i=19%all the original data without covert mime
+load('ECOG_Grid_8596_000067_B3.mat')
+for i=20%all the original data without covert mime
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
@@ -231,9 +237,13 @@ for i=2:length(condn_data)
 end
 test_idx=1:length(condn_data_overall);
 [cv_perf,conf_matrix] = test_network(net_mlp_v0,condn_data_overall,test_idx);
-aa=mean([diag(acc_batch);diag(acc_online)]);
+%[cv_perf,conf_matrix] = test_network(net_PnP,condn_data_overall,test_idx);
+aa=nanmean([diag(acc_batch);diag(acc_online)]);
 
 disp([aa cv_perf])
+
+figure;imagesc(conf_matrix)
+
 
 
 %% GETTING BIN LEVEL DECODING PERFORMANCE FOR ALL DAYS WITH DAILY MLP

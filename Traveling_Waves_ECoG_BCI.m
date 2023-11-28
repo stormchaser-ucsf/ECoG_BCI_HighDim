@@ -201,6 +201,46 @@ for i=1:2:size(raw_data,1)
 end
 
 
+%% TRAVELING WAVES FOR B3
+
+clc;clear;
+close all
+
+load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\20231122\Robot3DArrow\144831\BCI_Fixed\Data0007.mat')
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data_B3
+addpath 'C:\Users\nikic\Documents\MATLAB'
+load('ECOG_Grid_8596_000067_B3.mat')
+
+raw_data = cell2mat(TrialData.BroadbandData');
+
+bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
+         'HalfPowerFrequency1',8,'HalfPowerFrequency2',10, ...
+         'SampleRate',1e3);
+raw_data = filtfilt(bpFilt,raw_data);
+chmap=ecog_grid';
+TrialData.TaskState
+figure;
+for i=1:1:size(raw_data,1)
+    tmp=raw_data(i,:);
+    imagesc(tmp(chmap))        
+    colormap bone        
+    axis off
+    %caxis([min(raw_data(:)) max(raw_data(:))])
+    %colorbar
+    textboxHandle = uicontrol('Style', 'text', 'Position', [0, 0, 200, 30]);
+    newText = sprintf('Iteration: %d', ceil( (i-200)/200 +1));
+    set(textboxHandle, 'String', newText);
+    pause(0.001)    
+end
+
+
+
+
+
 
 
 

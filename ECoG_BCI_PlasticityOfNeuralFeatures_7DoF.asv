@@ -7529,7 +7529,7 @@ for i=1:length(foldernames)
             files = [files;findfiles('mat',filepath)'];
             folders=[folders;filepath];
         end  
-        
+    end
         if length(files)>0
             [b,a,t,T,ov_acc] = compute_bitrate(files,7);
             %[b,a,t,T] = compute_bitrate_constTime(files,7);

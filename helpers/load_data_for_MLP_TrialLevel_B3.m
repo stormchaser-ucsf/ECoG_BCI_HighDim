@@ -26,11 +26,13 @@ for ii=1:length(files)
 
 
         % get delta, beta and hG removing bad channels
-        temp = temp([257:512 1025:1280 1537:1792],:);
+        temp = temp([257:512 1025:1280 1537:1792],:); %delta, beta, hG
+        %temp = temp([1537:1792],:);% only hG
         bad_ch = [108 113 118];
         good_ch = ones(size(temp,1),1);
         for iii=1:length(bad_ch)
-            bad_ch_tmp = bad_ch(iii)*[1 2 3];
+            %bad_ch_tmp = bad_ch(iii)*[1 2 3];
+            bad_ch_tmp = bad_ch(iii)+(256*[0 1 2]);
             good_ch(bad_ch_tmp)=0;
         end
         temp = temp(logical(good_ch),:);

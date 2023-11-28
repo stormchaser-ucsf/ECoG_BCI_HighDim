@@ -12,7 +12,7 @@ for i=1:length(files)
 
     if file_loaded
         out = TrialData.ClickerState;
-        out1 = TrialData.FilteredClickerState;
+        out1 = TrialData.FilteredClickerState;        
         tid = TrialData.TargetID;
         decodes=[];
         for ii=1:7
