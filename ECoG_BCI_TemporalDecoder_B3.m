@@ -14,7 +14,7 @@ imag_files={};
 online_files={};
 k=1;jj=1;
 %day12 onwards is covert mime
-for i=12:length(session_data)
+for i=12:length(session_data)-1
     disp([i/length(session_data)]);
 
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -97,12 +97,12 @@ for i=1:length(imag_files)
                 data_seg = raw_data;
             elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
                 %bins =1:400:s; % originally only for state 3
-                bins = 200:400:s;
+                bins = 250:500:s;
                 jitter = round(100*rand(size(bins)));% add 1 here to avoid zero index errors if bins start at 0          
                 bins=bins+jitter;
                 raw_data = [raw_data;raw_data4];
                 for k=1:length(bins)-1
-                    tmp = raw_data(bins(k)+[0:799],:);
+                    tmp = raw_data(bins(k)+[0:999],:);
                     data_seg = cat(2,data_seg,tmp);
                 end
             end
@@ -142,6 +142,7 @@ end
 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
 save lstm_7DoF_imag_data_B3_CovertAction D1i D2i D3i D4i D5i D6i D7i -v7.3
+%save lstm_7DoF_imag_data_B3_First11Days D1i D2i D3i D4i D5i D6i D7i -v7.3
 clearvars -except online_files session_data files_not_loaded
 
 % GETTING DATA FROM ONLINE BCI CONTROL IN THE ARROW TASK
@@ -211,13 +212,13 @@ for i=1:length(online_files)
                 %                 end
 
                 % new for state 2 and 3
-                bins = 200:400:s;
+                bins = 250:500:s;
                 jitter = round(100*rand(size(bins)));% add 1 here to avoid zero index errors if bins start at 0
                 bins=bins+jitter;
                 raw_data = [raw_data;raw_data4];
                 for k=1:length(bins)-1
                     try
-                        tmp = raw_data(bins(k)+[0:799],:);
+                        tmp = raw_data(bins(k)+[0:999],:);
                     catch
                         tmp=[];
                     end
@@ -260,6 +261,7 @@ end
 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
 save lstm_7DoF_online_data_B3_CovertAction D1 D2 D3 D4 D5 D6 D7 -v7.3
+%save lstm_7DoF_online_data_B3_First11Days D1 D2 D3 D4 D5 D6 D7 -v7.3
 save files_not_loaded_CovertAction files_not_loaded
 
 
@@ -312,7 +314,7 @@ for i=1:length(Params.FilterBank),
 end
 
 
-len=800;
+len=1000;
 cd(root_path)
 load('lstm_7DoF_online_data_B3_CovertAction','D1');
 load('lstm_7DoF_imag_data_B3_CovertAction','D1i');
@@ -584,7 +586,7 @@ for ii=1:size(condn_data7,3)
 end
 
 % save the data
-save decimated_lstm_data_below25Hz_B3 condn_data_new Y -v7.3
+save decimated_lstm_data_below25Hz_B3_CovertAction condn_data_new Y -v7.3
 
 % get rid of artifacts, any channel with activity >15SD, set it to near zero
 for i=1:size(condn_data_new,3)
@@ -723,6 +725,9 @@ for i=1:length(aug_idx)
     YTrain = cat(1,YTrain,t_id);
 end
 
+
+
+
 %
 % % plotting examples
 % tmp=tmp1;
@@ -777,7 +782,7 @@ end
 % specify lstm structure
 inputSize = 506;
 numHiddenUnits1 = [  90 120 250 128 325];
-drop1 = [ 0.2 0.2 0.4  0.3 0.4];
+drop1 = [ 0.2 0.4 0.4  0.3 0.4];
 numClasses = 7;
 for i=3%1:length(drop1)
     numHiddenUnits=numHiddenUnits1(i);
@@ -786,13 +791,10 @@ for i=3%1:length(drop1)
         sequenceInputLayer(inputSize)
         bilstmLayer(numHiddenUnits,'OutputMode','sequence','Name','lstm_1')
         dropoutLayer(drop)
-        layerNormalizationLayer
-        gruLayer(numHiddenUnits/2,'OutputMode','last','Name','lstm_2')
+        layerNormalizationLayer        
+        gruLayer(numHiddenUnits,'OutputMode','last','Name','lstm_2')        
         dropoutLayer(drop)
-        %layerNormalizationLayer
-        fullyConnectedLayer(25)
-        leakyReluLayer
-        batchNormalizationLayer
+        layerNormalizationLayer
         fullyConnectedLayer(numClasses)
         softmaxLayer
         classificationLayer];
@@ -822,8 +824,8 @@ for i=3%1:length(drop1)
     net = trainNetwork(XTrain,YTrain,layers,options);
 end
 
-net_bilstm_B3_CovertAction = net;
-save net_bilstm_B3_CovertAction net_bilstm_B3_CovertAction
+net_bilstm_B3_First11Days = net;
+save net_bilstm_B3_First11Days net_bilstm_B3_First11Days
 
 net1=net;
 
@@ -864,25 +866,27 @@ figure;imagesc(acc)
 figure;stem(diag(acc))
 
 
-%% TESTING THE DATA ON ONLINE DATA
+%% TESTING THE DATA ON ONLINE DATA, HELD OUT DAY
 
 clear;clc
 
-%filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220304\RealRobotBatch';
 acc_mlp_days=[];
 acc_days=[];
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 addpath('C:\Users\nikic\Documents\MATLAB')
-
-root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+addpath('C:\Users\nikic\Documents\MATLAB')
 cd(root_path)
-%foldernames = {'20220803','20220810','20220812'};
-foldernames = {'20230419'};
+load('ECOG_Grid_8596_000067_B3.mat')
+chmap=ecog_grid;
+load session_data_B3
+
+foldernames = {'20231127'};
 
 
 % load the lstm 
-load net_bilstm_20220824
-net_bilstm = net_bilstm_20220824;
+load net_bilstm_B3_First11Days
+net_bilstm = net_bilstm_B3_First11Days;
 
 
 
@@ -916,7 +920,7 @@ for i=1:length(foldernames)
     disp(i)
     filepath = fullfile(root_path,foldernames{i},'Robot3DArrow');
     [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
-        =get_lstm_performance(filepath,net_bilstm,Params,lpFilt);
+        = get_lstm_performance_B3(filepath,net_bilstm,Params,lpFilt,7);
 
     acc_days = [acc_days diag(acc_lstm_sample)];
     acc_mlp_days = [acc_mlp_days diag(acc_mlp_sample)];
