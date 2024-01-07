@@ -3828,6 +3828,61 @@ session_data(k).folders = {'142420','142957','143245','152030',...
 session_data(k).folder_type={'B','B','B','B','B','B'};
 session_data(k).AM_PM = {'am','am','am','am','am','am'};
 
+%day23 PNP CONTROL Day 3
+k=23;
+session_data(k).Day = '20231129';
+session_data(k).folders = {'143141','143636','143936'};
+session_data(k).folder_type={'B','B','B'};
+session_data(k).AM_PM = {'am','am','am'};
+
+%day24 PNP CONTROL Day 4
+k=24;
+session_data(k).Day = '20231201';
+session_data(k).folders = {'142050','142505','142641','142920'};
+session_data(k).folder_type={'B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am'};
+
+%day25 PNP CONTROL Day 5
+k=25;
+session_data(k).Day = '20231207';
+session_data(k).folders = {'154441'};
+session_data(k).folder_type={'B'};
+session_data(k).AM_PM = {'am'};
+
+%day26 PNP CONTROL Day 6
+k=26;
+session_data(k).Day = '20231210';
+session_data(k).folders = {'153818','154259','154654','154930','155159'};
+session_data(k).folder_type={'B','B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am'};
+
+%day27 PNP CONTROL Day 7
+k=27;
+session_data(k).Day = '20231213';
+session_data(k).folders = {'144936','145457','145726'};
+session_data(k).folder_type={'B','B','B'};
+session_data(k).AM_PM = {'am','am','am'};
+
+%day28 PNP CONTROL Day 8
+k=28;
+session_data(k).Day = '20231215';
+session_data(k).folders = {'143903','144741','145028'};
+session_data(k).folder_type={'B','B','B'};
+session_data(k).AM_PM = {'am','am','am'};
+
+%day29 PNP CONTROL Day 9
+k=29;
+session_data(k).Day = '20231220';
+session_data(k).folders = {'143326','143844','144121'};
+session_data(k).folder_type={'B','B','B'};
+session_data(k).AM_PM = {'am','am','am'};
+
+%day30 PNP CONTROL Day 10
+k=30;
+session_data(k).Day = '20231228';
+session_data(k).folders = {'132651','133809','134328','134839','135205'};
+session_data(k).folder_type={'B','B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am'};
 
 save session_data_B3 session_data -v7.3
 
@@ -4798,7 +4853,7 @@ acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
 iterations=10;
-plot_true=false;
+plot_true=true;
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
@@ -4879,7 +4934,7 @@ for i=1:length(session_data)
     end
 
     % get the classification accuracy
-    [acc_batch,acc_batch_bin] = accuracy_online_data(files);
+    [acc_batch,acc_batch_bin] = accuracy_online_data_withNull(files);
     if plot_true
         figure;imagesc(acc_batch)
         colormap bone
@@ -7499,14 +7554,18 @@ grid on
 %% (MAIN) block by block bit rate computation for B3
 
 clc;clear
-close all
+
 
 
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 addpath 'C:\Users\nikic\Documents\MATLAB'
 
-foldernames = {'20231122','20231127'};
+% take a call to whether include 20231120 -> it didnt have norm 1 durng
+% online control 
+foldernames = {'20231120','20231122','20231127','20231129','20231201',...
+    '20231207','20231210','20231213','20231215','20231218','20231220',...
+    '20231228','20231229'};
 
 
 cd(root_path)
@@ -7528,11 +7587,71 @@ for i=1:length(foldernames)
             filepath
             files = [files;findfiles('mat',filepath)'];
             folders=[folders;filepath];
-        end  
-        
+        end
+
+        % removing bad trials
+        if i==2 && j==4 %20231122, 144831
+            good_files = ones(length(files),1);
+            good_files([1])=0;
+            files=files(logical(good_files));
+        end
+
+        if i==2 && j==8 %20231122, 153225
+            good_files = ones(length(files),1);
+            good_files([15])=0;
+            files=files(logical(good_files));
+        end
+
+
+        if i==4 && j==3
+            good_files = ones(length(files),1);
+            good_files([1])=0;
+            files=files(logical(good_files));
+        end
+
+
+        if i==5 && j==6
+            good_files = ones(length(files),1);
+            good_files([12 13])=0;
+            files=files(logical(good_files));
+        end
+
+        if i==8 && j==5
+            files=[];
+        end
+
+        if i==9 && j~=3
+            files=[];
+        end
+
+        if i==10 && j<5
+            files=[];
+        end
+
+        if i==11 && j==3 %20231220
+            good_files = ones(length(files),1);
+            good_files([12 ])=0;
+            files=files(logical(good_files));
+        end
+
+        if i==12 && j<5 %20231228
+            files=[];
+        end
+
+        if i==13 && (j==4 || j==5) %20231229
+            files=[];
+        end
+
+        if i==13 && (j==6) %20231229
+            good_files = ones(length(files),1);
+            good_files([6])=0;
+            files=files(logical(good_files));
+        end
+
         if length(files)>0
-            [b,a,t,T,ov_acc] = compute_bitrate(files,7);
-            %[b,a,t,T] = compute_bitrate_constTime(files,7);
+            [b,a,t,T,ov_acc] = compute_bitrate(files,7); % just compute as is
+            %[b,a,t,T] = compute_bitrate_constTime(files,7); %overall time
+            %[b,a,t,T] = compute_bitrate_badCh(files,7,net); %remove bad channels and simulate 
             conf_matrix_overall = cat(3,conf_matrix_overall,T);
             br = [br b];
             acc = [acc mean(a)];
@@ -7554,12 +7673,8 @@ addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
 figure;hold on
 br=[];
 brh=[];
-%cmap = brewermap(11,'blues');
-%cmap=flipud(cmap);
-%cmap=cmap(1:length(br_across_days),:);
-%cmap=flipud(cmap);
-cmap = turbo(7);%turbo(length(br_across_days));
-for i=1:7%length(br_across_days)
+cmap = turbo(length(br_across_days));
+for i=1:length(br_across_days)
     tmp = br_across_days{i};
     brh = [brh tmp];
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
@@ -7567,7 +7682,7 @@ for i=1:7%length(br_across_days)
     br(i) = median(tmp);
 end
 plot(br(1:end),'k','LineWidth',2)
-days={'1','5','12','14','19','21','28','32','35','40','42'};
+days={'1','3','8','10','12','18','21','24','26','29','31','39','40'};
 xticks(1:length(br))
 set(gca,'XTickLabel',days)
 set(gcf,'Color','w')
@@ -7576,8 +7691,9 @@ xlabel('Days - PnP')
 ylabel('BitRate')
 set(gca,'LineWidth',1)
 %set(gca,'Color',[.85 .85 .85])
-xlim([0 7.5])
-ylim([0 3.5])
+xlim([0 length(br_across_days)+0.5])
+ylim([0 4])
+yticks([0:.5:4])
 %
 
 figure
@@ -7589,14 +7705,14 @@ ylabel('Effective bit rate')
 set(gca,'FontSize',12)
 box off
 xlim([.75 1.25])
-ylim([0 3.5])
-yticks([0:.5:3.5])
+ylim([0 4])
+yticks([0:.5:4])
 set(gca,'LineWidth',1,'TickLength',[0.025 0.025]);
 
 figure;hold on
 acc=[];
 acch=[];
-for i=1:7%length(acc_days)
+for i=1:length(acc_days)
     tmp  = acc_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
@@ -7612,7 +7728,7 @@ set(gca,'FontSize',12)
 xlabel('Days - PnP')
 ylabel('Decoder Accuracy')
 set(gca,'LineWidth',1)
-xlim([0.5 7.5])
+xlim([0 length(br_across_days)+0.5])
 h=hline(1/7);
 set(h,'LineWidth',2)
 yticks([0:.2:1])
@@ -7620,7 +7736,7 @@ yticks([0:.2:1])
 figure;hold on
 t2t=[];
 t2th=[];
-for i=1:7%length(time2target_days)
+for i=1:length(time2target_days)
     tmp  = time2target_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
@@ -7636,7 +7752,7 @@ set(gca,'FontSize',12)
 xlabel('Days - PnP')
 ylabel('Mean time to Target (s)')
 set(gca,'LineWidth',1)
-xlim([0.5 7.5])
+xlim([0 length(br_across_days)+0.5])
 yticks([0:.5:3])
 
 figure;hist(acch,10)

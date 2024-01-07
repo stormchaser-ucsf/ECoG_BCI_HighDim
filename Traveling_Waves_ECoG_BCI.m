@@ -38,7 +38,7 @@ for j=3:length(D)
 end
 
 bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
-    'HalfPowerFrequency1',16,'HalfPowerFrequency2',26, ...
+    'HalfPowerFrequency1',4,'HalfPowerFrequency2',8, ...
     'SampleRate',1e3);
 bpFilt2 = designfilt('bandpassiir','FilterOrder',4, ...
     'HalfPowerFrequency1',70,'HalfPowerFrequency2',150, ...
@@ -52,6 +52,7 @@ for i=1:length(files)
     raw_data = cell2mat(raw_data');
     chmap = TrialData.Params.ChMap;
     raw_data = filtfilt(bpFilt,raw_data);
+    raw_data = abs(hilbert(raw_data));
     %raw_data = abs(hilbert(filtfilt(bpFilt2,raw_data)));
     %raw_data = filtfilt(bpFilt,raw_data);
     task_state = TrialData.TaskState;
@@ -91,7 +92,7 @@ for i=1:length(files)
     pow_stat3=[pow_stat3;P2x];
 
 
-    %
+    % traveling wave movie
     figure;
     for j=1:size(raw_data,1)
         tmp=raw_data(j,:);
@@ -206,7 +207,7 @@ end
 clc;clear;
 close all
 
-load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\20231122\Robot3DArrow\144831\BCI_Fixed\Data0007.mat')
+load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\20231122\Robot3DArrow\144831\BCI_Fixed\Data0011.mat')
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
@@ -218,11 +219,13 @@ load('ECOG_Grid_8596_000067_B3.mat')
 raw_data = cell2mat(TrialData.BroadbandData');
 
 bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
-         'HalfPowerFrequency1',8,'HalfPowerFrequency2',10, ...
+         'HalfPowerFrequency1',4,'HalfPowerFrequency2',8, ...
          'SampleRate',1e3);
 raw_data = filtfilt(bpFilt,raw_data);
 chmap=ecog_grid';
 TrialData.TaskState
+TrialData.TargetID
+
 figure;
 for i=1:1:size(raw_data,1)
     tmp=raw_data(i,:);
@@ -234,7 +237,7 @@ for i=1:1:size(raw_data,1)
     textboxHandle = uicontrol('Style', 'text', 'Position', [0, 0, 200, 30]);
     newText = sprintf('Iteration: %d', ceil( (i-200)/200 +1));
     set(textboxHandle, 'String', newText);
-    pause(0.001)    
+    pause(0.0001)    
 end
 
 

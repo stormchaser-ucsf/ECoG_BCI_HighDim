@@ -93,6 +93,11 @@ save net_mlp_v0 net_mlp_v0
 % save data temporarily
 condn_data_first11=condn_data;
 
+ layers=[layers(1:5)
+           fullyConnectedLayer(6)
+           softmaxLayer
+          classificationLayer]
+
 %% batch update with more recent data collected on covert miming
 
 
@@ -367,9 +372,91 @@ xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
 ylabel('Bin Level Decoding Accuracy, no mime')
 ylim([0 1])
 
+%% LOADING ALL DATA FROM A PNP EXPERIMENT AND LOOKING AT DECODING PROB
+% the idea is to check if the raw decoder o/p at sample levels are
+% different, or if the temporal pattern or trajectory is different
+
+clc;clear
+close all
+
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+load('ECOG_Grid_8596_000067_B3.mat')
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\20231129\Robot3DArrow';
+folders = {'143141', '143636', '143936'};
+cd(root_path)
+
+% load the neural features
+files=[];
+for ii=1:length(folders)
+    folderpath = fullfile(root_path, folders{ii},'BCI_Fixed');     
+    files = [files;findfiles('',folderpath)'];
+end
+condn_data = [load_data_for_MLP_TrialLevel_B3(files,ecog_grid,1) ];
+
+% pass it through the PnP decoder
+load('C:\Users\nikic\Documents\GitHub\bci\clicker\net_PnP.mat')
+decodes=[];
+decodes_idx=[];
+neural_feat=[];
+trial_idx=[];
+len=[];
+for i=1:length(condn_data)
+    tmp = condn_data(i).neural;
+    out = predict(net_PnP,tmp')';
+    condn_data(i).prob = out;
+    decodes = [decodes out];
+    neural_feat =[neural_feat condn_data(i).neural];
+    decodes_idx = [decodes_idx condn_data(i).targetID*ones(size(out,2),1)'];
+    trial_idx =[trial_idx i*ones(size(out,2),1)'];
+    len = [len size(decodes,2)];
+    %trial_idx{i} = i*ones(size(out,2),1)';
+end
+len=[0 len];
+
+% run PCA 
+[coeff,score,latent] = pca(decodes');
+figure;hold on
+cmap=turbo(7);
+for i=1:length(score)
+    col = cmap(decodes_idx(i),:);
+    plot3(score(i,2),score(i,3),score(i,4),'.','MarkerSize',20,'Color',col)
+end
+
+% MDS scale
+D = pdist(decodes','cosine');
+Y = mdscale(D,2);
+figure;hold on
+cmap=turbo(7);
+for i=1:length(Y)
+    col = cmap(decodes_idx(i),:);
+    %plot3(Y(i,1),Y(i,2),Y(i,3),'.','MarkerSize',20,'Color',col)
+    plot(Y(i,1),Y(i,2),'.','MarkerSize',20,'Color',col)
+end
+Y=Y';
+
+% for single trial look at variation and mean
+trial_data={};
+for i=1:length(len)-1
+    tmp_data = decodes(:,len(i)+1:len(i+1));
+    %tmp_data = Y(:,len(i)+1:len(i+1));
+    m = mean(tmp_data,2);
+    s = std(tmp_data')';
+    s1= det(cov(tmp_data'));
+    trial_data(i).mean = m;
+    trial_data(i).std = s1;
+    trial_data(i).targetID = decodes_idx(len(i)+1);
+end
 
 
-
-
+figure;hold on
+cmap=parula(7);
+for i=1:length(trial_data)
+    a = [trial_data(i).mean; trial_data(i).std];
+    col = cmap(trial_data(i).targetID,:);
+    plot3(a(1),a(2),a(3),'.','MarkerSize',30,'Color',col);
+end
+grid on
 
 

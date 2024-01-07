@@ -792,7 +792,7 @@ for i=3%1:length(drop1)
         bilstmLayer(numHiddenUnits,'OutputMode','sequence','Name','lstm_1')
         dropoutLayer(drop)
         layerNormalizationLayer        
-        gruLayer(numHiddenUnits,'OutputMode','last','Name','lstm_2')        
+        gruLayer(numHiddenUnits/2,'OutputMode','last','Name','lstm_2')        
         dropoutLayer(drop)
         layerNormalizationLayer
         fullyConnectedLayer(numClasses)
@@ -824,8 +824,8 @@ for i=3%1:length(drop1)
     net = trainNetwork(XTrain,YTrain,layers,options);
 end
 
-net_bilstm_B3_First11Days = net;
-save net_bilstm_B3_First11Days net_bilstm_B3_First11Days
+net_bilstm_B3_CovertAction = net;
+save net_bilstm_B3_CovertAction net_bilstm_B3_CovertAction
 
 net1=net;
 
@@ -881,12 +881,12 @@ load('ECOG_Grid_8596_000067_B3.mat')
 chmap=ecog_grid;
 load session_data_B3
 
-foldernames = {'20231127'};
+foldernames = {'20231129'};
 
 
 % load the lstm 
-load net_bilstm_B3_First11Days
-net_bilstm = net_bilstm_B3_First11Days;
+load net_bilstm_B3_CovertAction
+net_bilstm = net_bilstm_B3_CovertAction;
 
 
 
@@ -944,7 +944,7 @@ end
 ylim([0.3 1])
 xticks(1:2)
 xticklabels({'stack biLSTM','MLP'})
-legend({'0803','','0810','','0812','0817'})
+legend({'01122'})
 title('Arrow Task')
 ylabel('Accuracy of inidiv. samples at 5Hz')
 set(gcf,'Color','w')

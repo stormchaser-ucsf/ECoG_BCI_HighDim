@@ -1,4 +1,4 @@
-function [trial_data,coeff,score,latent] = load_data_for_MLP_TrialLevel_B3(files,ecog_grid,trial_type)
+function [trial_data,coeff,score,latent] = load_data_for_MLP_TrialLevel_B3(files,ecog_grid,trial_type,pooling)
 %function [condn_data] = load_data_for_MLP(files)
 
 
@@ -24,41 +24,50 @@ for ii=1:length(files)
         % relative to state 1:
         %temp = temp - mean(temp_state1,2);
 
+        if pooling==0
 
-        % get delta, beta and hG removing bad channels
-        temp = temp([257:512 1025:1280 1537:1792],:); %delta, beta, hG
-        %temp = temp([1537:1792],:);% only hG
-        bad_ch = [108 113 118];
-        good_ch = ones(size(temp,1),1);
-        for iii=1:length(bad_ch)
-            %bad_ch_tmp = bad_ch(iii)*[1 2 3];
-            bad_ch_tmp = bad_ch(iii)+(256*[0 1 2]);
-            good_ch(bad_ch_tmp)=0;
+
+            % get delta, beta and hG removing bad channels
+            temp = temp([257:512 1025:1280 1537:1792],:); %delta, beta, hG
+            %temp = temp([1537:1792],:);% only hG
+            bad_ch = [108 113 118];
+            good_ch = ones(size(temp,1),1);
+            for iii=1:length(bad_ch)
+                %bad_ch_tmp = bad_ch(iii)*[1 2 3];
+                bad_ch_tmp = bad_ch(iii)+(256*[0 1 2]);
+                good_ch(bad_ch_tmp)=0;
+            end
+            temp = temp(logical(good_ch),:);
+
+        elseif pooling==1
+
+
+            % get the pooled data
+            new_temp=[];
+            TrialData.Params.ChMap = ecog_grid;
+            [xx yy] = size(TrialData.Params.ChMap);
+            for k=1:size(temp,2)
+                tmp1 = temp(257:512,k);tmp1 = tmp1(TrialData.Params.ChMap);
+                tmp2 = temp(1025:1280,k);tmp2 = tmp2(TrialData.Params.ChMap);
+                tmp3 = temp(1537:1792,k);tmp3 = tmp3(TrialData.Params.ChMap);
+                pooled_data=[];
+                tmp1(end+1,:)=NaN;tmp1(:,end+1)=NaN;
+                tmp2(end+1,:)=NaN;tmp2(:,end+1)=NaN;
+                tmp3(end+1,:)=NaN;tmp3(:,end+1)=NaN;
+                for i=1:2:xx
+                    for j=1:2:yy
+                        delta = (tmp1(i:i+1,j:j+1));delta=nanmean(delta(:));
+                        beta = (tmp2(i:i+1,j:j+1));beta=nanmean(beta(:));
+                        hg = (tmp3(i:i+1,j:j+1));hg=nanmean(hg(:));
+                        pooled_data = [pooled_data; delta; beta ;hg];
+                    end
+                end
+                new_temp= [new_temp pooled_data];
+            end
+            temp=new_temp;
+
         end
-        temp = temp(logical(good_ch),:);
 
-        %
-        %         % get the pooled data
-        %         new_temp=[];
-        %         TrialData.Params.ChMap = ecog_grid;
-        %         [xx yy] = size(TrialData.Params.ChMap);
-        %         for k=1:size(temp,2)
-        %             tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
-        %             tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
-        %             tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-        %             pooled_data=[];
-        %             for i=1:2:xx
-        %                 for j=1:2:yy
-        %                     delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
-        %                     beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
-        %                     hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-        %                     pooled_data = [pooled_data; delta; beta ;hg];
-        %                 end
-        %             end
-        %             new_temp= [new_temp pooled_data];
-        %         end
-        %         temp=new_temp;
-        %
 
         % 2-norm
         for i=1:size(temp,2)

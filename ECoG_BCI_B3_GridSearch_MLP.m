@@ -10,6 +10,7 @@ addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 load session_data_B3
 addpath 'C:\Users\nikic\Documents\MATLAB'
 condn_data={};
+pooling=1;
 for i=1:11%length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
@@ -29,8 +30,8 @@ for i=1:11%length(session_data)
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
-    load('ECOG_Grid_8596_000067_B3.mat')
-    condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0)];
+    load('ECOG_Grid_8596_000067_B3.mat')    
+    condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0,pooling)];
 
     %%%%%% load online data
     folders = session_data(i).folders(online_idx);
@@ -41,7 +42,7 @@ for i=1:11%length(session_data)
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
-    condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,1) ];
+    condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,1,pooling) ];
 
     %%%%%% load batch data
     folders = session_data(i).folders(batch_idx);
@@ -52,7 +53,7 @@ for i=1:11%length(session_data)
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
-    condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,2) ];
+    condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,2,pooling) ];
 end
 
 % make them all into one giant struct
@@ -105,7 +106,9 @@ for iter=1:5
                 % net.performParam.regularization=0.2;
                 % net = train(net,N,T','useParallel','yes');
                 % cv_acc{j} = cv_perf;
-                layers = get_layers1(num_units(j),759);
+                aa=condn_data_overall(1).neural;
+                s=size(aa,1);
+                layers = get_layers1(num_units(j),s);
                 net = trainNetwork(XTrain,YTrain,layers,options);
                 cv_perf = test_network(net,condn_data_overall,test_idx);
                 if iter==1
@@ -736,3 +739,50 @@ for i=1:length(cv_acc3)
 end
 
 [aa bb]=max(acc)
+
+%% COMPARISON OF POOLING AND NO POOLING ONLINE FOR B3 DATA
+
+clc;clear;
+close all
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\20230216\';
+
+folders={'122733','123155'}; % pooling
+%folders={'123740','124104'};%no pooling
+
+files=[];
+for i=1:length(folders)
+    filepath=fullfile(root_path,'RadialTaskMultiStateDiscreteArrow',folders{i},'BCI_Fixed');
+    files=[files;findfiles('',filepath)'];
+end
+
+decodes=[];
+num_targets=4;
+trial_acc=zeros(num_targets);
+for i=1:length(files)
+    disp(i/length(files)*100)
+    load(files{i});
+    tid=TrialData.TargetID;
+    out=TrialData.ClickerState;
+    decodes_vote=[];
+    for i=1:(num_targets)
+        decodes_vote(i)=sum(out==i);
+    end
+    [aa bb]=max(decodes_vote);
+    trial_acc(tid,bb)=trial_acc(tid,bb)+1;
+    idx=(out==tid);
+    idx1=(out~=tid);
+    out(idx)=1;
+    out(idx1)=0;
+    decodes=[decodes out];
+end
+
+for i=1:length(trial_acc)
+    trial_acc(i,:)=trial_acc(i,:)/sum(trial_acc(i,:));
+end
+
+diag(trial_acc)
+mean(diag(trial_acc))
+mean(decodes)
+
+TrialData.Params.ChPooling
+
