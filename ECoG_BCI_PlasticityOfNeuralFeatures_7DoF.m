@@ -3884,6 +3884,22 @@ session_data(k).folders = {'132651','133809','134328','134839','135205'};
 session_data(k).folder_type={'B','B','B','B','B'};
 session_data(k).AM_PM = {'am','am','am','am','am'};
 
+%day31 PNP CONTROL Day 11
+k=31;
+session_data(k).Day = '20231229';
+session_data(k).folders = {'132822','133400','133737','134343','134836'};
+session_data(k).folder_type={'B','B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am'};
+
+%day32 PNP CONTROL Day 12
+k=32;
+session_data(k).Day = '20240104';
+session_data(k).folders = {'133046','133554','135401','135854','140117'};
+session_data(k).folder_type={'B','B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am'};
+
+
+
 save session_data_B3 session_data -v7.3
 
 %% PLASTICITY AND AE FRAMEWORK FOR B2 ARROW DATA (MAIN)
@@ -7565,7 +7581,7 @@ addpath 'C:\Users\nikic\Documents\MATLAB'
 % online control 
 foldernames = {'20231120','20231122','20231127','20231129','20231201',...
     '20231207','20231210','20231213','20231215','20231218','20231220',...
-    '20231228','20231229'};
+    '20231228','20231229','20240104'};
 
 
 cd(root_path)
@@ -7682,7 +7698,7 @@ for i=1:length(br_across_days)
     br(i) = median(tmp);
 end
 plot(br(1:end),'k','LineWidth',2)
-days={'1','3','8','10','12','18','21','24','26','29','31','39','40'};
+days={'1','3','8','10','12','18','21','24','26','29','31','39','40','46'};
 xticks(1:length(br))
 set(gca,'XTickLabel',days)
 set(gcf,'Color','w')
@@ -7695,6 +7711,35 @@ xlim([0 length(br_across_days)+0.5])
 ylim([0 4])
 yticks([0:.5:4])
 %
+
+% plotting noise free days;
+good_days=[1:6 8  10 12 ];
+figure;hold on
+br=[];
+brh=[];
+cmap = turbo(length(br_across_days));
+for i=1:length(good_days)
+    tmp = br_across_days{good_days(i)};
+    brh = [brh tmp];
+    idx= i*ones(size(tmp))+0.1*randn(size(tmp));
+    plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
+    br(i) = median(tmp);
+end
+plot(br(1:end),'k','LineWidth',2)
+days={'1','3','8','10','12','18','21','24','26','29','31','39','40','46'};
+xticks(1:length(br))
+set(gca,'XTickLabel',days(good_days))
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('Days - PnP')
+ylabel('BitRate')
+set(gca,'LineWidth',1)
+%set(gca,'Color',[.85 .85 .85])
+xlim([0 length(good_days)+0.5])
+ylim([0 4])
+yticks([0:.5:4])
+title('B3 Bit rate PnP')
+
 
 figure
 boxplot(brh,'whisker',1.75)

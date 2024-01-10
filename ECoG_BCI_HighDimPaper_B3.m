@@ -665,8 +665,8 @@ for i=1:length(files)
                 end
 
                 temp = temp(logical(good_ch),:);
-%                 figure;hist(temp(:))
-%                 title(d(jj).name)
+                %                 figure;hist(temp(:))
+                %                 title(d(jj).name)
 
                 %get smoothed delta hg and beta features
                 %         new_temp=[];
@@ -690,7 +690,7 @@ for i=1:length(files)
                 %         temp = temp([ 1:32 65:96 ],:);
 
 
-                if max(abs(temp(:))) < 10                    
+                if max(abs(temp(:))) < 10
                     data_overall = [data_overall;temp'];
                     for j=1:length(ImaginedMvmt)
                         if strcmp(ImaginedMvmt{j},TrialData.ImaginedAction)
@@ -917,13 +917,13 @@ D1=D;
 idx=[1:5 7:17 19:30];
 r1=6;r2=18;
 for i=1:length(idx)
-   % swapping the columns
-   D1(idx(i),r1)=D(idx(i),r2);
-   D1(idx(i),r2)=D(idx(i),r1);
+    % swapping the columns
+    D1(idx(i),r1)=D(idx(i),r2);
+    D1(idx(i),r2)=D(idx(i),r1);
 
-   % swapping the rows
-   D1(r1,idx(i)) = D(r2,idx(i));
-   D1(r2,idx(i)) = D(r1,idx(i));
+    % swapping the rows
+    D1(r1,idx(i)) = D(r2,idx(i));
+    D1(r2,idx(i)) = D(r1,idx(i));
 end
 D1(r1,r2)=D(r2,r1);
 D1(r2,r1)=D(r1,r2);
@@ -1231,7 +1231,7 @@ plot(b)
 plot(c)
 
 
-% plotting 
+% plotting
 
 
 
@@ -1253,7 +1253,7 @@ cd(root_path)
 files=[];
 for i=1:length(foldernames)
     folderpath = fullfile(root_path, foldernames{i},'ImaginedMvmtDAQ')
-    D=dir(folderpath);    
+    D=dir(folderpath);
 
     for j=3:length(D)
         filepath=fullfile(folderpath,D(j).name,'Imagined');
@@ -1285,7 +1285,7 @@ for i=1:length(ImaginedMvmt)
 end
 
 % TIMING INFORMATION FOR THE TRIALS
-Params.InterTrialInterval = 2; % rest period between trials 
+Params.InterTrialInterval = 2; % rest period between trials
 Params.InstructedDelayTime = 2; % text appears telling subject which action to imagine
 Params.CueTime = 2; % A red square; subject has to get ready
 Params.ImaginedMvmtTime = 4; % A green square, subject has actively imagine the action
@@ -1421,7 +1421,7 @@ xticklabels(ImaginedMvmt)
 data = ERP_Data{21};
 figure;
 for ch=1:size(data,2)
-    
+
     clf
     set(gcf,'Color','w')
     set(gcf,'WindowState','maximized')
@@ -1490,9 +1490,9 @@ for ch=1:size(data,2)
     %
     if sum(pval)>300 % how many sig. samples do you want for it to be 'sig'
         if sum(pval.*sign_time)>0
-            box_col = 'g';            
+            box_col = 'g';
         else
-            box_col = 'b';            
+            box_col = 'b';
         end
         box on
         set(gca,'LineWidth',2)
@@ -1501,7 +1501,7 @@ for ch=1:size(data,2)
     end
 
     waitforbuttonpress
-    
+
 
 
 end
@@ -1618,10 +1618,10 @@ for i=1:length(idx)
         end
     end
     sgtitle(ImaginedMvmt(idx(i)))
-%     filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
-%     saveas(gcf,filename)
-%     set(gcf,'PaperPositionMode','auto')
-%     print(gcf,filename,'-dpng','-r500')
+    %     filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
+    %     saveas(gcf,filename)
+    %     set(gcf,'PaperPositionMode','auto')
+    %     print(gcf,filename,'-dpng','-r500')
 end
 %save ERPs_sig_ch_beta -v7.3
 save ERPs_sig_ch_LMP -v7.3
@@ -1631,7 +1631,7 @@ save ERPs_sig_ch_LMP -v7.3
 for i=1:length(ImaginedMvmt)
     tmp = sig_ch(i,:);
     figure;imagesc(abs(tmp(chMap)));
-    title(ImaginedMvmt{i})    
+    title(ImaginedMvmt{i})
 end
 
 %plot brain plots of sig. ch for hg in tongue, rt bicep, rt thumb, lt
@@ -1678,55 +1678,55 @@ pmv= [53 2 13 ];
 channels = {s1,m1,rol,pmd,pmv};
 % plotting
 channels=1:128;
-for i=1:length(channels)    
+for i=1:length(channels)
     figure;
     hold on
     ch = channels(i);
     % first plot the ERPs
     for j=1:length(idx)
-        tmp_erp = ERP_Data{idx(j)};        
+        tmp_erp = ERP_Data{idx(j)};
         tmp = tmp_erp(:,ch,:);
-        tmp = squeeze(mean(tmp,2))';        
+        tmp = squeeze(mean(tmp,2))';
         tmp=detrend(tmp')';
         tmp = tmp+0.1;
-%         if j==4
-%             tmp = tmp-0.4;
-%         end
+        %         if j==4
+        %             tmp = tmp-0.4;
+        %         end
         m = smooth(mean(tmp,1),300);
         %mb = sort(bootstrp(1000,@mean,tmp)); % bootstrap
         s = std(tmp,1)/sqrt(size(tmp,1)); % standard error
         s = smooth(s',300);
-        tt=(0:size(tmp,2)-1) + 3000;        
-        plot(tt,m,'Color',cmap(j,:),'LineWidth',2)        
+        tt=(0:size(tmp,2)-1) + 3000;
+        plot(tt,m,'Color',cmap(j,:),'LineWidth',2)
         %  [fillhandle,msg]=jbfill(tt,(m-s)',(m+s)'...
         %      ,cmap(j,:),cmap(j,:),1,.2);
-        hold on        
-    end        
+        hold on
+    end
     set(gcf,'Color','w')
     % now plot the C.I.
     for j=1:length(idx)
-        tmp_erp = ERP_Data{idx(j)};        
+        tmp_erp = ERP_Data{idx(j)};
         tmp = tmp_erp(:,ch,:);
-        tmp = squeeze(mean(tmp,2))';        
+        tmp = squeeze(mean(tmp,2))';
         tmp=detrend(tmp')';
         tmp = tmp+0.1;
-%         if j==4
-%             tmp = tmp-0.4;
-%         end
+        %         if j==4
+        %             tmp = tmp-0.4;
+        %         end
         m = smooth(mean(tmp,1),300);
         %mb = sort(bootstrp(1000,@mean,tmp)); % bootstrap
         s = std(tmp,1)/sqrt(size(tmp,1)); % standard error
         s = smooth(s',300);
-        tt=(0:size(tmp,2)-1) + 3000;        
-        %plot(tt,m,'Color',cmap(j,:),'LineWidth',2)        
-          [fillhandle,msg]=jbfill(tt,(m-s)',(m+s)'...
-              ,cmap(j,:),cmap(j,:),1,.1);
-        hold on        
-    end 
+        tt=(0:size(tmp,2)-1) + 3000;
+        %plot(tt,m,'Color',cmap(j,:),'LineWidth',2)
+        [fillhandle,msg]=jbfill(tt,(m-s)',(m+s)'...
+            ,cmap(j,:),cmap(j,:),1,.1);
+        hold on
+    end
     axis tight
-    legend(ImaginedMvmt(idx))    
+    legend(ImaginedMvmt(idx))
     vline([1000 3000 7000]+3000,'r')
-    hline(0,'k')           
+    hline(0,'k')
     xlim([2000 7200]+3000)
     title(num2str(i))
     xticks(4000:2000:11000)
@@ -1765,8 +1765,8 @@ chmap=TrialData.Params.ChMap;
 %hand_elec =[22	5	20 111	122	117 105	120	107]; %pmv
 %hand_elec=[99	101	121	127	105	120];%pmd
 hand_elec = [49	64	58	59
-54	39	47	42
-18	1	8	15];% pmv
+    54	39	47	42
+    18	1	8	15];% pmv
 % get the average activity for each imagined action with C.I.
 roi_mean=[];
 roi_dist_mean=[];
@@ -1782,9 +1782,9 @@ for i=1:length(ImaginedMvmt)
     %data = squeeze(mean(data,1)); % channels
     data = data(:);
     roi_mean(i) = mean(data);
-%     if i==19
-%         roi_mean(i)=0.9;
-%     end
+    %     if i==19
+    %         roi_mean(i)=0.9;
+    %     end
     roi_dist_mean(:,i) = sort(bootstrp(1000,@mean,data));
 end
 figure;bar(roi_mean)
@@ -1823,9 +1823,9 @@ stem(abs(lt_channels))
 
 % PmD test
 pmd=[65	85	83	68
-37	56	48	43
-53	55	52	35
-2	10	21	30];pmd=pmd(:);
+    37	56	48	43
+    53	55	52	35
+    2	10	21	30];pmd=pmd(:);
 lt_pmd = (abs(sig_ch(10:18,pmd)));
 rt_pmd = (abs(sig_ch(1:9,pmd)));
 [sum(lt_pmd(:)) sum(rt_pmd(:))]
@@ -1926,31 +1926,31 @@ hline(1/30)
 figure;
 imagesc(squeeze(mean(res_overall_map,1)))
 
-% use a classifier based on 
+% use a classifier based on
 
 %%%% dPCA analyses on the imagined movement data.. ROI X Time X Mvmt-Type
 %avg activity: N x C x L x T
 % Channels X Conditions X Laterality X Time
 M1 =[27	9	3
-26	31	25
-116	103	106
-115	100	97];M1=M1(:);
+    26	31	25
+    116	103	106
+    115	100	97];M1=M1(:);
 pmd=[94	91	79
-73	90	67
-61	51	34
-40	46	41];pmd=pmd(:);
+    73	90	67
+    61	51	34
+    40	46	41];pmd=pmd(:);
 pmv=[96	84	76	95
-92	65	85	83
-62	37	56	48
-45	53	55	52];pmv=pmv(:);
+    92	65	85	83
+    62	37	56	48
+    45	53	55	52];pmv=pmv(:);
 m1_ant=[19	2	10	21
-24	13	6	4
-124	126	128	119
-102	109	99	101];m1_ant=m1_ant(:);
+    24	13	6	4
+    124	126	128	119
+    102	109	99	101];m1_ant=m1_ant(:);
 central=[33	49	64	58
-50	54	39	47
-28	18	1	8
-5	20	14	11];central=central(:);
+    50	54	39	47
+    28	18	1	8
+    5	20	14	11];central=central(:);
 
 %condn_idx = [1 23  3  24 ];
 condn_idx = [1 25  10  26 ];
@@ -1991,7 +1991,7 @@ legend(ImaginedMvmt(idx))
 
 
 % sig channel from the ERP analyses
-% head 
+% head
 tmp = sig_ch(27:28,:);
 tmp=mean(abs(tmp),1);
 tmp(tmp~=0)=1;
@@ -2092,7 +2092,7 @@ figure;imagesc(tmp1(chMap))
 % averaged over time
 anova_sig_ch_pval=[];
 time_idx=3200:5000;
-for i=1:128    
+for i=1:128
     anova_data = squeeze(mean(rt_data(:,time_idx,i,:),2))';
     [p,tbl,stats]=anova1(anova_data,[],'off');
     anova_sig_ch_pval(i)=p;
@@ -2107,7 +2107,7 @@ set(gcf,'Color','w')
 % same as above but with bad trial removal
 anova_sig_ch_pval=[];
 time_idx=3200:5000;
-for i=1:128    
+for i=1:128
     anova_data = squeeze(mean(rt_data(:,time_idx,i,:),2))';
     tmp=zscore(anova_data);
     bad_idx = abs(tmp)>2.0;
@@ -2121,7 +2121,7 @@ tmp = anova_sig_ch_pval<=0.05;
 figure;imagesc(tmp(chMap))
 axis off
 set(gcf,'Color','w')
-   
+
 
 
 % delta -> covers rt shoulder, lt shoulder and leg but also in same hand
@@ -2190,33 +2190,33 @@ end
 xticklabels(x1)
 set(gcf,'Color','w')
 
-% mahab distance after smoothing hG activity 
-
- 
-
- % saving dpng images for all erps in various bands
- filepath='F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\beta';
- D=dir(filepath); 
- for i=3:length(D)
-     disp(i-2)
-     filename = fullfile(D(i).folder,D(i).name);
-     openfig(filename);
-     set(gcf,'WindowState','maximized')
-     filename_to_save = fullfile(D(i).folder,D(i).name(1:end-4));
-     set(gcf,'PaperPositionMode','auto')
-     print(gcf,filename_to_save,'-dpng','-r500')
-     close all
- end
+% mahab distance after smoothing hG activity
 
 
- a = [0.27 0.35 0.37 0.45];
- stat = mean(a);
- a = a-mean(a)+0.25;
- boot=[];
- for i=1:10000
-     idx = randi(length(a),length(a),1);
-     boot(i) = mean(a(idx));
- end
+
+% saving dpng images for all erps in various bands
+filepath='F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\beta';
+D=dir(filepath);
+for i=3:length(D)
+    disp(i-2)
+    filename = fullfile(D(i).folder,D(i).name);
+    openfig(filename);
+    set(gcf,'WindowState','maximized')
+    filename_to_save = fullfile(D(i).folder,D(i).name(1:end-4));
+    set(gcf,'PaperPositionMode','auto')
+    print(gcf,filename_to_save,'-dpng','-r500')
+    close all
+end
+
+
+a = [0.27 0.35 0.37 0.45];
+stat = mean(a);
+a = a-mean(a)+0.25;
+boot=[];
+for i=1:10000
+    idx = randi(length(a),length(a),1);
+    boot(i) = mean(a(idx));
+end
 figure;hist(boot,6)
 vline(stat)
 sum(boot>stat)/length(boot)
@@ -2395,7 +2395,7 @@ figure;imagesc(data(chmap))
 %caxis([-2 2])
 caxis([-0.4 0.2])
 
-% plotting hand knob channels on brian 
+% plotting hand knob channels on brian
 figure;
 c_h = ctmr_gauss_plot(cortex,[0 0 0],...
     0,'lh');set(gcf,'Color','w')
@@ -2907,7 +2907,7 @@ xlabel ''
 
 
 
-%% ERPs for B2 from a session of imagined data 
+%% ERPs for B2 from a session of imagined data
 
 clc;clear
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
@@ -2931,7 +2931,7 @@ end
 
 [D1,D2,D3,D4] = load_erp_data_B2_imag(files);
 
-% plot ERPs with all the imagined data 
+% plot ERPs with all the imagined data
 load('ECOG_Grid_8596-002131.mat')
 
 
@@ -2953,14 +2953,14 @@ for i = 1:size(D1,1)
     end
     hold on
     erps =  squeeze(D1(i,:,:));
-    
+
     chdata = erps;
     % zscore the data to the first 10 time-bins
     tmp_data=chdata(1:10,:);
     m = mean(tmp_data(:));
     s = std(tmp_data(:));
     chdata = (chdata -m)./s;
-    
+
     % get the confidence intervals
     m = mean(chdata,2);
     mb = sort(bootstrp(1000,@mean,chdata'));
@@ -2972,7 +2972,7 @@ for i = 1:size(D1,1)
     %plot(mb(25,:),'--b')
     %plot(mb(975,:),'--b')
     %hline(0)
-    
+
     % shuffle the data for null confidence intervals
     tmp_mean=[];
     for j=1:1000
@@ -2985,14 +2985,14 @@ for i = 1:size(D1,1)
         tmp = (tmp -m)./s;
         tmp_mean(j,:) = mean(tmp,2);
     end
-    
+
     tmp_mean = sort(tmp_mean);
     %plot(tmp_mean(25,:),'--r')
     %plot(tmp_mean(975,:),'--r')
     [fillhandle,msg]=jbfill(tt,tmp_mean(25,:),tmp_mean(975,:)...
         ,[0.7 0.3 0.3],[0.7 0.3 0.3],1,.2);
-    
-    
+
+
     % statistical test
     % if the mean is outside confidence intervals in state 3
     m = mean(chdata,2);
@@ -3002,25 +3002,25 @@ for i = 1:size(D1,1)
     for j=1:length(idx)
         pval(j) = (sum(abs(mstat(j)) >= abs(tmp_mean(:,idx(j)))))./(size(tmp_mean,1));
     end
-    
+
     res=sum((1-pval)<=0.05);
     if res>=15
         suc=1;
     else
         suc=0;
     end
-    
+
     % beautify
     ylabel (num2str(i))
     axis tight
-    ylim([-2 2])    
+    ylim([-2 2])
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(5);
     %set(h,'LineWidth',1)
     set(h,'Color','k')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=107
         yticklabels ''
         xticklabels ''
@@ -3028,7 +3028,7 @@ for i = 1:size(D1,1)
         %xticks([tim])
         %xticklabels({'S1','S2','S3','S4'})
     end
-    
+
     if suc==1
         box on
         set(gca,'LineWidth',2)
@@ -3038,7 +3038,7 @@ for i = 1:size(D1,1)
     d = d+1;
 end
 
-%% ERPs for B2 from sessions of online data  
+%% ERPs for B2 from sessions of online data
 
 clc;clear
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
@@ -3048,7 +3048,7 @@ filepath ='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2';
 cd(filepath)
 folders = {'20210331'};%
 
-% get the file names 
+% get the file names
 files=[];
 for i=1:length(folders)
     full_path = fullfile(filepath,folders{i},'DiscreteArrow');
@@ -3065,7 +3065,7 @@ files_tong = files(73:end);
 [D1,D2,D3,D4,idx1,idx2,idx3,idx4] = load_erp_data_online_B2(files);
 [D5,D6,D7,D8,idx1,idx2,idx3,idx4] = load_erp_data_online_B2(files_tong);
 
-% plot ERPs with all the imagined data 
+% plot ERPs with all the imagined data
 load('ECOG_Grid_8596-002131.mat')
 
 
@@ -3091,14 +3091,14 @@ for i = 1:size(D4,1)
     end
     hold on
     erps =  squeeze(D4(i,:,:));
-    
+
     chdata = erps;
     % zscore the data to the first 6 time-bins
     tmp_data=chdata(1:6,:);
     m = mean(tmp_data(:));
     s = std(tmp_data(:));
     chdata = (chdata -m)./s;
-    
+
     % get the confidence intervals
     m = mean(chdata,2);
     mb = sort(bootstrp(1000,@mean,chdata'));
@@ -3110,7 +3110,7 @@ for i = 1:size(D4,1)
     %plot(mb(25,:),'--b')
     %plot(mb(975,:),'--b')
     %hline(0)
-    
+
     % shuffle the data for null confidence intervals
     tmp_mean=[];
     for j=1:1000
@@ -3123,14 +3123,14 @@ for i = 1:size(D4,1)
         tmp = (tmp -m)./s;
         tmp_mean(j,:) = mean(tmp,2);
     end
-    
+
     tmp_mean = sort(tmp_mean);
     %plot(tmp_mean(25,:),'--r')
     %plot(tmp_mean(975,:),'--r')
     [fillhandle,msg]=jbfill(tt,tmp_mean(25,:),tmp_mean(975,:)...
         ,[0.7 0.3 0.3],[0.7 0.3 0.3],1,.2);
-    
-    
+
+
     % statistical test
     % if the mean is outside confidence intervals in state 3
     m = mean(chdata,2);
@@ -3151,18 +3151,18 @@ for i = 1:size(D4,1)
     else
         suc=0;
     end
-    
+
     % beautify
     ylabel (num2str(i))
     axis tight
-    ylim([-2 2])    
+    ylim([-2 2])
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim);
     %set(h,'LineWidth',1)
     set(h,'Color','k')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=107
         yticklabels ''
         xticklabels ''
@@ -3170,7 +3170,7 @@ for i = 1:size(D4,1)
         %xticks([tim])
         %xticklabels({'S1','S2','S3','S4'})
     end
-    
+
     if suc==1
         box on
         set(gca,'LineWidth',2)
@@ -3203,9 +3203,9 @@ for i=1:length(ERP_Data)
     %data = squeeze(mean(data,1)); % channels
     data = data(:);
     roi_mean(i) = mean(data);
-%     if i==19
-%         roi_mean(i)=0.9;
-%     end
+    %     if i==19
+    %         roi_mean(i)=0.9;
+    %     end
     roi_dist_mean(:,i) = sort(bootstrp(1000,@mean,data));
 end
 figure;bar(roi_mean)
@@ -3222,7 +3222,7 @@ set(gca,'FontSize',16)
 set(gca,'LineWidth',1)
 xticklabels(ImaginedMvmt)
 
-%% ERPs B2 with higher samplign rate 
+%% ERPs B2 with higher samplign rate
 
 clc;clear
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
@@ -3232,7 +3232,7 @@ filepath ='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2';
 cd(filepath)
 folders = {'20210324'};
 
-% get the file names 
+% get the file names
 files=[];
 for i=1:length(folders)
     full_path = fullfile(filepath,folders{i},'DiscreteArrow');
@@ -3255,10 +3255,10 @@ for i=1:length(ImaginedMvmt)
 end
 
 % TIMING INFORMATION FOR THE TRIALS
-Params.InterTrialInterval = 1; % rest period between trials 
+Params.InterTrialInterval = 1; % rest period between trials
 Params.InstructedDelayTime = 1; % only arrow environment
 Params.CueTime = 1; % target appears
-Params.ImaginedMvmtTime = 8; % Go time 
+Params.ImaginedMvmtTime = 8; % Go time
 
 % low pass filter of raw
 lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
@@ -3266,7 +3266,7 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'SampleRate',1e3);
 
 
-% 
+%
 % % log spaced hg filters
 % Params.Fs = 1000;
 % Params.FilterBank(1).fpass = [70,77];   % high gamma1
@@ -3280,7 +3280,7 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 % Params.FilterBank(end+1).fpass = [0.5,4]; % delta
 % Params.FilterBank(end+1).fpass = [13,19]; % beta1
 % Params.FilterBank(end+1).fpass = [19,30]; % beta2
-% 
+%
 % % compute filter coefficients
 % for i=1:length(Params.FilterBank),
 %     [b,a] = butter(3,Params.FilterBank(i).fpass/(Params.Fs/2));
@@ -3305,10 +3305,10 @@ for i=1:length(files)
     idx1= ones(length(state1),1);
     idx2= 2*ones(length(state2),1);
     idx3= 3*ones(length(state3),1);
-    idx4= 4*ones(length(state4),1);   
+    idx4= 4*ones(length(state4),1);
     fidx=9:16;%filters idx, 9-15 is hg, 1 is delta and 4:5 is beta
 
-    %%%%% state 1 
+    %%%%% state 1
     % extract state 1 data hG and resample it to 1s
     features1 = cell2mat(features(state1)');
     filtered_data=[];
@@ -3319,7 +3319,7 @@ for i=1:length(files)
             Params.FilterBank(ii).a, ...
             features1)));
         k=k+1;
-    end    
+    end
     if length(size(filtered_data))>2
         features1 = squeeze(mean(filtered_data,3));
     else
@@ -3327,8 +3327,8 @@ for i=1:length(files)
     end
     % interpolation
     if size(features1,1)~=1000
-%         tb = [1:size(features1,1)]*1e-3;
-%         t = [1:1000]*1e-3;
+        %         tb = [1:size(features1,1)]*1e-3;
+        %         t = [1:1000]*1e-3;
 
         tb = [1:size(features1,1)]*1e-3;
         t = [1:1000]*1e-3;
@@ -3336,7 +3336,7 @@ for i=1:length(files)
         features1 = interp1(tb,features1,t);
     end
 
-    %%%%% state 2 
+    %%%%% state 2
     % extract state 1 data hG and resample it to 1s
     features2 = cell2mat(features(state2)');
     filtered_data=[];
@@ -3347,7 +3347,7 @@ for i=1:length(files)
             Params.FilterBank(ii).a, ...
             features2)));
         k=k+1;
-    end    
+    end
     if length(size(filtered_data))>2
         features2 = squeeze(mean(filtered_data,3));
     else
@@ -3358,7 +3358,7 @@ for i=1:length(files)
         tb = [1:size(features2,1)]*1e-3;
         t = [1:1000]*1e-3;
         tb = tb*t(end)/tb(end);
-        features2 = interp1(tb,features2,t);       
+        features2 = interp1(tb,features2,t);
     end
 
     %%%%% state 3
@@ -3372,7 +3372,7 @@ for i=1:length(files)
             Params.FilterBank(ii).a, ...
             features3)));
         k=k+1;
-    end       
+    end
     if length(size(filtered_data))>2
         features3 = squeeze(mean(filtered_data,3));
     else
@@ -3397,7 +3397,7 @@ for i=1:length(files)
             Params.FilterBank(ii).a, ...
             features4)));
         k=k+1;
-    end        
+    end
     if length(size(filtered_data))>2
         features4 = squeeze(mean(filtered_data,3));
     else
@@ -3410,9 +3410,9 @@ for i=1:length(files)
         tb = tb*t(end)/tb(end);
         features4 = interp1(tb,features4,t);
     end
-    
+
     % now stitch the raw data back together
-    data = [features1;features2;features3;features4];    
+    data = [features1;features2;features3;features4];
     data = smoothdata(data,'movmean',25);
     figure;imagesc(data)
     title(num2str(i))
@@ -3454,8 +3454,8 @@ for i = 1:size(D1,1)
         %subplot(8, 16, s)
     end
     hold on
-    erps =  squeeze(D1(i,:,:));    
-    chdata = erps;    
+    erps =  squeeze(D1(i,:,:));
+    chdata = erps;
 
     for j=1:size(chdata,2)
         tmp = chdata(:,j);
@@ -3463,7 +3463,7 @@ for i = 1:size(D1,1)
 
 
     end
-    
+
     % get the confidence intervals
     m = mean(chdata,2);
     mb = sort(bootstrp(1000,@mean,chdata'));
@@ -3475,7 +3475,7 @@ for i = 1:size(D1,1)
     %plot(mb(25,:),'--b')
     %plot(mb(975,:),'--b')
     %hline(0)
-    
+
     % shuffle the data for null confidence intervals
     tmp_mean=[];
     for j=1:1000
@@ -3488,14 +3488,14 @@ for i = 1:size(D1,1)
         tmp = (tmp -m)./s;
         tmp_mean(j,:) = mean(tmp,2);
     end
-    
+
     tmp_mean = sort(tmp_mean);
     %plot(tmp_mean(25,:),'--r')
     %plot(tmp_mean(975,:),'--r')
     [fillhandle,msg]=jbfill(tt,tmp_mean(25,:),tmp_mean(975,:)...
         ,[0.7 0.3 0.3],[0.7 0.3 0.3],1,.2);
-    
-    
+
+
     % statistical test
     % if the mean is outside confidence intervals in state 3
     m = mean(chdata,2);
@@ -3505,25 +3505,25 @@ for i = 1:size(D1,1)
     for j=1:length(idx)
         pval(j) = (sum(abs(mstat(j)) >= abs(tmp_mean(:,idx(j)))))./(size(tmp_mean,1));
     end
-    
+
     res=sum((1-pval)<=0.05);
     if res>=7
         suc=1;
     else
         suc=0;
     end
-    
+
     % beautify
     ylabel (num2str(i))
     axis tight
-    ylim([-2 2])    
+    ylim([-2 2])
     %set(gca,'LineWidth',1)
-    %vline([time(2:4)])   
+    %vline([time(2:4)])
     h=vline(tim);
     %set(h,'LineWidth',1)
     set(h,'Color','k')
     h=hline(0);
-    set(h,'LineWidth',1.5)    
+    set(h,'LineWidth',1.5)
     if i~=102
         yticklabels ''
         xticklabels ''
@@ -3531,7 +3531,7 @@ for i = 1:size(D1,1)
         %xticks([tim])
         %xticklabels({'S1','S2','S3','S4'})
     end
-    
+
     if suc==1
         box on
         set(gca,'LineWidth',2)
@@ -4178,9 +4178,9 @@ ylim([-5 10])
 delta_data=[];
 for i=1:length(delta_ep)
     tmp=delta_ep{i};
-%     for j=1:size(tmp,2)
-%         tmp(:,j)=smooth(tmp(:,j),100);
-%     end
+    %     for j=1:size(tmp,2)
+    %         tmp(:,j)=smooth(tmp(:,j),100);
+    %     end
     delta_data = cat(3,delta_data,tmp(1:7800,:));
 end
 
@@ -4204,7 +4204,7 @@ set(gca,'FontSize',14)
 axis tight
 ylim([-5 5])
 
-% 
+%
 % ch=106;
 % tmp=squeeze(delta_data(:,ch,:));
 % for i=1:size(tmp,2)
@@ -4231,7 +4231,7 @@ stem(cumsum(l)./sum(l))
 
 %% Looking at real-time signals and getting higher res ERPs
 % ERPs higher res
-% with traveling waves 
+% with traveling waves
 
 clc;clear
 
@@ -4446,9 +4446,9 @@ ylim([-5 10])
 delta_data=[];
 for i=1:length(delta_ep)
     tmp=delta_ep{i};
-%     for j=1:size(tmp,2)
-%         tmp(:,j)=smooth(tmp(:,j),100);
-%     end
+    %     for j=1:size(tmp,2)
+    %         tmp(:,j)=smooth(tmp(:,j),100);
+    %     end
     delta_data = cat(3,delta_data,tmp(1:7800,:));
 end
 
@@ -4472,7 +4472,7 @@ set(gca,'FontSize',14)
 axis tight
 ylim([-5 5])
 
-% 
+%
 % ch=106;
 % tmp=squeeze(delta_data(:,ch,:));
 % for i=1:size(tmp,2)
@@ -4532,10 +4532,10 @@ title('Circ Shuffle - phase is different')
 Cboot=[];
 pow_boot=[];
 for iter=1:1000
-    k = randperm(length(x));    
-    x1 = x(k);    
-    l = randperm(length(y));    
-    y1 = y(l);    
+    k = randperm(length(x));
+    x1 = x(k);
+    l = randperm(length(y));
+    y1 = y(l);
     Cboot(iter,:) = xcorr(x1,y1);
     [pow_boot(iter,:), F] = pwelch(Cboot(iter,:),[],[],[],fs);
 end
@@ -4552,6 +4552,60 @@ plot(F,log10(abs(pow)),'b','LineWidth',1)
 xlim([0 100])
 title('Significant rhythmicity based on FFT of correlation')
 
+%% LOOKING THE VARIANCE OF HIGH NOISE CHANNELS LATE DEC 2023
+
+
+clc;clear
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath 'C:\Users\nikic\Documents\MATLAB'
+
+% bad folders
+foldernames = {'20231218','20231220','20231228','20231229','20231129'};
+files=[];
+for i=1:length(foldernames)
+    folderpath = fullfile(root_path,foldernames{i},'Robot3DArrow');
+    D=dir(folderpath);
+    for j=3:length(D)
+        filepath = fullfile(folderpath,D(j).name,'BCI_Fixed');
+        if exist(filepath)
+            files=[files;findfiles('',filepath)'];
+        end
+    end
+end
+
+% now get the variance of individual channels in hG
+var_hg=[];
+for i=1:length(files)
+    disp(i/length(files)*100)
+    files_loaded=1;
+    try
+        load(files{i})
+    catch
+        files_loaded=0;
+    end
+    if files_loaded
+        features=cell2mat(TrialData.NeuralFeatures);
+        hg_features = features(1537:1792,:);
+        %bad_ch = [108 113 118];
+        good_ch = ones(size(hg_features,1),1);
+        %good_ch(bad_ch)=0;
+        hg_features = hg_features(logical(good_ch),:);
+        %var_hg=[var_hg;std(hg_features',1)];
+        var_hg=[var_hg (hg_features)];
+    end
+end
+
+load('ECOG_Grid_8596_000067_B3.mat')    
+chmap=ecog_grid;
+%m = median(var_hg,1);
+m = std(var_hg');
+figure;imagesc(m(chmap))
+
+%%  ROBOT CENTER OUT DATA LOOKING AT TRAJECTORIES TO OFF DIAGONAL TARGETS
+
+clc;clear
+foldersnames = {''}
 
 
 
