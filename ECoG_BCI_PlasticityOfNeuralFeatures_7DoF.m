@@ -6931,7 +6931,7 @@ t1 = cell2mat(ttc);
 t1b = sort(bootstrp(1000,@median,t1));
 [t1b(25) median(t1) t1b(975)]
 
-%% COACTIVATION / MULTISTATE building a classifier (MAIN)
+%% COACTIVATION / MULTISTATE building a classifier (MAIN -B1)
 % test on held out trials
 % the features are the output of the last layer of the LSTM. Collate these
 % features at each time-step across the trial, and label trial either right
