@@ -4557,6 +4557,7 @@ title('Significant rhythmicity based on FFT of correlation')
 
 clc;clear
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+cd(root_path)
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 addpath 'C:\Users\nikic\Documents\MATLAB'
 
@@ -4600,7 +4601,7 @@ load('ECOG_Grid_8596_000067_B3.mat')
 chmap=ecog_grid;
 %m = median(var_hg,1);
 m = std(var_hg');
-figure;imagesc(m(chmap))
+figure;imagesc(m(chmap'))
 
 %%  ROBOT CENTER OUT DATA LOOKING AT TRAJECTORIES TO OFF DIAGONAL TARGETS
 

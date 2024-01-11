@@ -7581,7 +7581,7 @@ addpath 'C:\Users\nikic\Documents\MATLAB'
 % online control 
 foldernames = {'20231120','20231122','20231127','20231129','20231201',...
     '20231207','20231210','20231213','20231215','20231218','20231220',...
-    '20231228','20231229','20240104'};
+    '20231228','20231229','20240104','20240110'};
 
 
 cd(root_path)
@@ -7664,6 +7664,12 @@ for i=1:length(foldernames)
             files=files(logical(good_files));
         end
 
+        if i==15 && j>6
+            good_files = ones(length(files),1);
+            good_files([7:end])=0;
+            files=files(logical(good_files));
+        end
+
         if length(files)>0
             [b,a,t,T,ov_acc] = compute_bitrate(files,7); % just compute as is
             %[b,a,t,T] = compute_bitrate_constTime(files,7); %overall time
@@ -7698,7 +7704,7 @@ for i=1:length(br_across_days)
     br(i) = median(tmp);
 end
 plot(br(1:end),'k','LineWidth',2)
-days={'1','3','8','10','12','18','21','24','26','29','31','39','40','46'};
+days={'1','3','8','10','12','18','21','24','26','29','31','39','40','46','52'};
 xticks(1:length(br))
 set(gca,'XTickLabel',days)
 set(gcf,'Color','w')

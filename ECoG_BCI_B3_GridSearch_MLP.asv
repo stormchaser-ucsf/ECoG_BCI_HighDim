@@ -590,9 +590,8 @@ for iter=1:1
                 XTrainA=predict(ae,XTrainA);                
 
                 clear net layers
-                a=condn_data_overall(1).neural;
-                s=size(a,1);
-                layers = get_layers1(num_units(j),s);
+                acondn_data_overall
+                layers = get_layers1(num_units(j),747);
                 %layers = get_layers2(120,64,759);
                 %layers = get_layers(120,64,64,759);
                 % train
