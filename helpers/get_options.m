@@ -8,6 +8,7 @@ XTest=[];
 YTest=[];
 for i=1:length(val_idx)
     tmp=condn_data_overall(val_idx(i)).neural;
+    %tmp=condn_data_overall(val_idx(i)).neural;
     if ~isempty(tmp)
         XTest = [XTest;tmp'];
         tmp1 = condn_data_overall(val_idx(i)).targetID;
@@ -29,7 +30,7 @@ end
 YTrain=categorical((YTrain));
 
 batch_size=32;
-val_freq = floor((8/10)*length(XTrain)/batch_size);
+val_freq = floor((9/10)*length(XTrain)/batch_size);
 %val_freq = floor(length(XTrain)/batch_size);
 options = trainingOptions('adam', ...
     'MaxEpochs',150, ...

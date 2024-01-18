@@ -60,13 +60,13 @@ tmp_lp(:,bb) = 1e-5*randn(size(tmp_lp(:,bb)));
 % tmp_lg(:,bb) = 1e-5*randn(size(tmp_lg(:,bb)));
 
 % normalizing between 0 and 1
-tmp_hg = (tmp_hg - min(tmp_hg(:)))/(max(tmp_hg(:))-min(tmp_hg(:)));
-tmp_lp = (tmp_lp - min(tmp_lp(:)))/(max(tmp_lp(:))-min(tmp_lp(:)));
+% tmp_hg = (tmp_hg - min(tmp_hg(:)))/(max(tmp_hg(:))-min(tmp_hg(:)));
+% tmp_lp = (tmp_lp - min(tmp_lp(:)))/(max(tmp_lp(:))-min(tmp_lp(:)));
 %tmp_lg = (tmp_lg - min(tmp_lg(:)))/(max(tmp_lg(:))-min(tmp_lg(:)));
 
 % L2 norm of 1
-% tmp_hg = tmp_hg./norm(tmp_hg(:));
-% tmp_lp = tmp_lp./norm(tmp_lp(:));
+tmp_hg = tmp_hg./norm(tmp_hg(:));
+tmp_lp = tmp_lp./norm(tmp_lp(:));
 
 % make new data structure
 tmp = [tmp_hg tmp_lp ];

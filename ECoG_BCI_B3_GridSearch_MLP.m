@@ -13,7 +13,7 @@ load session_data_B3
 addpath 'C:\Users\nikic\Documents\MATLAB'
 condn_data={};
 pooling=1;
-for i=1:11%length(session_data)
+for i=1:2%length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');

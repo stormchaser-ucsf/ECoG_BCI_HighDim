@@ -222,17 +222,16 @@ title([num2str(100*mean(diag(acc))) '% Accuracy'])
 
 clc;clear
 close all
-root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 addpath 'C:\Users\nikic\Documents\MATLAB'
 
-folders={'20221129','20221206','20221214','20221215','20230111','20230118',...
-    '20230120'};
+folders={'20240110'};
 
 % load the files especially if robot3dArrow. If Imagined and if
-% TrialData.Target is between 10 and 13, then store it 
+% TrialData.Target is between 10 and 13, then store it
 filedata=[];
 k=1;
 for i=1:length(folders)
@@ -241,26 +240,133 @@ for i=1:length(folders)
     D = dir(folderpath);
     for j=3:length(D)
         filepath = fullfile(folderpath,D(j).name);
-        D1 =dir(filepath);        
+        D1 =dir(filepath);
         datapath = fullfile(filepath,D1(3).name);
-        files = findfiles('',datapath)';
-        for ii=1:length(files)
-            load(files{ii});
-            target = TrialData.TargetID;
-            if sum(target == [1 2 4])>0
-                filedata(k).TargetID = target;
-                filedata(k).filename = files{ii};                
-                filedata(k).filetype = 1;
-                k=k+1;
-            elseif (target >= 10) && (target <=11)                
-                filedata(k).TargetID = target;
-                filedata(k).filename = files{ii};                
-                filedata(k).filetype = 0;
-                k=k+1;
+        if ~isempty(regexp(datapath,'Imagined'))
+            files = findfiles('',datapath)';
+            for ii=1:length(files)
+                load(files{ii});
+                target = TrialData.TargetID;
+                if sum(target == [1 2 4])>0
+                    if target==4
+                        target=3;
+                    end
+                    filedata(k).targetID = target;
+                    filedata(k).filename = files{ii};
+                    filedata(k).filetype = 1;
+                    k=k+1;
+                elseif (target >= 10) && (target <=11)
+                    if target ==10
+                        target=4;
+                    elseif target==11;
+                        target=5;
+                    end
+                    filedata(k).targetID = target;
+                    filedata(k).filename = files{ii};
+                    filedata(k).filetype = 0;
+                    k=k+1;
+                end
             end
         end
     end
 end
+
+% load the neural data, also pass it through the PnP decoder
+load('net_B3_mlp_BadChannels')
+net = net_B3_mlp_BadChannels;
+for ii=1:length(filedata)
+    disp(ii/length(filedata)*100)
+    load(filedata(ii).filename)
+    features  = TrialData.SmoothedNeuralFeatures;
+    temp = cell2mat(features);
+    kinax = find(TrialData.TaskState==3);
+    temp = cell2mat(features(kinax));
+
+    kinax1 = find(TrialData.TaskState==1);
+    temp_state1 = cell2mat(features(kinax1));
+    temp = temp([257:512 1025:1280 1537:1792],:); %delta, beta, hG
+    %temp = temp([1025:1280],:);% only hG
+    %bad_ch = [108 113 118];
+    bad_ch = [14,15,21,22,108,113,118]; % based on new noise levels
+    good_ch = ones(size(temp,1),1);
+    for iii=1:length(bad_ch)
+        %bad_ch_tmp = bad_ch(iii)*[1 2 3];
+        bad_ch_tmp = bad_ch(iii)+(256*[0 1 2]);
+        %bad_ch_tmp = bad_ch(iii)+(256*[0 ]);
+        good_ch(bad_ch_tmp)=0;
+    end
+    temp = temp(logical(good_ch),:);
+    % 2-norm
+    for i=1:size(temp,2)
+        temp(:,i) = temp(:,i)./norm(temp(:,i));
+    end
+    % store neural features
+    %filedata(ii).neural = temp;
+    % store decoder output
+    filedata(ii).neural = predict(net,temp')';
+end
+
+condn_data_overall=filedata;
+cv_acc=[];
+for iter=1:20
+    % split into training and testing trials, 15% test, 15% val, 70% test
+    tidx=0;tidx_1=0;
+    while tidx<5 || tidx_1<5
+        test_prop=0.15;
+        test_idx = randperm(length(condn_data_overall),round(test_prop*length(condn_data_overall)));
+        test_idx=test_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I(test_idx)=0;
+        train_val_idx = find(I~=0);
+        if test_prop==0
+            prop=0.80;
+        else
+            prop = (0.7/0.85);
+        end
+        tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+        train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I([train_idx;test_idx])=0;
+        val_idx = find(I~=0);val_idx=val_idx(:);
+
+        xx=[];
+        for k=1:length(val_idx)
+            xx(k) = condn_data_overall(val_idx(k)).targetID;
+        end
+        tidx=length(unique(xx));
+
+        xx=[];
+        for k=1:length(val_idx)
+            xx(k) = condn_data_overall(test_idx(k)).targetID;
+        end
+        tidx_1=length(unique(xx));
+        %disp([tidx_1 tidx])
+    end
+
+    % training options for NN
+    [options,XTrain,YTrain] = ...
+        get_options(condn_data_overall,val_idx,train_idx);
+
+    % train network
+    a=condn_data_overall(1).neural;
+    s=size(a,1);
+    layers = get_layers2(10,10,s,5);
+    %layers = get_layers1(120,s,5);
+    net = trainNetwork(XTrain,YTrain,layers,options);
+    cv_perf = test_network(net,condn_data_overall,test_idx);
+    cv_acc(iter) = cv_perf*100;
+end
+cv_acc_decodes = cv_acc;
+figure;boxplot(cv_acc)
+ylim([10 70])
+
+figure;boxplot([cv_acc_decodes' cv_acc_neural'])
+ylim([10 70])
+title('Co-activation')
+
+%%
+
+% load the PnP MLP
 
 % load the rnn
 load net_bilstm_20220824
