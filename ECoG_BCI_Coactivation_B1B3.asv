@@ -316,7 +316,7 @@ end
 
 condn_data_overall=filedata;
 cv_acc=[];
-for iter=6:10
+for iter=1:5
     % split into training and testing trials, 15% test, 15% val, 70% test
     tidx=0;tidx_1=0;
     while tidx<5 || tidx_1<5
@@ -367,7 +367,6 @@ end
 cv_acc_decodes = cv_acc;
 figure;boxplot(cv_acc)
 ylim([10 70])
-hline(20,'r')
 
 % figure;boxplot([cv_acc_decodes' cv_acc_neural'])
 % ylim([10 70])

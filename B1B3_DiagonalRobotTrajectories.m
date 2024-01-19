@@ -409,7 +409,7 @@ axis tight
 %% plotting diagonal robot trajectories (MAIN)
 
 clc;clear
-foldername = {'20231207','20231210','20231215','20231218'};
+foldername = {'20231207','20231210','20231215','20231218','20231228','20231229'};
 task_name = 'Robot';
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
@@ -422,11 +422,11 @@ files=[];
 for i=1:length(foldername)
     tmp = fullfile(root_path,foldername{i},'Robot3D');
     tmp=dir(tmp);
-    if i==1
-        idx=[7:10];
-        tmp=tmp(idx);
-    end
-    for j=1:length(tmp)
+%     if i==1
+%         idx=[7:10];
+%         tmp=tmp(idx);
+%     end
+    for j=3:length(tmp)
         filename = fullfile(tmp(j).folder,tmp(j).name,'BCI_Fixed');
         files=[files;findfiles('',filename)'];
     end
@@ -435,7 +435,7 @@ end
 
 % get all the good robot 3D trial data and plot them
 col = {'r','g','b','c','m','y'};
-col=turbo(4);
+col=turbo(5);
 files_suc=[];
 figure;
 hold on
@@ -446,10 +446,13 @@ tid=[];
 % also get the velocities in the x and y directions
 vel=[];
 err_vel=[];
+files_idx=[];
 for i=1:length(files)
     load(files{i})
     tid = [tid TrialData.TargetID];
-    if TrialData.TargetID == TrialData.SelectedTargetID
+    %if (TrialData.TargetID == TrialData.SelectedTargetID) && (tid(end)>6)
+    if (tid(end)>6)
+        files_idx = [files_idx i];
         kin = TrialData.CursorState;
         task_state = TrialData.TaskState;
         kinidx = find(task_state==3);
@@ -457,12 +460,12 @@ for i=1:length(files)
         target = TrialData.TargetPosition;
         targetID = TrialData.TargetID-6;
         fs = TrialData.Params.UpdateRate;
-        if size(kin,2)*(1/fs) < 12
+        %if size(kin,2)*(1/fs) < 25
             files_suc = [files_suc;files(i)];
             %plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col{targetID});
             plot3(kin(1,:),kin(2,:),kin(3,:),'LineWidth',2,'color',col(targetID,:));
             vel = [vel kin(4:6,:)];
-        end
+        %end
         % get the velocities relative to the ideal velocity towards the
         % target
         pos = TrialData.TargetPosition(1:2)';

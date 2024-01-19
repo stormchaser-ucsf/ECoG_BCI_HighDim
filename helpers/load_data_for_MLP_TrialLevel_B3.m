@@ -31,8 +31,8 @@ for ii=1:length(files)
             % get delta, beta and hG removing bad channels
             temp = temp([257:512 1025:1280 1537:1792],:); %delta, beta, hG
             %temp = temp([1537:1792],:);% only hG
-            %bad_ch = [108 113 118];
-            bad_ch = [14,15,21,22,108,113,118]; % based on new noise levels
+            bad_ch = [108 113 118];
+            %bad_ch = [14,15,21,22,108,113,118]; % based on new noise levels
             good_ch = ones(size(temp,1),1);
             for iii=1:length(bad_ch)
                 %bad_ch_tmp = bad_ch(iii)*[1 2 3];
