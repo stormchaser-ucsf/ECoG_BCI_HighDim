@@ -47,6 +47,19 @@ session_data(1).AM_PM = {'am','am','am','am','am',...
     'am','am','am','am',...
     'am','am','am'};
 
+%day2
+k=2;
+session_data(k).Day = '20240119';
+session_data(k).folders = {'140305','140743','141436','141939','142525',...
+    '143309','143645','144014','144321',...
+    '145136','145454','145811'};
+session_data(k).folder_type={'I','I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am'};
+
 
 save session_data_9DOF_B3 session_data
 
@@ -71,7 +84,7 @@ for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
-   
+
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
     batch_idx = find(folders_batch==1);
@@ -271,7 +284,7 @@ figure;boxplot(tmp)
 [h p tb st] = ttest(acc_imagined_days(:) ,acc_batch_days(:));p
 [h p tb st] = ttest(acc_online_days(:) ,acc_batch_days(:));p
 
-% fit a general linear regression model across days 
+% fit a general linear regression model across days
 acc=[];
 days_acc=[];
 experiment=[];
@@ -293,7 +306,7 @@ glm = fitglm(data,'acc ~ 1 + experiment');
 [h p tb st] = ttest(tmp,tmp2)
 [h p tb st] = ttest(tmp1,tmp2)
 
-% using a GLM for each action across days 
+% using a GLM for each action across days
 acc=[];
 days_acc=[];
 experiment=[];
@@ -385,7 +398,7 @@ for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
-   
+
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
     batch_idx = find(folders_batch==1);
@@ -404,12 +417,46 @@ for i=1:length(session_data)
     end
 
     %load the data
-    load('ECOG_Grid_8596_000067_B3.mat')    
+    load('ECOG_Grid_8596_000067_B3.mat')
     condn_data = load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0,0);
-    
+
+    % TEMP STEP TO SEE IF WE CAN SWAP OUT ACTIONS
+    % action 9 -> action 4. Then get all other 7DoF actions
+    idx9 = [find([condn_data.targetID]==9)];
+    idx8 = find([condn_data.targetID]==8);
+    idx4 = find([condn_data.targetID]==4);
+    k=1;condn_data_new={};
+    for ii=1:length(condn_data)
+        if condn_data(ii).targetID <=7 && condn_data(ii).targetID ~=4 ...
+                && condn_data(ii).targetID ~=5
+            condn_data_new(k).neural = condn_data(ii).neural;
+            condn_data_new(k).targetID = condn_data(ii).targetID;
+            k=k+1;
+        end
+    end
+    for ii=1:length(idx9)
+        condn_data_new(k).neural = condn_data(idx9(ii)).neural;
+        condn_data_new(k).targetID = 4;%condn_data(idx9(ii)).targetID;
+        k=k+1;
+    end
+    for ii=1:length(idx8)
+        condn_data_new(k).neural = condn_data(idx8(ii)).neural;
+        condn_data_new(k).targetID = 5;%condn_data(idx9(ii)).targetID;
+        k=k+1;
+    end
+
+    [acc_imagined,train_permutations] = accuracy_imagined_data(condn_data_new, iterations);
+    acc_imagined=squeeze(nanmean(acc_imagined,1));
+    figure;imagesc(acc_imagined)
+    colormap parula
+    clim([0 1])
+    set(gcf,'color','w')
+    title(['Accuracy of ' num2str(100*mean(diag(acc_imagined)))])
+
+
     % save the data
-    filename = ['condn_data_9DOF_ImaginedTrials_Day' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %     filename = ['condn_data_9DOF_ImaginedTrials_Day' num2str(i)];
+    %     save(filename, 'condn_data', '-v7.3')
 
     % get cross-val classification accuracy
     [acc_imagined,train_permutations] = accuracy_imagined_data_9DOF(condn_data, iterations);
@@ -583,7 +630,7 @@ figure;boxplot(tmp)
 [h p tb st] = ttest(acc_imagined_days(:) ,acc_batch_days(:));p
 [h p tb st] = ttest(acc_online_days(:) ,acc_batch_days(:));p
 
-% fit a general linear regression model across days 
+% fit a general linear regression model across days
 acc=[];
 days_acc=[];
 experiment=[];
@@ -605,7 +652,7 @@ glm = fitglm(data,'acc ~ 1 + experiment');
 [h p tb st] = ttest(tmp,tmp2)
 [h p tb st] = ttest(tmp1,tmp2)
 
-% using a GLM for each action across days 
+% using a GLM for each action across days
 acc=[];
 days_acc=[];
 experiment=[];
@@ -676,6 +723,281 @@ hline(0)
 
 b1_acc_rel_imagined_prop = [a1' a2'];
 save b1_acc_rel_imagined_prop b1_acc_rel_imagined_prop
+
+
+%% (MAIN B3) removing two actions to make it 7DoF and evaluating performance
+
+clc;clear;
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data_9DOF_B3
+addpath 'C:\Users\nikic\Documents\MATLAB'
+acc_imagined_days=[];
+acc_online_days=[];
+acc_batch_days=[];
+iterations=5;
+plot_true=true;
+acc_batch_days_overall=[];
+files_imagined=[];
+files_online=[];
+for i=1:length(session_data)
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+
+    % combine batch and online
+    online_idx = [online_idx];
+
+
+    %disp([session_data(i).Day '  ' num2str(length(batch_idx))]);
+
+    %%%%%% get the files imagined
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files_imagined = [files_imagined;findfiles('',folderpath)'];
+    end
+
+    %%%%%% get the files online
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files_online = [files_online;findfiles('',folderpath)'];
+    end
+end
+
+
+% load all data
+load('ECOG_Grid_8596_000067_B3.mat')
+files_imagined = [files_imagined;files_online];
+
+%load the imagined data
+load('ECOG_Grid_8596_000067_B3.mat')
+condn_data_imagined = [load_data_for_MLP_TrialLevel_B3(files_imagined,ecog_grid,0,0)];
+tmp={};k=1;
+for i=1:length(condn_data_imagined)
+    if ~isempty(condn_data_imagined(i).targetID)
+        tmp(k).neural = condn_data_imagined(i).neural;
+        tmp(k).targetID = condn_data_imagined(i).targetID;
+        k=k+1;
+    end
+end
+condn_data_imagined=tmp;
+
+% retain only the 7 main actions
+condn_data_imagined7={};
+k=1;
+for i=1:length(condn_data_imagined)
+    if condn_data_imagined(i).targetID <=7
+        condn_data_imagined7(k).neural=condn_data_imagined(i).neural;
+        condn_data_imagined7(k).targetID=condn_data_imagined(i).targetID;
+        k=k+1;
+    end
+end
+
+% swap out the actions, head and z-up
+condn_data = condn_data_imagined;
+idx9 = [find([condn_data.targetID]==9)];
+idx8 = find([condn_data.targetID]==8);
+idx4 = find([condn_data.targetID]==4);
+k=1;condn_data_new={};
+for ii=1:length(condn_data)
+    if condn_data(ii).targetID <=7 && condn_data(ii).targetID ~=4 ...
+           && condn_data(ii).targetID ~=5
+        condn_data_new(k).neural = condn_data(ii).neural;
+        condn_data_new(k).targetID = condn_data(ii).targetID;
+        k=k+1;
+    end
+end
+for ii=1:length(idx8)
+    condn_data_new(k).neural = condn_data(idx8(ii)).neural;
+    condn_data_new(k).targetID = 4;%condn_data(idx9(ii)).targetID;
+    k=k+1;
+end
+for ii=1:length(idx9)
+    condn_data_new(k).neural = condn_data(idx9(ii)).neural;
+    condn_data_new(k).targetID = 5;%condn_data(idx9(ii)).targetID;
+    k=k+1;
+end
+
+% test it on imagined data itself (CV)
+[acc_imagined,train_permutations,acc_imag_bin] =...
+    accuracy_imagined_data(condn_data_new, iterations);
+acc_imagined=squeeze(nanmean(acc_imagined,1));
+acc_imag_bin=squeeze(nanmean(acc_imag_bin,1));
+
+figure;imagesc(acc_imagined)
+colormap parula
+clim([0 1])
+set(gcf,'color','w')
+title(['Accuracy of ' num2str(100*mean(diag(acc_imagined)))])
+disp(diag(acc_imagined))
+disp(diag(acc_imag_bin))
+
+% using the old 7DoF
+condn_data_new = condn_data_imagined7;
+% test it on imagined data itself (CV)
+[acc_imagined,train_permutations,acc_imag_bin] =...
+    accuracy_imagined_data(condn_data_new, iterations);
+acc_imagined=squeeze(nanmean(acc_imagined,1));
+acc_imag_bin=squeeze(nanmean(acc_imag_bin,1));
+
+figure;imagesc(acc_imagined)
+colormap parula
+clim([0 1])
+set(gcf,'color','w')
+title(['Accuracy of ' num2str(100*mean(diag(acc_imagined)))])
+disp(diag(acc_imagined))
+disp(diag(acc_imag_bin))
+
+
+% build a classifier
+condn_data_overall = condn_data_new;
+test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+test_idx=test_idx(:);
+I = ones(length(condn_data_overall),1);
+I(test_idx)=0;
+train_val_idx = find(I~=0);
+prop = (0.7/0.85);
+tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+I = ones(length(condn_data_overall),1);
+I([train_idx;test_idx])=0;
+val_idx = find(I~=0);val_idx=val_idx(:);
+
+% training options for NN
+[options,XTrain,YTrain] = ...
+    get_options(condn_data_overall,val_idx,train_idx);
+
+layers = get_layers1(120,759);
+net = trainNetwork(XTrain,YTrain,layers,options);
+
+% test network on imagined itself
+cv_perf = test_network(net,condn_data_overall,test_idx);
+
+% test network on all the held out online data
+condn_data_online = [load_data_for_MLP_TrialLevel_B3(files_online,ecog_grid,0,0)];
+
+% get only the first 7 actions
+condn_data = condn_data_online;
+idx9 = [find([condn_data.targetID]==9)];
+idx8 = find([condn_data.targetID]==8);
+idx4 = find([condn_data.targetID]==4);
+k=1;condn_data_new={};
+for ii=1:length(condn_data)
+    if ~isempty(condn_data(ii).targetID) && ...
+            condn_data(ii).targetID <=7 && condn_data(ii).targetID ~=4 ...
+            && condn_data(ii).targetID ~=5
+        condn_data_new(k).neural = condn_data(ii).neural;
+        condn_data_new(k).targetID = condn_data(ii).targetID;
+        k=k+1;
+    end
+end
+for ii=1:length(idx8)
+    condn_data_new(k).neural = condn_data(idx8(ii)).neural;
+    condn_data_new(k).targetID = 4;%condn_data(idx9(ii)).targetID;
+    k=k+1;
+end
+for ii=1:length(idx9)
+    condn_data_new(k).neural = condn_data(idx9(ii)).neural;
+    condn_data_new(k).targetID = 5;%condn_data(idx9(ii)).targetID;
+    k=k+1;
+end
+
+test_idx =1:length(condn_data_new);
+cv_perf = test_network(net,condn_data_new,test_idx);
+
+
+
+% save the data
+%     filename = ['condn_data_9DOF_ImaginedTrials_Day' num2str(i)];
+%     save(filename, 'condn_data', '-v7.3')
+
+% get cross-val classification accuracy
+[acc_imagined,train_permutations] = accuracy_imagined_data_9DOF(condn_data, iterations);
+acc_imagined=squeeze(nanmean(acc_imagined,1));
+if plot_true
+    figure;imagesc(acc_imagined)
+    colormap bone
+    clim([0 1])
+    set(gcf,'color','w')
+    title(['Accuracy of ' num2str(100*mean(diag(acc_imagined)))])
+    xticks(1:9)
+    yticks(1:9)
+    xticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
+        'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
+    yticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
+        'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
+end
+acc_imagined_days(:,i) = diag(acc_imagined);
+
+
+%%%%%% get classification accuracy for online data
+folders = session_data(i).folders(online_idx);
+day_date = session_data(i).Day;
+files=[];
+for ii=1:length(folders)
+    folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+    %cd(folderpath)
+    files = [files;findfiles('',folderpath)'];
+end
+
+% get the classification accuracy
+acc_online = accuracy_online_data_9DOF(files);
+if plot_true
+    figure;imagesc(acc_online)
+    colormap bone
+    clim([0 1])
+    set(gcf,'color','w')
+    title(['Accuracy of ' num2str(100*mean(diag(acc_online)))])
+    xticks(1:9)
+    yticks(1:9)
+    xticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
+        'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
+    yticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
+        'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
+end
+acc_online_days(:,i) = diag(acc_online);
+
+
+%%%%%% classification accuracy for batch data
+folders = session_data(i).folders(batch_idx);
+day_date = session_data(i).Day;
+files=[];
+for ii=1:length(folders)
+    folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+    %cd(folderpath)
+    files = [files;findfiles('',folderpath)'];
+end
+
+% get the classification accuracy
+acc_batch = accuracy_online_data_9DOF(files);
+if plot_true
+    figure;imagesc(acc_batch)
+    colormap bone
+    clim([0 1])
+    set(gcf,'color','w')
+    title(['Accuracy of ' num2str(100*mean(diag(acc_batch)))])
+    xticks(1:9)
+    yticks(1:9)
+    xticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Lips','Tongue',...
+        'Both Middle','Rt. Wrist Pronation','Rt. Wrist Supination'})
+    yticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Lips','Tongue',...
+        'Both Middle','Rt. Wrist Pronation','Rt. Wrist Supination'})
+end
+acc_batch_days(:,i) = diag(acc_batch);
+acc_batch_days_overall(:,:,i)=acc_batch;
+end
 
 
 
@@ -853,7 +1175,7 @@ plot((median(mahab_full_online(:,1:end))))
 plot((median(mahab_full_batch(:,1:end))))
 
 
-%% for chris, detecting start and stop of a signal 
+%% for chris, detecting start and stop of a signal
 
 
 % Define the true signal parameters
@@ -892,12 +1214,12 @@ for i = 1:length(t)
     % Predict the state and error covariance
     x_pred = F*x_est;
     P_pred = F*P_est*F' + Q;
-    
+
     % Update the state and error covariance based on the measurement
     K = P_pred*H'/(H*P_pred*H' + R);
     x_est = x_pred + K*(y_meas(i) - H*x_pred);
     P_est = (1 - K*H)*P_pred;
-    
+
     % Save the estimated signal
     x_kf(i) = x_est;
 end

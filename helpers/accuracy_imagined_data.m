@@ -1,4 +1,4 @@
-function [acc,train_permutations] = accuracy_imagined_data(condn_data, iterations)
+function [acc,train_permutations,acc_bin] = accuracy_imagined_data(condn_data, iterations)
 
 num_trials = length(condn_data);
 train_permutations = zeros(num_trials,iterations)';
@@ -70,13 +70,19 @@ for iter = 1:iterations % loop over 20 times
     % train MLP
     net = patternnet([120]) ;
     net.performParam.regularization=0.2;
-    net.divideParam.trainRatio = 0.875;
-    net.divideParam.valRatio = 0.125;
-%     net.divideParam.testRatio = 0;
+    net.divideParam.trainRatio = 0.85;
+    net.divideParam.valRatio = 0.15;
+    net.divideParam.testRatio = 0;
     net = train(net,N,T');
+
+    % get the bin level decoding accuracy
+    acc_bin=zeros(7);
+
+
 
     % test it out on the held out trials using a mode filter
     acc = zeros(7);
+    acc_bin = zeros(7);
     for i=1:length(test_data)
         features = test_data(i).neural;
         if ~isempty(features)
@@ -90,15 +96,26 @@ for iter = 1:iterations % loop over 20 times
                 decodes_sum(ii) = sum(decodes==ii);
             end
             [aa bb]=max(decodes_sum);
-            acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1;
+            acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+
+            % bin level 
+            for j=1:length(idx)
+                acc_bin(test_data(i).targetID,idx(j)) = ...
+                    acc_bin(test_data(i).targetID,idx(j))+1;
+            end
         end
     end
     for i=1:size(acc,1)
         acc1(i,:) = acc(i,:)/sum(acc(i,:));
     end
+    for i=1:size(acc_bin,1)
+        acc_bin1(i,:) = acc_bin(i,:)/sum(acc_bin(i,:));
+    end
     %acc1
     acc_permutations(iter,:,:) = acc1;
+    acc_bin_permutations(iter,:,:) = acc_bin1;
 end
 acc=acc_permutations;
+acc_bin = acc_bin_permutations;
 end
 

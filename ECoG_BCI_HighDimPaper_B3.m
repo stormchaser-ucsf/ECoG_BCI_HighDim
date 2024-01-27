@@ -560,7 +560,8 @@ addpath('C:\Users\nikic\Documents\MATLAB')
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
-foldernames = {'20230111','20230118','20230119','20230125','20230126','20230201','20230203'};
+foldernames = {'20230111','20230118','20230119','20230125','20230126',...
+    '20230201','20230203'};
 cd(root_path)
 
 

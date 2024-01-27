@@ -1,5 +1,5 @@
 function layers = get_layers1(j,input_size,num_classes)
-
+%function layers = get_layers1(j,input_size,num_classes)
 
 if nargin<3
     num_classes=7;

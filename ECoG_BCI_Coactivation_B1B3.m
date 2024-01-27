@@ -228,7 +228,7 @@ cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 addpath 'C:\Users\nikic\Documents\MATLAB'
 
-folders={'20240110','20240117'};
+folders={'20240110','20240117','20240119'};
 
 % load the files especially if robot3dArrow. If Imagined and if
 % TrialData.Target is between 10 and 13, then store it
@@ -241,10 +241,11 @@ for i=1:length(folders)
     if i==1
         D=D(8:end);
     end
-    if i==2
+    if i==2 || i==3
         D=D(3:6);
     end
-    for j=3:length(D)
+    
+    for j=1:length(D)
         filepath = fullfile(folderpath,D(j).name);
         D1 =dir(filepath);
         datapath = fullfile(filepath,D1(3).name);
@@ -308,15 +309,15 @@ for ii=1:length(filedata)
     end
     
     % store neural features
-    filedata(ii).neural = temp;
+    %filedata(ii).neural = temp;
 
     % store decoder output
-    %filedata(ii).neural = predict(net,temp')';
+    filedata(ii).neural = predict(net,temp')';
 end
 
 condn_data_overall=filedata;
 cv_acc=[];
-for iter=6:10
+for iter=1:10
     % split into training and testing trials, 15% test, 15% val, 70% test
     tidx=0;tidx_1=0;
     while tidx<5 || tidx_1<5
@@ -358,8 +359,8 @@ for iter=6:10
     % train network
     a=condn_data_overall(1).neural;
     s=size(a,1);
-    %layers = get_layers2(10,10,s,5);
-    layers = get_layers1(120,s,5);
+    layers = get_layers2(10,10,s,5);
+    %layers = get_layers1(120,s,5);
     net = trainNetwork(XTrain,YTrain,layers,options);
     cv_perf = test_network(net,condn_data_overall,test_idx);
     cv_acc(iter) = cv_perf*100;

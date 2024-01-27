@@ -1277,9 +1277,9 @@ Params.ImaginedMvmtTime = 4; % A green square, subject has actively imagine the 
 lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
     'PassbandFrequency',5,'PassbandRipple',0.2, ...
     'SampleRate',1e3);
-
 % 
 % % 
+% % % 
 % % log spaced hg filters
 % Params.Fs = 1000;
 % Params.FilterBank(1).fpass = [70,77];   % high gamma1
@@ -1314,7 +1314,7 @@ for i=1:length(files)
     %get hG through filter bank approach
     filtered_data=zeros(size(features,1),size(features,2),1);
     k=1;
-    for ii=1 %9:16 is hG, 4:5 is beta
+    for ii=9:16 %is hG, 4:5 is beta
         filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
             Params.FilterBank(ii).b, ...
             Params.FilterBank(ii).a, ...
@@ -1324,10 +1324,14 @@ for i=1:length(files)
     %tmp_hg = squeeze(mean(filtered_data.^2,3));
     tmp_hg = squeeze(mean(filtered_data,3));
 
-    % low pass filter the data 
-%     features1 = [randn(4000,128);features;randn(4000,128)];
-%     tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
-%     tmp_hg = tmp_hg(4001:end-4000,:);
+    % low pass filter the data or low pass filter hG data
+    %features1 = [randn(4000,128);features;randn(4000,128)];
+    features1 = [std(tmp_hg(:))*randn(4000,128) + mean(tmp_hg);...
+        tmp_hg;...
+        std(tmp_hg(:))*randn(4000,128) + mean(tmp_hg)];
+    tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+    %tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+    tmp_hg = tmp_hg(4001:end-4000,:);
 
     task_state = TrialData.TaskState;
     idx=[];
@@ -1411,7 +1415,7 @@ for i=1:length(idx)
         m=mean(chdata,2);
         opt=statset('UseParallel',true);
         mb = sort(bootstrp(1000,@mean,chdata','Options',opt));
-        %tt=linspace(-1,7,size(data,1));
+        tt=linspace(-1,7,size(data,1));
         %figure;        
         [fillhandle,msg]=jbfill(tt,(mb(25,:)),(mb(975,:))...
         ,[0.5 0.5 0.5],[0.5 0.5 0.5],1,.4);
@@ -1449,7 +1453,7 @@ for i=1:length(idx)
 
         end
         [pfdr, pval1]=fdr(pval,0.05);pfdr;
-        pfdr=0.0005;
+        %pfdr=0.0005;
         pval(pval<=pfdr) = 1;
         pval(pval~=1)=0;
         m1=m(3001:6000);
@@ -1476,10 +1480,10 @@ for i=1:length(idx)
         end        
     end    
     sgtitle(ImaginedMvmt(idx(i)))
-    filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
-    saveas(gcf,filename)
-    set(gcf,'PaperPositionMode','auto')
-    print(gcf,filename,'-dpng','-r500')
+    %filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
+    %saveas(gcf,filename)
+    %set(gcf,'PaperPositionMode','auto')
+    %print(gcf,filename,'-dpng','-r500')
 end
 %save ERPs_sig_ch_beta -v7.3
 save ERPs_sig_ch_beta -v7.3
