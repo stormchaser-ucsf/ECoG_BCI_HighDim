@@ -2,6 +2,7 @@ function [XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF(files,Params,lpFil
 
 
 % get the raw data
+disp('Loading all the files to get LSTM training data')
 D1={};
 D2={};
 D3={};

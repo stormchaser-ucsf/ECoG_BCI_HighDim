@@ -3907,8 +3907,12 @@ set(gca,'LineWidth',1,'TickLength',[0.025 0.025]);
 figure;hold on
 acc=[];
 acch=[];
+acc_ind_days=[];
+days_track=[];
 for i=1:7%length(acc_days)
     tmp  = acc_days{i};
+    acc_ind_days=[acc_ind_days tmp'];
+    days_track = [days_track str2num(days{i})*ones(1,length(tmp))];
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
     acc(i) = median(tmp);
@@ -3927,6 +3931,27 @@ xlim([0.5 7.5])
 h=hline(1/7);
 set(h,'LineWidth',2)
 yticks([0:.2:1])
+
+% exponential fit 
+y=acc_ind_days(1:end);
+x=days_track(1:end);
+t=x;
+figure;plot(t,y,'ok','MarkerSize',20);hold on
+f=fit(t(:),y(:),'exp1',Algorithm='Levenberg-Marquardt');
+a=f.a;
+b=f.b;
+%c=f.c;
+%d=f.d;
+%yhat = a*exp(b*t) + c*exp(d*t);
+yhat = a*exp(b*t) ;
+plot(t,yhat,'k','LineWidth',1)
+tau = -(1/b);
+time_to_50per = -log(0.5)*tau;
+tt=1:100;
+yhat = a*exp(b*tt) ;
+plot(tt,yhat,'r','LineWidth',1)
+vline(round(time_to_50per))
+
 
 figure;hold on
 t2t=[];

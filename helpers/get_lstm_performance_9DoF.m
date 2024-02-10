@@ -1,6 +1,7 @@
 function [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial] = ...
     get_lstm_performance_9DoF(files,net_bilstm,Params,lpFilt,num_targets)
-
+%function [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial] = ...
+% get_lstm_performance_9DoF(files,net_bilstm,Params,lpFilt,num_targets)
 
 %
 % % get the name of the files

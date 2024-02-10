@@ -1,4 +1,4 @@
-%% ERPs of imagined actions higher sampling rate (MAIN)
+%% ERPs of imagined actions higher sampling rate (MAIN B1)
 % using hG and LMP, beta etc.
 
 clc;clear
@@ -107,7 +107,7 @@ for i=1:length(files)
     %get hG through filter bank approach
     filtered_data=zeros(size(features,1),size(features,2),1);
     k=1;
-    for ii=9:16 %is hG, 4:5 is beta
+    for ii=1% 9:16is hG, 4:5 is beta, 1 is delta
         filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
             Params.FilterBank(ii).b, ...
             Params.FilterBank(ii).a, ...
@@ -119,12 +119,12 @@ for i=1:length(files)
 
     % low pass filter the data or low pass filter hG data
     %features1 = [randn(4000,128);features;randn(4000,128)];
-    features1 = [std(tmp_hg(:))*randn(4000,128) + mean(tmp_hg);...
-        tmp_hg;...
-        std(tmp_hg(:))*randn(4000,128) + mean(tmp_hg)];
-    tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
-    %tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
-    tmp_hg = tmp_hg(4001:end-4000,:);
+%     features1 = [std(tmp_hg(:))*randn(4000,128) + mean(tmp_hg);...
+%         tmp_hg;...
+%         std(tmp_hg(:))*randn(4000,128) + mean(tmp_hg)];
+%     tmp_hg = ((filtfilt(lpFilt,features1)));
+%     %tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+%     tmp_hg = tmp_hg(4001:end-4000,:);
 
     task_state = TrialData.TaskState;
     idx=[];
@@ -166,7 +166,19 @@ end
 %save high_res_erp_LMP_imagined_data -v7.3
 %save high_res_erp_imagined_data -v7.3
 %save high_res_delta_erp_imagined_data -v7.3
-save high_res_erp_hgLFO_imagined_data -v7.3
+%save high_res_erp_hgLFO_imagined_data -v7.3
+save high_res_erp_beta_imagined_data -v7.3
+
+
+% get the number of epochs used
+ep=[];
+for i=1:length(ERP_Data)
+    tmp = ERP_Data{i};
+    ep(i) = size(tmp,3);
+end
+figure;stem(ep)
+xticks(1:32)
+xticklabels(ImaginedMvmt)
 
 
 
@@ -207,7 +219,7 @@ for i=1:length(idx)
         chdata = chdata(:,good_idx);      
 
         % significance testing via temporal cluster correction
-        [t,pval]=temporal_clust_1D(chdata',0.05);
+        %[t,pval]=temporal_clust_1D(chdata',0.05);
 
 
         % confidence intervals around the mean
@@ -274,19 +286,19 @@ for i=1:length(idx)
         
 % 
         %if sum(pval>0)
-        if ~isempty(pval) && sum(t(3000:7000)) >0 
-            %if sum(pval.*sign_time)>0
-                box_col = 'g';
-                sig_ch(i,ch)=1;
-            %else
-            %    box_col = 'b';
-            %    sig_ch(i,ch)=-1;
-            %end
-            box on
-            set(gca,'LineWidth',2)
-            set(gca,'XColor',box_col)
-            set(gca,'YColor',box_col)
-        end        
+%         if ~isempty(pval) && sum(t(3000:7000)) >0 
+%             %if sum(pval.*sign_time)>0
+%                 box_col = 'g';
+%                 sig_ch(i,ch)=1;
+%             %else
+%             %    box_col = 'b';
+%             %    sig_ch(i,ch)=-1;
+%             %end
+%             box on
+%             set(gca,'LineWidth',2)
+%             set(gca,'XColor',box_col)
+%             set(gca,'YColor',box_col)
+%         end        
     end    
     sgtitle(ImaginedMvmt(idx(i)))
     %filename = fullfile('F:\DATA\ecog data\ECoG BCI\Results\ERPs Imagined Actions\delta',ImaginedMvmt{idx(i)});
@@ -297,6 +309,20 @@ end
 %save ERPs_sig_ch_beta -v7.3
 save ERPs_sig_ch_beta -v7.3
 %save ERPs_sig_ch_hg -v7.3
+
+% temp scatter
+tmp=chdata(3600,:);
+idx=ones(size(tmp))+0.1*randn(size(tmp));
+figure;plot(idx,tmp,'.','MarkerSize',18,'Color',[.5 .5 .5 .5])
+xlim([0.5 1.5])
+hold on
+plot(mean(tmp),'.r','MarkerSize',40)
+hline(0,'k')
+set(gcf,'Color','w')
+ylabel('Z-score')
+set(gca,'FontSize',14)
+xlabel ''
+xticks ''
 
 %% no plotting just compute channels with tests for significance
 % SINGLE CHANNEL TEMPORAL CLUSTER CORRECTION OF THE ERP
@@ -341,6 +367,8 @@ end
 %% Clustering tests for significance B1 (2D, TFCE etc). 
 
 % B1 grid layout
+tic
+chMap=TrialData.Params.ChMap;
 grid_layout = chMap;
 neighb=zeros(size(grid_layout));
 for i=1:numel(grid_layout)
@@ -362,9 +390,9 @@ idx = [1:30];
 %idx =  [1,10,30,25,20,28];
 chMap=TrialData.Params.ChMap;
 %ch=3;
-sig_ch=zeros(30,128);
-loop_iter=250;
-tfce_flag=true;
+sig_ch_all=zeros(30,128);
+loop_iter=750;
+tfce_flag=false;
 for i=1:length(idx)    
     data = ERP_Data{idx(i)};
     t_scores=[];tboot=zeros(128,8001,loop_iter);
@@ -375,10 +403,23 @@ for i=1:length(idx)
 
         % bad trial removal
         tmp_bad=zscore(chdata')';
-        artifact_check=((tmp_bad)>=4) + (tmp_bad<=-4);
-        good_idx = find(sum(artifact_check)==0);
+        %artifact_check = (abs(tmp_bad))<=3.0;
+        artifact_check= (tmp_bad(2000:7000,:)>=3.5) + ...
+            (tmp_bad(2000:7000,:)<=-3.5);
+        %good_idx = find(sum(artifact_check)==0);
+        good_idx = find( (sum(artifact_check)/size(artifact_check,1)) <=0.01);
         chdata = chdata(:,good_idx);
 
+        % artfiact correction at each time point
+%         t=[];p=[];artifact_check=logical(artifact_check);
+%         for ii=1:size(chdata,1)
+%             idx= artifact_check(ii,:);
+%             [hh,pp,ci,stats]=ttest(chdata(ii,idx));
+%             t(ii)=stats.tstat;
+%             p(ii)=pp;
+%         end
+    
+        
         % get the true t-statistic at each time-point
         [h,p,ci,stats] = ttest(chdata');
         t = stats.tstat;
@@ -387,27 +428,29 @@ for i=1:length(idx)
         end
         t_scores(ch,:) = t;
         p_scores(ch,:) = p;
+    
 
-        % get the null t-statistics at each time-point
+        % get the null t-statistics at each time-point thru bootstrap
         a = chdata';
         anew=a-mean(a); % set the mean to zero
         asize=size(anew);
         for loop=1:loop_iter
             a1= anew(randi(asize(1),[asize(1) 1]),:); % sample with replacement
-            [h0 p0 ci stats]=ttest(a1); % run the t-test
-            t=stats.tstat;
+            [h0 p0 ci stats0]=ttest(a1); % run the t-test
+            t0=stats0.tstat;
             if tfce_flag
-                t(p>0.05)=0; % only if TFCE
+                t0(p0>0.05)=0; % only if TFCE
             end
-            tboot(ch,:,loop)=t;
-            pboot(ch,:,loop)=p;
+            tboot(ch,:,loop)=t0;
+            pboot(ch,:,loop)=p0;
         end
     end
 
     % TFCE
     if tfce_flag
-        [tfce_score,~] = limo_tfce(2,t_scores,neighb);
-        [tfce_score_boot,~] = limo_tfce(2,tboot,neighb);
+        E=1;H=2;dh=0.2;
+        [tfce_score,~] = limo_tfce(2,t_scores,neighb,1,E,H,dh);
+        [tfce_score_boot,~] = limo_tfce(2,tboot,neighb,1,E,H,dh);
 
         % get the null distribution of tfce score from each bootstrap
         tfce_boot=[];
@@ -420,16 +463,28 @@ for i=1:length(idx)
         tfce_boot=sort(tfce_boot);tfce_score1=tfce_score;
         thresh = tfce_boot(round(0.95*length(tfce_boot)));
         tfce_score1(tfce_score1<thresh)=0;
-        figure;imagesc(tfce_score1)
+        figure;
+        subplot(3,1,1)
+        tt=linspace(-3,4,size(t_scores,2));
+        imagesc(tt,1:128,t_scores);
+        title('Uncorrected for multiple comparisons')
+        subplot(3,1,2)
+        imagesc(tt,1:128,tfce_score1)
+        ylabel('Channels')
+        xlabel('Time')
+        title('Spatiotemp. multiple comparison corrected')
 
         % plot the significant channels
         a=tfce_score1;
-        aa=sum(a(:,3000:7000),2);
+        aa=sum(a(:,3000:6000),2);
         sig_ch_idx = find(aa>0);
-        sig_ch = zeros(numel(chMap));
+        sig_ch = zeros(numel(chMap),1);
         sig_ch(sig_ch_idx)=1;
-        figure;imagesc(sig_ch(chMap))
-        title(ImaginedMvmt{i})
+        sig_ch_all(i,:) = sig_ch;
+        subplot(3,1,3);
+        imagesc(sig_ch(chMap))
+        title('Sig channels 0 to 3s')
+        sgtitle(ImaginedMvmt{i})
         axis off
         set(gcf,'Color','w')
 
@@ -438,27 +493,377 @@ for i=1:length(idx)
         LIMO.data.chanlocs=[];
         LIMO.data.neighbouring_matrix=neighb;
         [mask,cluster_p,max_th] = ...
-            limo_clustering(t_scores,p_scores,tboot,pboot,LIMO,2,0.05,0);
+            limo_clustering((t_scores.^2),p_scores,...
+            (tboot.^2),pboot,LIMO,2,0.05,0);
+        figure;subplot(3,1,1)
+        tt=linspace(-3,4,size(t_scores,2));
+        imagesc(tt,1:128,t_scores);
+        title('Uncorrected for multiple comparisons')    
+        ylabel('Channels')
+        xlabel('Time')
+        subplot(3,1,2)
+        t_scores1=t_scores;
+        t_scores1(mask==0)=0;
+        imagesc(tt,1:128,t_scores1);
+        title('Corrected for multiple comparisons')        
+        ylabel('Channels')
+        xlabel('Time')
         a=mask;
-        aa=sum(a(:,3000:7000),2);
+        aa=sum(a(:,3000:6000),2);
         sig_ch_idx = find(aa>0);
-        sig_ch = zeros(numel(chMap));
+        sig_ch = zeros(numel(chMap),1);
         sig_ch(sig_ch_idx)=1;
-        figure;imagesc(sig_ch(chMap))
+        sig_ch_all(i,:) = sig_ch;
+        subplot(3,1,3);
+        imagesc(sig_ch(chMap))
+        title('Sig channels 0 to 3s')
+        sgtitle(ImaginedMvmt{i})
         axis off
         set(gcf,'Color','w')
-        title(ImaginedMvmt{i})
+        colorbar
     end
-
 end
+% 
+% figure;
+% for ii=3e3:size(aa,2)
+%     a=aa(:,ii);
+%     imagesc(a(chMap))
+%     title(num2str(ii))
+%     caxis([-5 5])
+%     colorbar
+%     pause(0.005)
+% end
 
 
+
+toc
+
+save hg_LFO_Imagined_SpatTemp_New sig_ch_all -v7.3
 
 
 % 
 % tmp=sig_ch(i,:);
 % figure;imagesc(tmp(chMap))
 % title(ImaginedMvmt{i})
+
+%% Clustering tests for significance B1 (2D, TFCE etc) WITH ARTIFACT CORRECTION. 
+
+
+% B1 grid layout
+tic
+chMap=TrialData.Params.ChMap;
+grid_layout = chMap;
+neighb=zeros(size(grid_layout));
+for i=1:numel(grid_layout)
+    [x y]=find(grid_layout == i);
+    Lx=[x-1 x+1];
+    Ly=[y-1 y+1];
+    Lx=Lx(logical((Lx<=size(grid_layout,1)) .* (Lx>0)));
+    Ly=Ly(logical((Ly<=size(grid_layout,2)) .* (Ly>0)));
+    temp=grid_layout(Lx,Ly);
+    ch1=[grid_layout(x,Ly)';grid_layout(Lx,y);];
+    neighb(i,ch1)=1;
+end
+figure;
+imagesc(neighb)
+
+
+
+idx = [1:30];
+%idx =  [1,10,30,25,20,28];
+chMap=TrialData.Params.ChMap;
+%ch=3;
+sig_ch_all=zeros(30,128);
+loop_iter=750;
+tfce_flag=false;
+for i=1:length(idx)    
+    data = ERP_Data{idx(i)};
+    t_scores=[];tboot=zeros(128,8001,loop_iter);
+    p_scores=[];pboot=zeros(128,8001,loop_iter);
+    parfor ch=1:numel(chMap)
+        disp(['movement ' num2str(i) ', Channel ' num2str(ch)])
+        chdata = squeeze((data(:,ch,:)));
+
+        % bad trial removal
+        tmp_bad=zscore(chdata')';
+        artifact_check = logical(abs(tmp_bad)>3.0);
+        chdata(artifact_check)=NaN;        
+
+        [h,p,ci,stats] = ttest(chdata');
+        t = stats.tstat;
+        if tfce_flag
+            t(p>0.05)=0; % only if TFCE
+        end
+        t_scores(ch,:) = t;
+        p_scores(ch,:) = p;
+    
+
+        % get the null t-statistics at each time-point thru bootstrap
+        a = chdata';
+        anew=a-nanmean(a); % centering
+        asize=size(anew);
+        for loop=1:loop_iter
+            a1= anew(randi(asize(1),[asize(1) 1]),:); % sample with replacement
+            [h0 p0 ci stats0]=ttest(a1); % run the t-test
+            t0=stats0.tstat;
+            if tfce_flag
+                t0(p0>0.05)=0; % only if TFCE
+            end
+            tboot(ch,:,loop)=t0;
+            pboot(ch,:,loop)=p0;
+        end
+    end
+
+    % TFCE
+    if tfce_flag
+        E=1;H=2;dh=0.2;
+        [tfce_score,~] = limo_tfce(2,t_scores,neighb,1,E,H,dh);
+        [tfce_score_boot,~] = limo_tfce(2,tboot,neighb,1,E,H,dh);
+
+        % get the null distribution of tfce score from each bootstrap
+        tfce_boot=[];
+        for loop=1:size(tfce_score_boot,3)
+            a=squeeze(tfce_score_boot(:,:,loop));
+            tfce_boot(loop) = max(a(:));
+        end
+
+        % threshold the true tfce scores with the null distribution
+        tfce_boot=sort(tfce_boot);tfce_score1=tfce_score;
+        thresh = tfce_boot(round(0.95*length(tfce_boot)));
+        tfce_score1(tfce_score1<thresh)=0;
+        figure;
+        subplot(3,1,1)
+        tt=linspace(-3,4,size(t_scores,2));
+        imagesc(tt,1:128,t_scores);
+        title('Uncorrected for multiple comparisons')
+        subplot(3,1,2)
+        imagesc(tt,1:128,tfce_score1)
+        ylabel('Channels')
+        xlabel('Time')
+        title('Spatiotemp. multiple comparison corrected')
+
+        % plot the significant channels
+        a=tfce_score1;
+        aa=sum(a(:,3000:6000),2);
+        sig_ch_idx = find(aa>0);
+        sig_ch = zeros(numel(chMap),1);
+        sig_ch(sig_ch_idx)=1;
+        sig_ch_all(i,:) = sig_ch;
+        subplot(3,1,3);
+        imagesc(sig_ch(chMap))
+        title('Sig channels 0 to 3s')
+        sgtitle(ImaginedMvmt{i})
+        axis off
+        set(gcf,'Color','w')
+
+    else
+        % 2D spatiotemporal cluster correction
+        LIMO.data.chanlocs=[];
+        LIMO.data.neighbouring_matrix=neighb;
+        [mask,cluster_p,max_th] = ...
+            limo_clustering((t_scores.^2),p_scores,...
+            (tboot.^2),pboot,LIMO,2,0.05,0);
+        figure;subplot(3,1,1)
+        tt=linspace(-3,4,size(t_scores,2));
+        imagesc(tt,1:128,t_scores);
+        title('Uncorrected for multiple comparisons')    
+        ylabel('Channels')
+        xlabel('Time')
+        subplot(3,1,2)
+        t_scores1=t_scores;
+        t_scores1(mask==0)=0;
+        imagesc(tt,1:128,t_scores1);
+        title('Corrected for multiple comparisons')        
+        ylabel('Channels')
+        xlabel('Time')
+        a=mask;
+        aa=sum(a(:,3000:6000),2);
+        sig_ch_idx = find(aa>0);
+        sig_ch = zeros(numel(chMap),1);
+        sig_ch(sig_ch_idx)=1;
+        sig_ch_all(i,:) = sig_ch;
+        subplot(3,1,3);
+        imagesc(sig_ch(chMap))
+        title('Sig channels 0 to 3s')
+        sgtitle(ImaginedMvmt{i})
+        axis off
+        set(gcf,'Color','w')
+        colorbar
+    end
+end
+% 
+% figure;
+% for ii=3e3:size(aa,2)
+%     a=aa(:,ii);
+%     imagesc(a(chMap))
+%     title(num2str(ii))
+%     caxis([-5 5])
+%     colorbar
+%     pause(0.005)
+% end
+
+
+
+toc
+
+save delta_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
+
+
+% 
+% tmp=sig_ch(i,:);
+% figure;imagesc(tmp(chMap))
+% title(ImaginedMvmt{i})
+
+%% SPATIO TEMP TEST SAME AS AOBOVE BUT TEST OF MEDIAN BEING ZERO 
+
+
+% B1 grid layout
+tic
+chMap=TrialData.Params.ChMap;
+grid_layout = chMap;
+neighb=zeros(size(grid_layout));
+for i=1:numel(grid_layout)
+    [x y]=find(grid_layout == i);
+    Lx=[x-1 x+1];
+    Ly=[y-1 y+1];
+    Lx=Lx(logical((Lx<=size(grid_layout,1)) .* (Lx>0)));
+    Ly=Ly(logical((Ly<=size(grid_layout,2)) .* (Ly>0)));
+    temp=grid_layout(Lx,Ly);
+    ch1=[grid_layout(x,Ly)';grid_layout(Lx,y);];
+    neighb(i,ch1)=1;
+end
+figure;
+imagesc(neighb)
+
+
+
+idx = [1:30];
+%idx =  [1,10,30,25,20,28];
+chMap=TrialData.Params.ChMap;
+%ch=3;
+sig_ch_all=zeros(30,128);
+loop_iter=750;
+tfce_flag=false;
+for i=1:length(idx)    
+    data = ERP_Data{idx(i)};
+    t_scores=[];tboot=zeros(128,8001,loop_iter);
+    p_scores=[];pboot=zeros(128,8001,loop_iter);
+    parfor ch=1:numel(chMap)
+        disp(['movement ' num2str(i) ', Channel ' num2str(ch)])
+        chdata = squeeze((data(:,ch,:)));
+
+       [t,p] = signrank_2D(chdata);
+        
+        if tfce_flag
+            t(p>0.05)=0; % only if TFCE
+        end
+
+        t_scores(ch,:) = t;
+        p_scores(ch,:) = p;
+
+        % get the null t-statistics at each time-point thru bootstrap
+        a = chdata';
+        anew=a-median(a); % set the median to zero
+        asize=size(anew);
+        for loop=1:loop_iter
+            a1= anew(randi(asize(1),[asize(1) 1]),:); % sample with replacement
+            [t0,p0] = signrank_2D(a1');            
+            if tfce_flag
+                t0(p0>0.05)=0; % only if TFCE
+            end
+            tboot(ch,:,loop)=t0;
+            pboot(ch,:,loop)=p0;
+        end
+    end
+
+    % TFCE
+    if tfce_flag
+        E=1;H=2;dh=0.2;
+        [tfce_score,~] = limo_tfce(2,t_scores,neighb,1,E,H,dh);
+        [tfce_score_boot,~] = limo_tfce(2,tboot,neighb,1,E,H,dh);
+
+        % get the null distribution of tfce score from each bootstrap
+        tfce_boot=[];
+        for loop=1:size(tfce_score_boot,3)
+            a=squeeze(tfce_score_boot(:,:,loop));
+            tfce_boot(loop) = max(a(:));
+        end
+
+        % threshold the true tfce scores with the null distribution
+        tfce_boot=sort(tfce_boot);tfce_score1=tfce_score;
+        thresh = tfce_boot(round(0.95*length(tfce_boot)));
+        tfce_score1(tfce_score1<thresh)=0;
+        figure;
+        subplot(3,1,1)
+        tt=linspace(-3,4,size(t_scores,2));
+        imagesc(tt,1:128,t_scores);
+        title('Uncorrected for multiple comparisons')
+        subplot(3,1,2)
+        imagesc(tt,1:128,tfce_score1)
+        ylabel('Channels')
+        xlabel('Time')
+        title('Spatiotemp. multiple comparison corrected')
+
+        % plot the significant channels
+        a=tfce_score1;
+        aa=sum(a(:,3000:6000),2);
+        sig_ch_idx = find(aa>0);
+        sig_ch = zeros(numel(chMap),1);
+        sig_ch(sig_ch_idx)=1;
+        sig_ch_all(i,:) = sig_ch;
+        subplot(3,1,3);
+        imagesc(sig_ch(chMap))
+        title('Sig channels 0 to 3s')
+        sgtitle(ImaginedMvmt{i})
+        axis off
+        set(gcf,'Color','w')
+
+    else
+        % 2D spatiotemporal cluster correction
+        LIMO.data.chanlocs=[];
+        LIMO.data.neighbouring_matrix=neighb;
+        [mask,cluster_p,max_th] = ...
+            limo_clustering(abs(t_scores.^2),p_scores,...
+            abs(tboot.^2),pboot,LIMO,2,0.05,0);
+        figure;subplot(3,1,1)
+        tt=linspace(-3,4,size(t_scores,2));
+        imagesc(tt,1:128,t_scores);
+        title('Uncorrected for multiple comparisons')    
+        ylabel('Channels')
+        xlabel('Time')
+        subplot(3,1,2)
+        t_scores1=t_scores;
+        t_scores1(mask==0)=0;
+        imagesc(tt,1:128,t_scores1);
+        title('Corrected for multiple comparisons')        
+        ylabel('Channels')
+        xlabel('Time')
+        a=mask;
+        aa=sum(a(:,3000:6000),2);
+        sig_ch_idx = find(aa>0);
+        sig_ch = zeros(numel(chMap),1);
+        sig_ch(sig_ch_idx)=1;
+        sig_ch_all(i,:) = sig_ch;
+        subplot(3,1,3);
+        imagesc(sig_ch(chMap))
+        title('Sig channels 0 to 3s')
+        sgtitle(ImaginedMvmt{i})
+        axis off
+        set(gcf,'Color','w')
+        colorbar
+    end
+end
+% 
+% figure;
+% for ii=3e3:size(aa,2)
+%     a=aa(:,ii);
+%     imagesc(a(chMap))
+%     title(num2str(ii))
+%     caxis([-5 5])
+%     colorbar
+%     pause(0.005)
+% end
+
 
 
 %% MORE PLOTTING STUFF

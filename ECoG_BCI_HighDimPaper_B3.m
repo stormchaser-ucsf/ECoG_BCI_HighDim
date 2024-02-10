@@ -656,16 +656,16 @@ for i=1:length(files)
                 % hg and delta and beta
                 temp = temp([257:512 1025:1280 1537:1792],:);
 
-
                 % remove the bad channels 108, 113 118
                 bad_ch = [108 113 118];
                 good_ch = ones(size(temp,1),1);
                 for ii=1:length(bad_ch)
-                    bad_ch_tmp = bad_ch(ii)*[1 2 3];
+                    %bad_ch_tmp = bad_ch(ii)*[1 2 3];
+                    bad_ch_tmp = bad_ch(ii)+(256*[0 1 2]);
                     good_ch(bad_ch_tmp)=0;
                 end
-
                 temp = temp(logical(good_ch),:);
+                
                 %                 figure;hist(temp(:))
                 %                 title(d(jj).name)
 

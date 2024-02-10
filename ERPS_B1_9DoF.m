@@ -320,47 +320,142 @@ session_data(10).folder_type={'I','I','I','I',...
     'B','B'};
 session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
 
-% day 11
-session_data(10).Day = '20230714';
-session_data(10).folders={'104450','105120','105739','110205',...
-    '111105','111516','112121','112440','113114','113432',...
-    '114241','114608'};
-session_data(10).folder_type={'I','I','I','I',...
-    'O','O','O','O','O','O',...
-    'B','B'};
-session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
+% day 11 % no more imagined data, only pnp online and batch
+k=11;
+session_data(k).Day = '20230719';
+session_data(k).folders={'133734','134224','134728','135144',...
+    '140605','141013','141421','142149','142551'};
+session_data(k).folder_type={'O','O','O','O',...
+    'B','B','B','B','B'};
+session_data(k).AM_PM = {'pm','pm','pm','pm',...
+    'pm','pm','pm','pm','pm'};
 
 % day 12
-session_data(10).Day = '20230714';
-session_data(10).folders={'104450','105120','105739','110205',...
-    '111105','111516','112121','112440','113114','113432',...
-    '114241','114608'};
-session_data(10).folder_type={'I','I','I','I',...
-    'O','O','O','O','O','O',...
-    'B','B'};
-session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
-
+k=12;
+session_data(k).Day = '20230721';
+session_data(k).folders={'101738','102409','102834','103458',...
+    '105349','105827','110246','111239','111616','112000','113307','113707',...
+    '114321'};
+session_data(k).folder_type={'O','O','O','O',...
+    'B','B','B','B','B','B','B','B',...
+    'B'};
+session_data(k).AM_PM = {'am','am','am','am',...
+    'am','am','am','am','am','am','am','am',...
+    'am'};
 
 % day 13
-session_data(10).Day = '20230714';
-session_data(10).folders={'104450','105120','105739','110205',...
-    '111105','111516','112121','112440','113114','113432',...
-    '114241','114608'};
-session_data(10).folder_type={'I','I','I','I',...
-    'O','O','O','O','O','O',...
-    'B','B'};
-session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
-
+k=13;
+session_data(k).Day = '20230726';
+session_data(k).folders={'132810','133457','133936','134402',...
+    '135617','140041','140527','140914',...
+    '141824','142242','142720','143054'};
+session_data(k).folder_type={'I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B'};
+session_data(k).AM_PM = {'pm','pm','pm','pm',...
+    'pm','pm','pm','pm',...
+    'pm','pm','pm','pm'};
 
 % day 14
-session_data(10).Day = '20230714';
-session_data(10).folders={'104450','105120','105739','110205',...
-    '111105','111516','112121','112440','113114','113432',...
-    '114241','114608'};
-session_data(10).folder_type={'I','I','I','I',...
-    'O','O','O','O','O','O',...
-    'B','B'};
-session_data(10).AM_PM = {'am','am','am','am','am','am','am','am','am','am','am','am'};
+k=14;
+session_data(k).Day = '20230728';
+session_data(k).folders={'103350','104123','104952','105450',...
+    '111555','111960','112404','112801',...
+    '141824','142242','142720','143054'};
+session_data(k).folder_type={'I','I','I','I',...
+    'O','O','O','O',...
+    'B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am',...
+    'am','am','am','am',...
+    'am','am','am','am'};
+
+% day 15
+k=15;
+session_data(k).Day = '20230809';
+session_data(k).folders={'105849','110549','110931','111309',...
+    '112839','113218','113533','113900'};
+session_data(k).folder_type={'O','O','O','O',...
+    'B','B','B','B'};
+session_data(k).AM_PM = {'am','am','am','am',...
+    'am','am','am','am'};
+
+% day 16
+k=16;
+session_data(k).Day = '20230818';
+session_data(k).folders={'100459','101117','101501','101855',...
+    '102206','102746','103158',...
+    '103628','104040','104448','104902',...
+    '105849'};
+session_data(k).folder_type={'O','O','O','O',...
+    'O','O','O',...
+    'I','I','I','I',...
+    'B'};
+session_data(k).AM_PM = {'am','am','am','am',...
+    'am','am','am',...  
+    'am','am','am','am',...
+    'am'};
+
+% day 17
+k=17;
+session_data(k).Day = '20231020';
+session_data(k).folders={'133923','134528',...
+    '134945','135807','140223','140655',...
+    '143525','143847','144336',...
+    '145203','145616','145938'};
+session_data(k).folder_type={'O','O',...
+    'I','I','I','I',...
+    'O','O','O',...
+    'B','B','B'};
+session_data(k).AM_PM = {'pm','pm',...
+    'pm','pm','pm','pm',...
+    'pm','pm','pm',...
+    'pm','pm','pm'};
+
+
+% day 18
+k=18;
+session_data(k).Day = '20231025';
+session_data(k).folders={'105941','111148',...
+    '111747','112642','113037','113654',...
+    '114052','114741'};
+session_data(k).folder_type={'O','O',...
+    'O','O','O','O',...
+    'O','O'};
+session_data(k).AM_PM = {'am','am',...
+    'am','am','am','am',...
+    'am','am'};
+
+
+% day 19
+k=19;
+session_data(k).Day = '20231027';
+session_data(k).folders={'104548','105235','105628','110014','110341',...
+    '110714','111033','111942','112316','112630','113007','113332',...
+    '113912','114235','114615','115026'};
+session_data(k).folder_type={'O','O','O','O','O',...
+    'O','O','O','O','O','O','O',...
+    'O','O','O','O'};
+session_data(k).AM_PM = {'am','am','am','am','am',...
+    'am','am','am','am','am','am','am',...
+    'am','am','am','am'};
+
+
+% day 20
+k=20;
+session_data(k).Day = '20240202';
+session_data(k).folders={'104013',...
+    '104648','105144','105644','111451','112003',...
+    '113352','113754','114136',...
+    '114834'};
+session_data(k).folder_type={'O',...
+    'I','I','I','I','I',...
+    'O','O','O',...
+    'B'};
+session_data(k).AM_PM = {'am',...
+    'am','am','am','am','am',...
+    'am','am','am',...
+    'am'};
+
 
 
 save session_data_9DoF session_data -v7.3
@@ -368,6 +463,10 @@ save session_data_9DoF session_data -v7.3
 
 %% (MAIN) looking at decoding performance from imagined -> online -> batch
 % across days
+
+%%%% IMPORTANT POINT TO NOTE
+% IF THE LSTM OPTION IS USED THEN MATLAB DOES NOT SAVE THE SMOOTHED NEURAL
+% FEATURES AND INSTEAD SAVES ONLY THE BROADBAND DATA
 
 clc;clear;
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
@@ -380,16 +479,16 @@ acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
 iterations=5;
-plot_true=false;
+plot_true=true;
 for i=3:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
-    folders_online = folders_online + folders_batch; % just doing all closed-loop folders at once
+    %folders_online = folders_online + folders_batch; % just doing all closed-loop folders at once
 
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
-    %batch_idx = find(folders_batch==1);
+    batch_idx = find(folders_batch==1);
     %disp([session_data(i).Day '  ' num2str(length(batch_idx))]);
 
     %%%%%% cross_val classification accuracy for imagined data
@@ -403,7 +502,7 @@ for i=3:length(session_data)
     end
 
     %load the data
-    condn_data = load_data_for_MLP_TrialLevel(files);
+    condn_data = load_data_for_MLP_TrialLevel(files,0,1);
     % save the data
     %     filename = ['condn_data_ImaginedTrials_Day' num2str(i)];
     %     save(filename, 'condn_data', '-v7.3')
@@ -445,24 +544,28 @@ for i=3:length(session_data)
     acc_online_days(:,i) = diag(acc_online);
 
 
-    %     %%%%%% cross_val classification accuracy for batch data
-    %     folders = session_data(i).folders(batch_idx);
-    %     day_date = session_data(i).Day;
-    %     files=[];
-    %     for ii=1:length(folders)
-    %         folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
-    %         %cd(folderpath)
-    %         files = [files;findfiles('',folderpath)'];
-    %     end
-    %
-    %     % get the classification accuracy
-    %     acc_batch = accuracy_online_data(files);
-    %     if plot_true
-    %         figure;imagesc(acc_batch)
-    %         colormap bone
-    %         clim([0 1])
-    %         set(gcf,'color','w')
-    %     end
+    %%%%%% cross_val classification accuracy for batch data
+    folders = session_data(i).folders(batch_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    % get the classification accuracy
+    acc_batch = accuracy_online_data_9DOF(files);
+    if plot_true
+        figure;imagesc(acc_batch)
+        colormap bone
+        clim([0 0.8])
+        set(gcf,'color','w')
+        xticklabels({'Rt. Thumb','Left Leg','Left Thumb','Rt. Bicep',...
+            'Lips','Tongue','Both middle','Rot. Rt Wrist','Rot Lt. Wrist'})
+        yticklabels({'Rt. Thumb','Left Leg','Left Thumb','Rt. Bicep',...
+            'Lips','Tongue','Both middle','Rot. Rt Wrist','Rot Lt. Wrist'})
+    end
     %     acc_batch_days(:,i) = diag(acc_batch);
 end
 
@@ -987,6 +1090,13 @@ addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 addpath('C:\Users\nikic\Documents\MATLAB')
 load session_data_9DoF
 session_data
+
+% get the foldername sfrom session_data
+foldernames={};
+for i=1:length(session_data)
+    foldernames{i} = session_data(i).Day;
+end
+
 % for only 6 DoF original:
 %foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
 
@@ -994,7 +1104,7 @@ foldernames = {'20230609','20230616','20230621','20230623','20230628','20230630'
     '20230705','20230707','20230712','20230714','20230719','20230721',...
     '20230726','20230728','20230809','20230818'};%
 % new 9DoF
-foldernames0 = {'20231020','20231025','20231027'};
+foldernames0 = {'20231020','20231025','20231027','20240202'};
 
 foldernames1={'20230816','20230823','20230825',...
     '20230830','20230901','20230906'}; %get the 5D target data from here 
@@ -1077,14 +1187,14 @@ lpFilt = designfilt('lowpassiir','FilterOrder',4, ...
 
 % have to cycle through days 3 to 14 in terms of testing out model across
 % days
-testing_days=[3:19];
+testing_days=[3:20];
 idx = 1:length(datafiles_days);
 acc_sample_days_lstm=[];
 acc_trial_days_lstm=[];
 acc_sample_days_mlp=[];
 acc_trial_days_mlp=[];
 % load the pretrained RNN
-load('net_bilstm_2023_Nov.mat')
+load('net_bilstm_2023_Nov.mat') % trained till 20230602
 for i=1:length(testing_days)
     test_days = testing_days(i);
     train_days = ones(size(idx));
@@ -1102,8 +1212,27 @@ for i=1:length(testing_days)
 
     % get training and testing samples
     clear XTrain XTest YTrain YTest
-    [XTrain,XTest,YTrain,YTest] = get_lstm_features_8DoF(files,Params,lpFilt);
+    [XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF(files,Params,lpFilt);
     %[XTrain,XTest,YTrain,YTest] = get_lstm_features_9DoF_reduced(files,Params,lpFilt);
+
+    % remove problematic channel 99
+    for ii=1:length(XTrain)
+        disp(ii)
+        tmp=XTrain{ii};
+        tmp(99,:)=0;
+        tmp(99*2,:)=0;        
+        XTrain{ii}=tmp;
+    end
+
+    % remove problematic channel 99
+    for ii=1:length(XTest)
+        disp(ii)
+        tmp=XTest{ii};
+        tmp(99,:)=0;
+        tmp(99*2,:)=0;        
+        XTest{ii}=tmp;
+    end
+
 
     % optional -> reduce the channel dimensions
 %     load ch_per_bands
@@ -1133,23 +1262,118 @@ for i=1:length(testing_days)
 %     
     
     % train the LSTM
-     layers= net_bilstm_2023_Nov.Layers(1:10);
-     layers = [layers
-        fullyConnectedLayer(8)% for 8DoF control
+    layers= net_bilstm_2023_Nov.Layers(1:10);
+    layers = [layers
+        fullyConnectedLayer(9)% for 8DoF control
         softmaxLayer
         classificationLayer];
+
+    % train the LSTM after removing bad channels
+%     inputSize=254;numHiddenUnits=250;drop=0.3;numClasses=9;
+%     layers = [ ...
+%         sequenceInputLayer(inputSize)
+%         bilstmLayer(numHiddenUnits,'OutputMode','sequence','Name','lstm_1')
+%         dropoutLayer(drop)
+%         layerNormalizationLayer
+%         gruLayer(numHiddenUnits/2,'OutputMode','last','Name','lstm_2')
+%         dropoutLayer(drop)
+%         layerNormalizationLayer
+%         fullyConnectedLayer(25)
+%         leakyReluLayer
+%         batchNormalizationLayer
+%         fullyConnectedLayer(numClasses)
+%         softmaxLayer
+%         classificationLayer];
+  
+
     %net_bilstm = train_lstm(XTrain,XTest,YTrain,YTest,64,0.3,5,layers);
     net_bilstm = train_lstm(XTrain,XTest,YTrain,YTest,[],[],[],layers);
 
     % test out on the held-out day
     files_test = datafiles_days(test_days).online;
     [acc_lstm_sample,acc_mlp_sample,acc_lstm_trial,acc_mlp_trial]...
-        = get_lstm_performance_8DoF(files_test,net_bilstm,Params,lpFilt,8);
+        = get_lstm_performance_9DoF(files_test,net_bilstm,Params,lpFilt,9);
     acc_sample_days_lstm(i,:,:) = acc_lstm_sample;
     acc_sample_days_mlp(i,:,:) = acc_mlp_sample;
     acc_trial_days_lstm(i,:,:) = acc_lstm_trial;
     acc_trial_days_mlp(i,:,:) = acc_mlp_trial;
 end
+
+
+% save a trained model
+%net_bilstm_9DoF_Feb2024 = net_bilstm;
+%save net_bilstm_9DoF_Feb2024 net_bilstm_9DoF_Feb2024
+
+
+% temp -> building a model restricting to only 7DoF
+% action 1 (rt thumb), action 2 (left leg), action 3 (left thumb), action 4
+% (rot rt wrist, current action 8), action 5 (lips), action 6 (tongue) and
+% action 7 (bmf). Thus excluding old action 4 (rt bicep) and old action 9
+% (rot left wrist). 
+
+XTrain_New={};
+XTest_New ={};
+YTrain_New=[];
+YTest_New=[];
+% training data
+k=1;
+for i=1:length(YTrain)
+    
+    if double(YTrain(i)) <=3
+        XTrain_New{k} = XTrain{i};
+        YTrain_New(k) = double(YTrain(i));
+        k=k+1;
+
+    elseif double(YTrain(i)) == 8
+        XTrain_New{k} = XTrain{i};
+        YTrain_New(k) = 4;
+        k=k+1;
+
+    elseif double(YTrain(i)) == 5 || double(YTrain(i)) == 6 ...
+            || double(YTrain(i)) == 7
+        XTrain_New{k} = XTrain{i};
+        YTrain_New(k) = double(YTrain(i));
+        k=k+1;
+    end
+end
+YTrain_New=categorical(YTrain_New');
+XTrain_New = XTrain_New';
+
+k=1;
+for i=1:length(YTest)
+    
+    if double(YTest(i)) <=3
+        XTest_New{k} = XTest{i};
+        YTest_New(k) = double(YTest(i));
+        k=k+1;
+
+    elseif double(YTest(i)) == 8
+        XTest_New{k} = XTest{i};
+        YTest_New(k) = 4;
+        k=k+1;
+
+    elseif double(YTest(i)) == 5 || double(YTest(i)) == 6 ...
+            || double(YTest(i)) == 7
+        XTest_New{k} = XTest{i};
+        YTest_New(k) = double(YTest(i));
+        k=k+1;
+    end
+end
+YTest_New=categorical(YTest_New');
+XTest_New = XTest_New';
+
+% build the 7DoF decoder using these new mapping of actions
+clear layers
+layers= net_bilstm_2023_Nov.Layers(1:10);
+layers = [layers
+    fullyConnectedLayer(7)% for 7DoF control
+    softmaxLayer
+    classificationLayer];
+
+net_bilstm_7DoF_Feb2024_RtWrist_Act4 = ...
+    train_lstm(XTrain_New,XTest_New,YTrain_New,YTest_New,[],[],[],layers);
+
+save net_bilstm_7DoF_Feb2024_RtWrist_Act4 net_bilstm_7DoF_Feb2024_RtWrist_Act4
 
 % save 9DoF_LSTM_vs_MLP ...
 %      acc_sample_days_lstm acc_sample_days_mlp acc_trial_days_lstm ...

@@ -1,5 +1,5 @@
 function net = train_lstm(XTrain,XTest,YTrain,YTest,numHiddenUnits1,drop1,num_classes,layers)
-
+%function net = train_lstm(XTrain,XTest,YTrain,YTest,numHiddenUnits1,drop1,num_classes,layers)
 
 
 
@@ -31,7 +31,7 @@ numClasses = num_classes;
 
 
 % options
-batch_size=64;
+batch_size=32;
 val_freq = floor(length(XTrain)/batch_size);
 options = trainingOptions('adam', ...
     'MaxEpochs',140, ...

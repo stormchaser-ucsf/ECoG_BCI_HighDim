@@ -6793,8 +6793,12 @@ hold on
 col=turbo(length(ttc));
 col={'r','b','k'}; % in case of plotting the task difficulty by color
 mm=[];
+time2target=[];
+days_list=[];
 for i=1:length(ttc)
     tmp=ttc{i};
+    time2target=[time2target tmp];
+    days_list=[days_list PnP_days_wall_task(i)*ones(1,length(tmp))];
     dim_tmp = dim{i};
     dist_tmp = dist{i};
     idx=length(tmp);
@@ -6846,8 +6850,81 @@ xlabel('Days - PnP')
 ylabel('Accuracy')
 box off
 
+% linear regression
 X=[ones(8,1) (1:8)'];
 [B,BINT,R,RINT,STATS] = regress(acc(1:8)',X);
+
+% exponential fit with tau parameter on time to target
+y=time2target(1:end-4);
+x=days_list(1:end-4);
+t=x;
+figure;plot(t,y,'ok','MarkerSize',20);hold on
+f=fit(t(:),y(:),'exp1',Algorithm='Levenberg-Marquardt');
+a=f.a;
+b=f.b;
+%c=f.c;
+%d=f.d;
+%yhat = a*exp(b*t) + c*exp(d*t);
+yhat = a*exp(b*t) ;
+plot(t,yhat,'k','LineWidth',1)
+tau = -(1/b);
+time_to_50per = -log(2)*tau;
+tt=1:1000;
+yhat = a*exp(b*tt) ;
+plot(tt,yhat,'r','LineWidth',1)
+vline(round(time_to_50per))
+
+% exponential fit with tau parameter on accuracy
+y = acc(1:8);
+x = PnP_days_wall_task(1:8);t=x;
+figure;plot(t,y,'ok','MarkerSize',20);
+ylim([0 1])
+hold on
+f=fit(t(:),y(:),'exp1',Algorithm='Levenberg-Marquardt');
+a=f.a;
+b=f.b;
+%c=f.c;
+%d=f.d;
+%yhat = a*exp(b*t) + c*exp(d*t);
+yhat = a*exp(b*t) ;
+plot(t,yhat,'k','LineWidth',1)
+tau = -(1/b);
+time_to_50per = -log(0.5)*tau;
+tt=1:1000;
+yhat = a*exp(b*tt) ;
+plot(tt,yhat,'r','LineWidth',1)
+vline(round(time_to_50per))
+
+% computing the exponential curve
+tau = (-1/B(2));
+A = exp(B(1));
+y=exp(y);
+x=x(:,2);
+yhat = A*exp(-x/tau);
+figure;hold on
+plot(x,y,'ok','MarkerSize',15)
+plot(x,yhat,'k','LineWidth',1)
+ylim([0 1])
+
+% testing the exponential curve
+t=1:1:150;tau=20;const=2;
+y = const*(exp(-t/tau)) + rand(size(t))*0.25;
+figure;plot(t,y,'.','MarkerSize',10);
+hold on
+f=fit(t(:),y(:),'exp1',Algorithm='Levenberg-Marquardt');
+a=f.a;
+b=f.b;
+%c=f.c;
+%d=f.d;
+yhat = a*exp(b*t); % + c*exp(d*t);
+plot(t,yhat,'k','LineWidth',1)
+
+
+
+[A,tau,yhat,tt] = exp_fit(t,y);
+figure;plot(t,y,'.','MarkerSize',10);
+hold on
+plot(tt,yhat,'k','LineWidth',1)
 
 
 % compare performance in first month to rest of session
