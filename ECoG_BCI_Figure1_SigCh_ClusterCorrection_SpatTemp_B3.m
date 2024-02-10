@@ -5,6 +5,11 @@ clc;clear
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 addpath('C:\Users\nikic\Documents\MATLAB')
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+
+
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
 foldernames = {'20230111','20230118','20230119','20230125','20230126',...
