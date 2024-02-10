@@ -2,9 +2,20 @@
 % using hG and LMP, beta etc.
 
 clc;clear
-addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
-addpath('C:\Users\nikic\Documents\MATLAB')
-addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+if ~isunix
+    addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+    addpath('C:\Users\nikic\Documents\MATLAB')
+    addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+    addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
+    addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
+    addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+else
+    addpath(genpath('/home/reza/Repositories/ECoG_BCI_HighDim'))
+    addpath('/home/reza/Repositories/limo_tools')
+    addpath('/home/reza/Repositories/limo_tools/limo_cluster_functions')
+end
+cd('/home/reza/Repositories/ECoG_BCI_HighDim')
+
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
 foldernames = {'20230111','20230118','20230119','20230125','20230126',...
@@ -187,12 +198,13 @@ figure;stem(ep)
 xticks(1:32)
 xticklabels(ImaginedMvmt)
 
-%% SAVING THE FILES
+%% SAVING THE DATA FILES
 for i=1:length(ImaginedMvmt)
+    disp(['Saving Movement ' num2str(i)])
     data=ERP_Data{i};
     data = single(data);
-    filename = string([ImaginedMvmt{i} '.mat'];
-    save(filename,data,'-v7.3')
+    filename = ([ImaginedMvmt{i} '.mat']);
+    save(filename,'data','-v7.3')
 end
 
 %%  plot ERPs and see individual channels, with stats
@@ -406,8 +418,9 @@ save ERPs_sig_ch_LMP -v7.3
 %% %% Clustering tests for significance B3 (2D, TFCE etc) WITH ARTIFACT CORRECTION. 
 
 
-% B1 grid layout
-tic
+% B3 grid layout
+filepath='/media/reza/ResearchDrive/B3 Data for ERP Analysis';
+cd(filepath)
 load('ECOG_Grid_8596_000067_B3.mat')    
 chMap=ecog_grid;
 grid_layout = chMap;
@@ -442,18 +455,20 @@ end
 figure;
 imagesc(neighb)
 
-
+tic
 
 idx = [1:length(ImaginedMvmt)];
 %idx =  [1,10,30,25,20,28];
 sig_ch_all=zeros(32,253);
 loop_iter=750;
 tfce_flag=false;
+
 for i=1:length(idx)    
-    load('C:\Data from F drive\B3 data\B3_high_res_erp_imagined_data.mat',...
-        'ERP_Data')
-    data = ERP_Data{idx(i)};
-    clear ERP_Data
+    filename = [ImaginedMvmt{i} '.mat'];
+    
+    load(filename)
+    data = dou
+    
     t_scores=[];tboot=(zeros(253,8001,loop_iter));
     p_scores=[];pboot=(zeros(253,8001,loop_iter));
     % remove the bad channels

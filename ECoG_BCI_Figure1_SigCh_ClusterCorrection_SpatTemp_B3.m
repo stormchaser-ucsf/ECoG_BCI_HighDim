@@ -2,13 +2,19 @@
 % using hG and LMP, beta etc.
 
 clc;clear
-addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
-addpath('C:\Users\nikic\Documents\MATLAB')
-addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
-addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
-addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
-addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
-
+if ~isunix
+    addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+    addpath('C:\Users\nikic\Documents\MATLAB')
+    addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+    addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
+    addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
+    addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+else
+    addpath(genpath('/home/reza/Repositories/ECoG_BCI_HighDim'))
+    addpath('/home/reza/Repositories/limo_tools')
+    addpath('/home/reza/Repositories/limo_tools/limo_cluster_functions')
+end
+cd('/home/reza/Repositories/ECoG_BCI_HighDim')
 
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
@@ -412,8 +418,9 @@ save ERPs_sig_ch_LMP -v7.3
 %% %% Clustering tests for significance B3 (2D, TFCE etc) WITH ARTIFACT CORRECTION. 
 
 
-% B1 grid layout
-tic
+% B3 grid layout
+filepath='/media/reza/ResearchDrive/B3 Data for ERP Analysis';
+cd(filepath)
 load('ECOG_Grid_8596_000067_B3.mat')    
 chMap=ecog_grid;
 grid_layout = chMap;
@@ -448,18 +455,20 @@ end
 figure;
 imagesc(neighb)
 
-
+tic
 
 idx = [1:length(ImaginedMvmt)];
 %idx =  [1,10,30,25,20,28];
 sig_ch_all=zeros(32,253);
 loop_iter=750;
 tfce_flag=false;
+
 for i=1:length(idx)    
-    load('C:\Data from F drive\B3 data\B3_high_res_erp_imagined_data.mat',...
-        'ERP_Data')
-    data = ERP_Data{idx(i)};
-    clear ERP_Data
+    filename = [ImaginedMvmt{i} '.mat'];
+    
+    load(filename)
+    data = double(data);
+    
     t_scores=[];tboot=(zeros(253,8001,loop_iter));
     p_scores=[];pboot=(zeros(253,8001,loop_iter));
     % remove the bad channels
@@ -550,7 +559,7 @@ for i=1:length(idx)
         LIMO.data.neighbouring_matrix=neighb;
         [mask,cluster_p,max_th] = ...
             limo_clustering((t_scores.^2),p_scores,...
-            (tboot.^2),pboot,LIMO,2,0.01,0);
+            (tboot.^2),pboot,LIMO,2,0.01,1);
         figure;subplot(3,1,1)
         tt=linspace(-3,4,size(t_scores,2));
         imagesc(tt,1:253,t_scores);
@@ -594,5 +603,5 @@ end
 
 toc
 
-save B3_delta_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
+save B3_hG_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
 

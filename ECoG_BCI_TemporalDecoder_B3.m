@@ -795,6 +795,8 @@ for i=3%1:length(drop1)
         gruLayer(numHiddenUnits/2,'OutputMode','last','Name','lstm_2')        
         dropoutLayer(drop)
         layerNormalizationLayer
+        fullyConnectedLayer(32)
+        leakyReluLayer
         fullyConnectedLayer(numClasses)
         softmaxLayer
         classificationLayer];
