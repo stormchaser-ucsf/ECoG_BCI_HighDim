@@ -109,9 +109,9 @@ for i=1:length(files)
 
 
             %get hG through filter bank approach
-            filtered_data=zeros(size(features,1),size(features,2),2);
+            filtered_data=zeros(size(features,1),size(features,2),1);
             k=1;
-            for ii=9:16 %9:16 is hG, 4:5 is beta
+            for ii=1%9:16 is hG, 4:5 is beta, 1 is delta
                 filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
                     Params.FilterBank(ii).b, ...
                     Params.FilterBank(ii).a, ...
@@ -121,14 +121,14 @@ for i=1:length(files)
             %tmp_hg = squeeze(mean(filtered_data.^2,3));
             tmp_hg = squeeze(mean(filtered_data,3));   
 
-            % low pass filter the data or low pass filter hG data
-            %features1 = [randn(4000,128);features;randn(4000,128)];
-            features1 = [std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg);...
-                tmp_hg;...
-                std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg)];
-            tmp_hg = ((filtfilt(lpFilt,features1)));
-            %tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
-            tmp_hg = tmp_hg(4001:end-4000,:);
+%             % low pass filter the data or low pass filter hG data
+%             %features1 = [randn(4000,128);features;randn(4000,128)];
+%             features1 = [std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg);...
+%                 tmp_hg;...
+%                 std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg)];
+%             tmp_hg = ((filtfilt(lpFilt,features1)));
+%             %tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+%             tmp_hg = tmp_hg(4001:end-4000,:);
             
 
             task_state = TrialData.TaskState;
@@ -180,7 +180,7 @@ end
 
 %save high_res_erp_beta_imagined_data -v7.3
 %save high_res_erp_LMP_imagined_data -v7.3
-save B3_high_res_erp_imagined_data -v7.3
+save B3_delta_high_res_erp_imagined_data -v7.3
 
 % get the number of epochs used
 ep=[];
@@ -193,11 +193,13 @@ xticks(1:32)
 xticklabels(ImaginedMvmt)
 
 %% SAVING THE DATA FILES
+mkdir('C:\Data from F drive\B3 data\delta')
+cd('C:\Data from F drive\B3 data\delta')
 for i=1:length(ImaginedMvmt)
     disp(['Saving Movement ' num2str(i)])
     data=ERP_Data{i};
     data = single(data);
-    filename = ([ImaginedMvmt{i} '.mat']);
+    filename = ([ImaginedMvmt{i} '_Delta.mat']);
     save(filename,'data','-v7.3')
 end
 

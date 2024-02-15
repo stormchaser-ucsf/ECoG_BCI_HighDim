@@ -389,11 +389,10 @@ for i=1:length(foldernames)
 end
 
 ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right Pinky',...
-    'Right Pinch Grasp','Right Tripod Grasp','Right Power Grasp',...
+    'Rotate Right Wrist','Right Pinch Grasp','Right Tripod Grasp','Right Power Grasp',...
     'Left Thumb','Left Index','Left Middle','Left Ring','Left Pinky',...
-    'Left Pinch Grasp','Left Tripod Grasp','Left Power Grasp',...
+    'Rotate Left Wrist','Left Pinch Grasp','Left Tripod Grasp','Left Power Grasp',...
     'Squeeze Both Hands',...
-    'Rotate Right Wrist','Rotate Left Wrist',...
     'Imagined Head Movement',...
     'Right Shoulder Shrug',...
     'Left Shoulder Shrug',...
@@ -401,6 +400,7 @@ ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right P
     'Right Bicep','Left Bicep',...
     'Right Leg','Left Leg',...
     'Lips','Tongue'};
+
 
 % %no bicep or tricep
 % ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right Pinky',...
@@ -418,6 +418,7 @@ ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right P
 Data={};
 for i=1:length(ImaginedMvmt)
     Data{i}=zeros(0,0);
+    bins_per_mvmt{i}=zeros(0,0);
 end
 
 
@@ -464,6 +465,11 @@ for i=1:length(files)
             tmp=Data{j};
             tmp = [tmp temp];
             Data{j} = tmp;
+
+            % store number of bins per movement
+            tempp = bins_per_mvmt{j};
+            tempp = [tempp size(temp,2)];
+            bins_per_mvmt{j} = tempp;
             break
         end
     end
@@ -605,9 +611,10 @@ ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right P
 
 
 
-Data={};
+Data={};bins_per_mvmt={};
 for i=1:length(ImaginedMvmt)
     Data{i}=zeros(0,0);
+    bins_per_mvmt{i} = zeros(0,0);
 end
 
 
@@ -635,12 +642,12 @@ for i=1:length(files)
         %temp=temp(:,3:end); % ignore the first 600ms
 
         % baseline the data to state 2
-        %m = mean(temp2,2);
-        %s = std(temp2')';
+        m = mean(temp2,2);
+        s = std(temp2')';
         %temp = (temp-m)./s;
 
         % take from 400 to 2000ms
-        temp = temp(:,3:end);
+        temp = temp(:,3:17);
         %temp=temp(:,3:end); % ignore the first 600ms
 
         % hg and delta and beta
@@ -678,6 +685,11 @@ for i=1:length(files)
                 tmp=Data_tmp{j};
                 tmp = [tmp temp];
                 Data_tmp{j} = tmp;
+
+                % store number of bins per movement 
+                temp = bins_per_mvmt{j};
+                temp = [temp size(tmp,2)];
+                bins_per_mvmt{j} = temp;
                 break
             end
         end
@@ -698,6 +710,26 @@ for i=1:length(files)
     end
 end
 
+% plot average ERP for a single movement at a specific channel
+tmp = Data{1}; % rt thumb
+bins = bins_per_mvmt{1};
+bins = [0 cumsum(bins)];
+erp=[];
+for i=1:length(bins)-1
+    tmp_data = tmp(259,bins(i)+1:bins(i+1));
+    erp(i,:) = tmp_data;
+end
+figure;plot(erp')
+figure;plot(mean(erp,1))
+
+% get the number of trials per movement and bins per movement 
+trials_num=[];bins=[];
+for i=1:length(bins_per_mvmt)
+    tmp=bins_per_mvmt{i};
+    trials_num(i) = length(tmp);
+    bins=[bins tmp];
+end
+unique(bins)
 
 % get the mahalanobis distance between the imagined actions
 D=zeros(length(ImaginedMvmt));
@@ -719,7 +751,7 @@ set(gcf,'Color','w')
 %colormap bone
 %caxis([0 200])
 
-Z = linkage(D,'ward');
+Z = linkage(D,'complete');
 figure;dendrogram(Z,0)
 x = string(get(gca,'xticklabels'));
 x1=[];
@@ -729,6 +761,264 @@ for i=1:length(x)
 end
 xticklabels(x1)
 set(gcf,'Color','w')
+
+% MD scaling
+[Y,~,disparities] = mdscale(D,2,'Start','random');
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+for i=1:size(Y,1)
+    plot(Y(i,1),Y(i,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    if sum(i==idx)==1
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i});
+    end
+end
+
+%%% T-SNE PLOTTING ROUTINES 
+% ver 1
+% t-sne with trial level bootstrapping of the mean
+A=[];idx=[];samples=20;
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    bins = bins_per_mvmt{i};
+    bins = [0 cumsum(bins)];
+    %bins = [0 (bins)];
+    A1=[];
+    for j=1:length(bins)-1
+        trial_bins = tmp(bins(j)+1:bins(j+1),1:end);
+        A1=  [A1; median(trial_bins,1)];
+        idx=[idx;i];
+    end
+    A1 = bootstrp(samples,@mean,A1);
+    A = [A;A1];
+end
+Y = tsne(A,'Perplexity',40);
+%figure;plot(Y(:,1),Y(:,2),'.')
+
+% plotting
+figure;hold on
+cmap = parula(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:samples:size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp,1);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
+
+% plotting with ellipses
+figure;hold on
+cmap = parula(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:samples:size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    C=  cov(tmp);    
+    plot_gaussian_ellipsoid(mean(tmp),C);
+    %plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp,1);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
+
+% getting the distance matrix from Y
+D=zeros(30);
+for i=1:30
+    idxa = (1:samples) + (samples*(i-1));
+    a = Y(idxa,:);
+    a=mean(a,1);
+    for j=i+1:30
+        idxb = (1:samples) + (samples*(j-1));
+        b = Y(idxb,:);
+        b=mean(b,1);
+        %d = mahal2(a,b,2);
+        d=sqrt(sum((a-b).^2));
+        D(i,j)=d;
+        D(j,i)=d;
+    end
+end
+figure;imagesc(D)
+xticks(1:30)
+yticks(1:30)
+xticklabels(ImaginedMvmt)
+yticklabels(ImaginedMvmt)
+
+Z = linkage(D,'complete');
+figure;dendrogram(Z,0)
+x = string(get(gca,'xticklabels'));
+x1=[];
+for i=1:length(x)
+    tmp = str2num(x{i});
+    x1 = [x1 ImaginedMvmt(tmp)];
+end
+xticklabels(x1)
+set(gcf,'Color','w')
+
+
+% VER 2
+% t-sne at the single trial level, with averaged neural activity per trial
+% per movement.
+A=[];idx=[];
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    bins = bins_per_mvmt{i};
+    bins = [0 cumsum(bins)];
+    %bins = [0 (bins)];
+    A1=[];
+    for j=1:length(bins)-1
+        trial_bins = tmp(bins(j)+1:bins(j+1),:);
+        A1=  [A1; mean(trial_bins,1)];
+        idx=[idx;i];
+    end
+    %A = [A;A1];
+    A = [A;mean(A1,1)];
+end
+Y = tsne(A,'Algorithm','exact');
+% plotting
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:(size(Y,1)/30):size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
+
+% TSNE VER 3
+% t-sne, bootstrapped samples of the overall mean across all trials
+A=[];samples=10;
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    tmp_mean = bootstrp(samples,@mean,tmp); % 20 samples belong to each mvmt
+    A = [A;tmp_mean];    
+    %A(i,:) =  median(tmp,1);
+end
+Y = tsne(A,'Algorithm','exact');
+
+% for bootstrapped samples of the mean 
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:samples:size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
+
+% VER 4 -> GET THE MEAN FROM VER 5
+A=day1_data;
+Y = tsne(A);
+% for just the mean
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+for i=1:size(Y,1)
+    plot(Y(i,1),Y(i,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    if sum(i==idx)==1
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i});
+    end
+end
+
+% VER 5 TSNE WITH PROCRUSTUS ALIGNMENT ACROSS DAYS 
+% get the grand mean across all days and align each day to that
+day1_data=[];
+for i=1:length(Data)
+    bins=bins_per_mvmt{i};
+    bins = bins(1);
+    tmp = Data{i};
+    %tmp = tmp(:,1:bins);
+    day1_data = [day1_data;mean(tmp')];
+end
+% get the mean of day 1's data
+A=[];
+%A = day1_data;
+
+% now align each session to grand mean
+for days=1:49 % all sessions, align the mean to the first day and store in A
+    A1=[];
+    for i=1:length(Data)
+        tmp = Data{i};
+        bins = bins_per_mvmt{i};
+        bins = [0 cumsum(bins)];
+        tmp=tmp(:,bins(days)+1:bins(days+1));
+        A1=[A1 mean(tmp,2)];
+    end
+    % align to first day
+    [d, Z, tr] = procrustes(day1_data,A1');
+    A =[A;Z]; % first 30 is day 1, second 30 is day 2, etc. 
+end
+
+% tsne and plot
+Y = tsne(A,'Perplexity',40);
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+for i=1:30
+    j=i:30:size(A,1);
+    tmp = Y(j,:);
+    plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
+
+
+% VER 6
+% perform t-sne each day and then align to the grand average 
+
+% grand avrage t-sne
+A=[];
+for i=1:length(Data)    
+    tmp = Data{i};    
+    A = [A;mean(tmp')];
+end
+Y_overall = tsne(A);
+
+% now align the average of each day to grand average
+Y=[];
+for days=1:49 % all sessions, align the mean to the first day and store in A
+    A1=[];
+    for i=1:length(Data)
+        tmp = Data{i};
+        bins = bins_per_mvmt{i};
+        bins = [0 cumsum(bins)];
+        tmp=tmp(:,bins(days)+1:bins(days+1));
+        A1=[A1 mean(tmp,2)];
+    end
+    y = tsne(A1');
+    % align to grandmean
+    [d, Z, tr] = procrustes(Y_overall,y);
+    Y =[Y;Z]; % first 30 is day 1, second 30 is day 2, etc. 
+end
+
+
 
 
 %title('pooled hg complete')

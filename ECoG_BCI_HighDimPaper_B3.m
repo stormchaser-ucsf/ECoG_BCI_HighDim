@@ -608,6 +608,7 @@ ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right P
 Data={};
 for i=1:length(ImaginedMvmt)
     Data{i}=zeros(0,0);
+    bins_per_mvmt{i} = zeros(0,0);
 end
 
 
@@ -635,6 +636,7 @@ for i=1:length(files)
         end
         if file_loaded
             features  = TrialData.SmoothedNeuralFeatures;
+            %features  = TrialData.NeuralFeatures;
             kinax = TrialData.TaskState;
             kinax2 = find(kinax==2);
             kinax = find(kinax==3);
@@ -648,8 +650,8 @@ for i=1:length(files)
             %temp = (temp-m)./s;
 
             % take from 400 to 2000ms
-            temp = temp(:,3:end);
-            %temp=temp(:,3:end); % ignore the first 600ms
+            temp = temp(:,3:15); % 12 is better
+            
 
             if size(temp,1)==1792
 
@@ -665,39 +667,20 @@ for i=1:length(files)
                     good_ch(bad_ch_tmp)=0;
                 end
                 temp = temp(logical(good_ch),:);
-                
-                %                 figure;hist(temp(:))
-                %                 title(d(jj).name)
 
-                %get smoothed delta hg and beta features
-                %         new_temp=[];
-                %         [xx yy] = size(TrialData.Params.ChMap);
-                %         for k=1:size(temp,2)
-                %             tmp1 = temp(129:256,k);tmp1 = tmp1(TrialData.Params.ChMap);
-                %             tmp2 = temp(513:640,k);tmp2 = tmp2(TrialData.Params.ChMap);
-                %             tmp3 = temp(769:896,k);tmp3 = tmp3(TrialData.Params.ChMap);
-                %             pooled_data=[];
-                %             for i=1:2:xx
-                %                 for j=1:2:yy
-                %                     delta = (tmp1(i:i+1,j:j+1));delta=mean(delta(:));
-                %                     beta = (tmp2(i:i+1,j:j+1));beta=mean(beta(:));
-                %                     hg = (tmp3(i:i+1,j:j+1));hg=mean(hg(:));
-                %                     pooled_data = [pooled_data; delta; beta ;hg];
-                %                 end
-                %             end
-                %             new_temp= [new_temp pooled_data];
-                %         end
-                %         temp=new_temp;
-                %         temp = temp([ 1:32 65:96 ],:);
-
-
-                if max(abs(temp(:))) < 10
+                if max(abs(temp(:))) < 10 % not needed when referencing to
+                %state 1
                     data_overall = [data_overall;temp'];
                     for j=1:length(ImaginedMvmt)
                         if strcmp(ImaginedMvmt{j},TrialData.ImaginedAction)
                             tmp=Data_tmp{j};
                             tmp = [tmp temp];
                             Data_tmp{j} = tmp;
+
+                            % store number of bins per movement
+                            tempp = bins_per_mvmt{j};
+                            tempp = [tempp size(temp,2)];
+                            bins_per_mvmt{j} = tempp;
                             break
                         end
                     end
@@ -712,7 +695,7 @@ for i=1:length(files)
     for j=1:length(Data_tmp)
         tmp=Data_tmp{j};
         if ~isempty(tmp)
-            tmp = (tmp-m')./s';
+            tmp = (tmp-m')./s'; % this is better
             Data_tmp{j}=tmp;
 
             % transfer to main file
@@ -723,13 +706,37 @@ for i=1:length(files)
     end
 end
 
+% plot average ERP for a single movement at a specific channel
+tmp = Data{1}; % rt thumb
+bins = bins_per_mvmt{1};
+bins = [0 cumsum(bins)];
+erp=[];
+for i=1:length(bins)-1
+    tmp_data = tmp(149,bins(i)+1:bins(i+1));
+    erp(i,:) = tmp_data;
+end
+figure;plot(erp')
+figure;plot(mean(erp,1))
+
+% get the number of trials per movement and bins per movement 
+trials_num=[];bins=[];
+for i=1:length(bins_per_mvmt)
+    tmp=bins_per_mvmt{i};
+    trials_num(i) = length(tmp);
+    bins=[bins tmp];
+end
+unique(bins)
+
 
 % get the mahalanobis distance between the imagined actions
 D=zeros(length(ImaginedMvmt));
 for i=1:length(Data)
+    disp(['Processing mvmt ' num2str(i)])
     A = Data{i}';
+    %A(abs(A)>5) = NaN;
     for j=i+1:length(Data)
         B = Data{j}';
+        %B(abs(B)>5) = NaN;
         d = mahal2(A,B,2);
         D(i,j)=d;
         D(j,i)=d;
@@ -744,7 +751,7 @@ set(gcf,'Color','w')
 %colormap bone
 %caxis([20 200])
 
-Z = linkage(D,'ward');
+Z = linkage(D,'complete');
 figure;dendrogram(Z,0)
 x = string(get(gca,'xticklabels'));
 x1=[];
@@ -755,6 +762,162 @@ end
 xticklabels(x1)
 set(gcf,'Color','w')
 
+% MD scaling
+Y = mdscale(D,2,'Start','random');
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,31,32];
+for i=1:size(Y,1)
+    plot(Y(i,1),Y(i,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    if sum(i==idx)==1
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i});
+    end
+end
+
+% t-sne ON THE MEAN
+A=[];
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    A(i,:) =  mean(tmp,1);
+end
+Y = tsne(A);
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,31,32];
+for i=1:size(Y,1)
+    plot(Y(i,1),Y(i,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    if sum(i==idx)==1
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i});
+    end
+end
+
+
+%%% T-SNE PLOTTING ROUTINES 
+% ver 1
+% t-sne with trial level bootstrapping of the mean
+A=[];idx=[];samples=20;
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    bins = bins_per_mvmt{i};
+    bins = [0 cumsum(bins)];
+    %bins = [0 (bins)];
+    A1=[];
+    for j=1:length(bins)-1
+        trial_bins = tmp(bins(j)+1:bins(j+1),1:end);
+        A1=  [A1; median(trial_bins,1)];
+        idx=[idx;i];
+    end
+    A1 = bootstrp(samples,@mean,A1);
+    A = [A;A1];
+end
+Y = tsne(A,'Perplexity',40);
+%figure;plot(Y(:,1),Y(:,2),'.')
+
+% plotting
+figure;hold on
+cmap = parula(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:samples:size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp,1);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
+
+% getting the distance matrix from Y
+D=zeros(32);
+for i=1:32
+    idxa = (1:samples) + (samples*(i-1));
+    a = Y(idxa,:);
+    a=mean(a,1);
+    for j=i+1:30
+        idxb = (1:samples) + (samples*(j-1));
+        b = Y(idxb,:);
+        b=mean(b,1);
+        %d = mahal2(a,b,2);
+        d=sqrt(sum((a-b).^2));
+        D(i,j)=d;
+        D(j,i)=d;
+    end
+end
+figure;imagesc(D)
+xticks(1:32)
+yticks(1:32)
+xticklabels(ImaginedMvmt)
+yticklabels(ImaginedMvmt)
+
+
+% VER 2
+% t-sne at the single trial level, with averaged neural activity per trial
+% per movement.
+A=[];idx=[];
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    bins = bins_per_mvmt{i};
+    bins = [0 cumsum(bins)];
+    %bins = [0 (bins)];
+    A1=[];
+    for j=1:length(bins)-1
+        trial_bins = tmp(bins(j)+1:bins(j+1),:);
+        A1=  [A1; mean(trial_bins,1)];
+        idx=[idx;i];
+    end
+    A = [A;A1];
+    %A = [A;mean(A1,1)];
+end
+Y = tsne(A);
+% plotting
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:(size(Y,1)/32):size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
+
+
+% TSNE VER 3
+% t-sne, bootstrapped samples of the overall mean across all trials
+A=[];samples=10;
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    tmp_mean = bootstrp(samples,@mean,tmp); % 20 samples belong to each mvmt
+    A = [A;tmp_mean];    
+    %A(i,:) =  median(tmp,1);
+end
+Y = tsne(A);
+
+% for bootstrapped samples of the mean 
+figure;hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:samples:size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold');
+    else
+        text(x(1),x(2),ImaginedMvmt{i});
+    end
+end
 
 %title('pooled hg complete')
 
@@ -852,7 +1015,7 @@ toc
 D=squeeze(mean(D_overall,1));
 
 figure;imagesc(D)
-caxis([.96 1])
+%caxis([.5 1])
 xticks(1:size(D,1))
 yticks(1:size(D,1))
 xticklabels(ImaginedMvmt)

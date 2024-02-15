@@ -182,6 +182,8 @@ xticklabels(ImaginedMvmt)
 
 
 
+
+
 %% plot ERPs at all channels with tests for significance
 idx = [1:30];
 %idx =  [1,10,30,25,20,28];
@@ -708,6 +710,70 @@ toc
 
 save delta_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
 
+
+%% PERFORMING CLASSIFICATION TRIAL LEVEL OR LOW LEVEL REPRESENTATION 
+% USING ALL FEATURES FROM THE PROCESSED DATA
+
+
+clc;clear
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath('C:\Users\nikic\Documents\MATLAB')
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+
+% load all the hG features first
+load high_res_erp_hgLFO_imagined_data
+
+% load the features, trial level 
+chMap=TrialData.Params.ChMap;
+hg_features={};
+for i=1:length(ImaginedMvmt)
+    disp(['Getting features for Mvmt ' num2str(i)]);
+
+    data = ERP_Data{(i)};  
+    ch_feat=[];
+    for ch=1:numel(chMap)        
+        chdata = squeeze((data(:,ch,:)));
+
+         % bad trial removal
+        tmp_bad=zscore(chdata')';
+        artifact_check = logical(abs(tmp_bad)>3.0);
+        chdata(artifact_check)=NaN;     
+
+        % get the neural features, between 3500 and 4500 samples
+        xx = nanmean(chdata(3500:4000,:),1);
+        xx(isnan(xx)) = nanmedian(xx);
+        ch_feat(ch,:) = xx;
+    end
+    hg_features{i}=ch_feat;
+end
+
+% Mahalanobis distance matrix
+D=zeros(length(hg_features));
+for i=1:length(hg_features)
+    A=hg_features{i};
+    % get rid of bad trials
+     a=zscore(median(A,1));
+     good_idx= find(abs(a)<=3);
+     A = A(:,good_idx);
+
+    for j=i+1:length(hg_features)
+        B=hg_features{j};
+
+        % get rid of bad trials
+        b=zscore(median(B,1));
+        good_idx= find(abs(a)<=3);
+        B = B(:,good_idx);
+
+        % get the mahal distance
+        D(i,j) = mahal2(A',B',2);
+        D(j,i) = D(i,j);
+    end
+end
+figure;imagesc(D)
+Z = linkage(squareform(D),'complete');
+figure;
+dendrogram(Z)
 
 % 
 % tmp=sig_ch(i,:);
