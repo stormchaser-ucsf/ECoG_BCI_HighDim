@@ -1111,30 +1111,31 @@ sum(stat_boot>stat)/length(stat_boot)
 % plotting with regression lines, mahab full
 % plotting the regression for Mahab distance increases as a function of day
 figure;
-xlim([0 11])
+num_days=size(tmp,1);
+xlim([0 num_days+1])
 hold on
 x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 % imag
-plot(1:10,tmp(:,1),'.b','MarkerSize',20)
+plot(1:num_days,tmp(:,1),'.b','MarkerSize',20)
 y = tmp(:,1);
 [B,BINT,R,RINT,STATS1] = regress(y,x);
 yhat = x*B;
-plot(1:10,yhat,'b','LineWidth',1)
+plot(1:num_days,yhat,'b','LineWidth',1)
 % online
-plot(1:10,tmp(:,2),'.k','MarkerSize',20)
+plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
 y = tmp(:,2);
 [B,BINT,R,RINT,STATS2] = regress(y,x);
 yhat = x*B;
-plot(1:10,yhat,'k','LineWidth',1)
+plot(1:num_days,yhat,'k','LineWidth',1)
 % batch
-plot(1:10,tmp(:,3),'.r','MarkerSize',20)
+plot(1:num_days,tmp(:,3),'.r','MarkerSize',20)
 y = tmp(:,3);
 [B,BINT,R,RINT,STATS3] = regress(y,x);
 yhat = x*B;
-plot(1:10,yhat,'r','LineWidth',1)
+plot(1:num_days,yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
-xticks([1:10])
+xticks([1:num_days])
 % yticks([5:5:35])
 % ylim([5 35])
 
@@ -1357,63 +1358,64 @@ std(tmp)/sqrt(10)
 [h p tb st]=ttest(tmp(:,2),tmp(:,1))
 
 % plotting the regression for Mahab distance increases as a function of day
+num_days = size(tmp,1);
 figure;
-xlim([0 11])
+xlim([0 num_days+1])
 hold on
 x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 % imag
-plot(1:10,tmp(:,1),'.b','MarkerSize',20)
+plot(1:num_days,tmp(:,1),'.b','MarkerSize',20)
 y = tmp(:,1);
 [B,BINT,R,RINT,STATS1] = regress(y,x);
 yhat = x*B;
-plot(1:10,yhat,'b','LineWidth',1)
+plot(1:num_days,yhat,'b','LineWidth',1)
 % online
-plot(1:10,tmp(:,2),'.k','MarkerSize',20)
+plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
 y = tmp(:,2);
 [B,BINT,R,RINT,STATS2] = regress(y,x);
 yhat = x*B;
-plot(1:10,yhat,'k','LineWidth',1)
+plot(1:num_days,yhat,'k','LineWidth',1)
 % batch
-plot(1:10,tmp(:,3),'.r','MarkerSize',20)
+plot(1:num_days,tmp(:,3),'.r','MarkerSize',20)
 y = tmp(:,3);
 [B,BINT,R,RINT,STATS3] = regress(y,x);
 yhat = x*B;
-plot(1:10,yhat,'r','LineWidth',1)
+plot(1:num_days,yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
-xticks([1:10])
+xticks([1:num_days])
 % yticks([5:5:35])
 % ylim([5 35])
 
 % using robust regression in matlab
 figure;
-xlim([0 11])
+xlim([0 num_days+1])
 hold on
 x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 % imag
-plot(1:10,tmp(:,1),'.b','MarkerSize',20)
+plot(1:num_days,tmp(:,1),'.b','MarkerSize',20)
 y = tmp(:,1);
 lm=fitlm(x(:,2:end),y,'Robust','on')
 B=lm.Coefficients.Estimate;
 yhat = x*B;
-plot(1:10,yhat,'b','LineWidth',1)
+plot(1:num_days,yhat,'b','LineWidth',1)
 % online
-plot(1:10,tmp(:,2),'.k','MarkerSize',20)
+plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
 y = tmp(:,2);
 lm=fitlm(x(:,2:end),y,'Robust','on')
 B=lm.Coefficients.Estimate;
 yhat = x*B;
-plot(1:10,yhat,'k','LineWidth',1)
+plot(1:num_days,yhat,'k','LineWidth',1)
 % batch
-plot(1:10,tmp(:,3),'.r','MarkerSize',20)
+plot(1:num_days,tmp(:,3),'.r','MarkerSize',20)
 y = tmp(:,3);
 lm=fitlm(x(:,2:end),y,'Robust','on')
 B=lm.Coefficients.Estimate;
 yhat = x*B;
-plot(1:10,yhat,'r','LineWidth',1)
+plot(1:num_days,yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
-xticks([1:10])
+xticks([1:num_days+1])
 % yticks([5:5:35])
 % ylim([5 35])
 
@@ -2282,19 +2284,32 @@ for i=1:length(session_data)
     end
 
     %load the data
-    condn_data = load_data_for_MLP_TrialLevel(files);
+    condn_data = load_data_for_MLP_TrialLevel(files,0,1);
     % save the data
-    filename = ['condn_data_ImaginedTrials_Day' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %filename = ['condn_data_ImaginedTrials_Day' num2str(i)];
+    %save(filename, 'condn_data', '-v7.3')
 
     % get cross-val classification accuracy
     [acc_imagined,train_permutations] = accuracy_imagined_data(condn_data, iterations);
-    acc_imagined=squeeze(nanmean(acc_imagined,1));
+    acc_imagined=squeeze(nanmean(acc_imagined,1));    
     if plot_true
-        figure;imagesc(acc_imagined)
-        colormap bone
-        clim([0 1])
+        figure;imagesc(acc_imagined*100)
+        colormap(brewermap(128,'Blues'))
+        clim([0 100])
         set(gcf,'color','w')
+        % add text
+        for j=1:size(acc_imagined,1)
+            for k=1:size(acc_imagined,2)
+                if j==k
+                    text(j-0.35,k,num2str(round(100*acc_imagined(k,j),1)),'Color','w')
+                else
+                    text(j-0.35,k,num2str(round(100*acc_imagined(k,j),1)),'Color','k')
+                end
+            end
+        end
+        box on
+        xticklabels ''
+        yticklabels ''
     end
     acc_imagined_days(:,i) = diag(acc_imagined);
 
@@ -2312,10 +2327,23 @@ for i=1:length(session_data)
     % get the classification accuracy
     acc_online = accuracy_online_data(files);
     if plot_true
-        figure;imagesc(acc_online)
-        colormap bone
-        clim([0 1])
+        figure;imagesc(acc_online*100)
+        colormap(brewermap(128,'Blues'))
+        clim([0 100])
         set(gcf,'color','w')
+        % add text
+        for j=1:size(acc_online,1)
+            for k=1:size(acc_online,2)
+                if j==k
+                    text(j-0.35,k,num2str(round(100*acc_online(k,j),1)),'Color','w')
+                else
+                    text(j-0.35,k,num2str(round(100*acc_online(k,j),1)),'Color','k')
+                end
+            end
+        end
+        box on
+        xticklabels ''
+        yticklabels ''        
     end
     acc_online_days(:,i) = diag(acc_online);
 
@@ -2333,10 +2361,23 @@ for i=1:length(session_data)
     % get the classification accuracy
     acc_batch = accuracy_online_data(files);
     if plot_true
-        figure;imagesc(acc_batch)
-        colormap bone
-        clim([0 1])
+        figure;imagesc(acc_batch*100)
+        colormap(brewermap(128,'Blues'))
+        clim([0 100])
         set(gcf,'color','w')
+        % add text
+        for j=1:size(acc_batch,1)
+            for k=1:size(acc_batch,2)
+                if j==k
+                    text(j-0.35,k,num2str(round(100*acc_batch(k,j),1)),'Color','w')
+                else
+                    text(j-0.35,k,num2str(round(100*acc_batch(k,j),1)),'Color','k')
+                end
+            end
+        end
+        box on
+        xticklabels ''
+        yticklabels ''
     end
     acc_batch_days(:,i) = diag(acc_batch);
 end
@@ -2351,8 +2392,8 @@ ylim([0.2 1])
 xlim([0.5 10.5])
 hold on
 plot(mean(acc_imagined_days,1))
-plot(median(acc_online_days,1))
-plot(median(acc_batch_days,1),'k')
+plot(mean(acc_online_days,1))
+plot(mean(acc_batch_days,1),'k')
 
 % linear model for time to see if improvement in decoding accuracy
 days=1:10;
@@ -4870,7 +4911,7 @@ acc_online_days=[];
 acc_batch_days=[];
 iterations=10;
 plot_true=true;
-for i=1:length(session_data)
+for i=1:11% length(session_data) % 11 is first set of collected data
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
@@ -5061,24 +5102,41 @@ figure;boxplot(tmp)
 [P,H,STATS] = ranksum(mean(acc_batch_days,1),mean(acc_imagined_days,1))
 
 % regression lines for mahab distances in latent space
-imag = [0.732087
-    0.471915
-    0.526922
-    0.187374
-    0.611636
-    0.501813
+imag = [15.0423
+21.7693
+18.7126
+22.8332
+23.4961
+17.6836
+24.1478
+22.3141
+24.0741
+25.988
+21.2023
     ];
-online=[4.09371
-    1.46306
-    0.93976
-    2.13517
-    1.05116
-    1.34932
+online=[21.7351
+37.6585
+29.8865
+36.8177
+36.405
+28.0914
+39.3517
+39.2764
+37.1626
+39.8291
+41.1453
     ];
-batch=[1.58127
-    2.48264
-    3.26464
-    3.10718
+batch=[23.5318
+38.3169
+36.3582
+36.8336
+50.3386
+34.7854
+41.713
+38.7748
+55.4192
+50.7281
+51.2077
     ]; % days 12 thru 5
 
 % PLOT REGRESSION LINES
@@ -5277,11 +5335,14 @@ decoding_acc = tmp(:);
 figure;plot((neural_var),(decoding_acc),'.','MarkerSize',20)
 figure;plot((mahab_dist),(decoding_acc),'.','MarkerSize',20)
 
+
+% look at kmeans statistic i.e., within means sum of squares to mean
+% divided by total sum of squares of means 
 figure;
 hold on
 col={'r','g','b'};k=1;
 for i=1:11:33
-    plot((neural_var(i:i+10)),(decoding_acc(i:i+10)),'.','MarkerSize',20,'color',col{k});
+    plot((mahab_dist(i:i+10)),(decoding_acc(i:i+10)),'.','MarkerSize',20,'color',col{k});
     k=k+1;
 end
 
@@ -5622,27 +5683,27 @@ plot(1:size(mahab_full_imagined,2),mean(mahab_full_batch),'k')
 % plotting the regression for Mahab distance increases as a function of day
 tmp=[mean(mahab_full_imagined)' mean(mahab_full_online)' mean(mahab_full_batch)'];
 figure;
-xlim([0 15])
+xlim([0 size(tmp,1)+0.5])
 hold on
 x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 % imag
-plot(1:15,tmp(:,1),'.b','MarkerSize',20)
+plot(1:size(tmp,1),tmp(:,1),'.b','MarkerSize',20)
 y = tmp(:,1);
 [B1,BINT,R,RINT,STATS1] = regress(y,x);
 yhat = x*B1;
-plot(1:15,yhat,'b','LineWidth',1)
+plot(1:size(tmp,1),yhat,'b','LineWidth',1)
 % online
-plot(1:15,tmp(:,2),'.k','MarkerSize',20)
+plot(1:size(tmp,1),tmp(:,2),'.k','MarkerSize',20)
 y = tmp(:,2);
 [B2,BINT,R,RINT,STATS2] = regress(y,x);
 yhat = x*B2;
-plot(1:15,yhat,'k','LineWidth',1)
+plot(1:size(tmp,1),yhat,'k','LineWidth',1)
 % batch
-plot(1:15,tmp(:,3),'.r','MarkerSize',20)
+plot(1:size(tmp,1),tmp(:,3),'.r','MarkerSize',20)
 y = tmp(:,3);
 [B3,BINT,R,RINT,STATS3] = regress(y,x);
 yhat = x*B3;
-plot(1:15,yhat,'r','LineWidth',1)
+plot(1:size(tmp,1),yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
 xticks([1:11])
@@ -6795,8 +6856,10 @@ col={'r','b','k'}; % in case of plotting the task difficulty by color
 mm=[];
 time2target=[];
 days_list=[];
+median_t2t=[];
 for i=1:length(ttc)
     tmp=ttc{i};
+    median_t2t(i) = median(tmp);
     time2target=[time2target tmp];
     days_list=[days_list PnP_days_wall_task(i)*ones(1,length(tmp))];
     dim_tmp = dim{i};
@@ -6837,7 +6900,7 @@ box off
 % plot the accuracy
 acc=successRate;
 figure;hold on
-plot(acc(1:8),'ok','MarkerSize',15)
+plot(acc(1:9),'ok','MarkerSize',15)
 plot(acc,'k','LineWidth',1)
 xlim([0 10])
 xticks(1:9)
@@ -6875,6 +6938,8 @@ plot(tt,yhat,'r','LineWidth',1)
 vline(round(time_to_50per))
 
 % exponential fit with tau parameter on accuracy
+PnP_days_wall_task = [2    14    19    21    34    35    40   210     0];
+acc=[1	0.750000000000000	1	0.875000000000000	0.888888888888889	0.666666666666667	0.800000000000000	0.714285714285714	1];
 y = acc(1:8);
 x = PnP_days_wall_task(1:8);t=x;
 figure;plot(t,y,'ok','MarkerSize',20);
@@ -6941,6 +7006,8 @@ median(a1)
 a2= acc(5:8);
 median(a2)
 
+
+%%%% STATS for the top down rotate task 
 clc;clear;
 load('topDown_rotate_v2.mat');
 PnP_days_rotate_task = [77,81,102,203];
@@ -7828,7 +7895,7 @@ figure
 boxplot(brh,'whisker',1.75)
 set(gcf,'Color','w')
 xticks(1)
-xticklabels('PnP Experiment 1')
+xticklabels('PnP Experiment')
 ylabel('Effective bit rate')
 set(gca,'FontSize',12)
 box off
@@ -7836,12 +7903,16 @@ xlim([.75 1.25])
 ylim([0 4])
 yticks([0:.5:4])
 set(gca,'LineWidth',1,'TickLength',[0.025 0.025]);
+ylim([0 3.6])
 
+% plotting decoder acc across days
 figure;hold on
 acc=[];
 acch=[];
-for i=1:length(acc_days)
-    tmp  = acc_days{i};
+acc_good_days = acc_days(good_days);
+cmap = turbo(length(acc_good_days));
+for i=1:length(acc_good_days)
+    tmp  = acc_good_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
     acc(i) = median(tmp);
@@ -7850,13 +7921,13 @@ end
 plot(acc,'k','LineWidth',2)
 ylim([0 1])
 xticks(1:length(acc))
-set(gca,'XTickLabel',days)
+set(gca,'XTickLabel',days(good_days))
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
 xlabel('Days - PnP')
 ylabel('Decoder Accuracy')
 set(gca,'LineWidth',1)
-xlim([0 length(br_across_days)+0.5])
+xlim([0 length(acc_good_days)+0.5])
 h=hline(1/7);
 set(h,'LineWidth',2)
 yticks([0:.2:1])
@@ -7864,8 +7935,9 @@ yticks([0:.2:1])
 figure;hold on
 t2t=[];
 t2th=[];
-for i=1:length(time2target_days)
-    tmp  = time2target_days{i};
+time2target_good_days = time2target_days(good_days);
+for i=1:length(time2target_good_days)
+    tmp  = time2target_good_days{i};
     idx= i*ones(size(tmp))+0.1*randn(size(tmp));
     plot(idx,tmp,'.','Color',cmap(i,:),'MarkerSize',15);
     t2t(i) = median(tmp);
@@ -7873,14 +7945,14 @@ for i=1:length(time2target_days)
 end
 plot(t2t,'k','LineWidth',2)
 ylim([0 3])
-xticks(1:length(acc))
-set(gca,'XTickLabel',days)
+xticks(1:length(t2t))
+set(gca,'XTickLabel',days(good_days))
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
 xlabel('Days - PnP')
 ylabel('Mean time to Target (s)')
 set(gca,'LineWidth',1)
-xlim([0 length(br_across_days)+0.5])
+xlim([0 length(time2target_good_days)+0.5])
 yticks([0:.5:3])
 
 figure;hist(acch,10)
@@ -7909,5 +7981,26 @@ overall_trial_accuracy_bkup=overall_trial_accuracy;
 for i=1:length(overall_trial_accuracy)
     overall_trial_accuracy(i,:) = overall_trial_accuracy(i,:)./sum(overall_trial_accuracy(i,:));
 end
+
+
+%% chcking porjection and CKA metric
+
+X = randn(4000,759);
+
+w1=randn(759,275);
+w2=randn(759,275);
+
+x = X*w1;
+y = X*w2;
+
+% cka between x and  y
+x=x-mean(x);
+y=y-mean(y);
+a=norm(x*x','fro');
+b=norm(y*y','fro');
+c=norm(x*y','fro');
+d=c/(a*b)
+
+
 
 

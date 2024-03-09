@@ -30,8 +30,8 @@ end
 YTrain=categorical((YTrain));
 
 batch_size=32;
-val_freq = floor((9/10)*length(XTrain)/batch_size);
-%val_freq = floor(length(XTrain)/batch_size);
+%val_freq = floor((9/10)*length(XTrain)/batch_size);
+val_freq = floor(length(XTrain)/batch_size);
 options = trainingOptions('adam', ...
     'MaxEpochs',150, ...
     'MiniBatchSize',batch_size, ...

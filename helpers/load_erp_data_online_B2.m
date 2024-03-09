@@ -11,7 +11,7 @@ for i=1:length(files)
     disp([i ])
     features  = TrialData.SmoothedNeuralFeatures;
     features = cell2mat(features);
-    features = features(769:end,:);
+    features = features(769:end,:);% select specific features for diff freq bands 
     fs = TrialData.Params.UpdateRate;
     kinax = TrialData.TaskState;
     state1 = find(kinax==1);

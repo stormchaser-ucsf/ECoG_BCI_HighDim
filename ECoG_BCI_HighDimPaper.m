@@ -710,6 +710,10 @@ for i=1:length(files)
     end
 end
 
+
+
+
+
 % plot average ERP for a single movement at a specific channel
 tmp = Data{1}; % rt thumb
 bins = bins_per_mvmt{1};
@@ -1926,7 +1930,7 @@ for i=1:16:128
 end
 grid_ecog=flipud(grid_ecog);
 figure;
-ch=10;
+ch=97;
 [x y] = find(chMap==ch);
 ch1 = grid_ecog(x,y);
 c_h = ctmr_gauss_plot(cortex,[0 0 0],0,'lh',1,1,1);
@@ -3258,7 +3262,7 @@ addpath('C:\Users\nikic\Documents\MATLAB')
 
 filepath ='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2';
 cd(filepath)
-folders = {'20210331'};%
+folders = {'20210324'};%
 
 % get the file names 
 files=[];
@@ -3274,7 +3278,7 @@ end
 
 files_motor = files(1:72);
 files_tong = files(73:end);
-[D1,D2,D3,D4,idx1,idx2,idx3,idx4] = load_erp_data_online_B2(files);
+[D1,D2,D3,D4,idx1,idx2,idx3,idx4] = load_erp_data_online_B2(files_motor);
 [D5,D6,D7,D8,idx1,idx2,idx3,idx4] = load_erp_data_online_B2(files_tong);
 
 % plot ERPs with all the imagined data 
@@ -3291,7 +3295,7 @@ ha=tight_subplot(8,16);
 d = 1;
 set(gcf,'Color','w')
 tim = cumsum([length(idx1) length(idx2) length(idx3) length(idx4)]);
-for i = 1:size(D4,1)
+for i = 1:size(D1,1)
     [x y] = find(chMap==i);
     if x == 1
         axes(ha(y));
@@ -3302,7 +3306,7 @@ for i = 1:size(D4,1)
         %subplot(8, 16, s)
     end
     hold on
-    erps =  squeeze(D4(i,:,:));
+    erps =  squeeze(D1(i,:,:));
     
     chdata = erps;
     % zscore the data to the first 6 time-bins
@@ -3412,7 +3416,7 @@ for i=1:length(ERP_Data)
     data = ERP_Data{i};
     data = data(hand_elec,idx,:);
     data = squeeze(mean(data,2)); % time
-    %data = squeeze(mean(data,1)); % channels
+    data = squeeze(mean(data,1)); % channels
     data = data(:);
     roi_mean(i) = mean(data);
 %     if i==19

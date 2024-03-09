@@ -1,3 +1,85 @@
+%% LOOKING AT REPRESENTATIONAL DRIFT
+% is there a difference between any two days recordings
+
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data_B3
+addpath 'C:\Users\nikic\Documents\MATLAB'
+pooling=0;
+condn_data_day={};
+for i=1:11%length(session_data)
+    condn_data={};
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+
+
+    %%%%%% load imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+    load('ECOG_Grid_8596_000067_B3.mat')    
+    %condn_data = [condn_data;load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0,pooling)];
+    tmp= load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0,pooling);
+    for j=1:length(tmp)
+        tmp(j).targetID=i;
+    end
+    condn_data_day{i}=tmp;
+end
+
+% make them all into one giant struct
+tmp=cell2mat(condn_data_day(1));
+condn_data_overall=tmp;
+for i=2:length(condn_data_day)
+    tmp=cell2mat(condn_data_day(i));
+    for k=1:length(tmp)
+        condn_data_overall(end+1) =tmp(k);
+    end
+end
+
+% paritioning the dataset
+num_classes = length(unique([condn_data_overall.targetID]));
+test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+test_idx=test_idx(:);
+I = ones(length(condn_data_overall),1);
+I(test_idx)=0;
+train_val_idx = find(I~=0);
+prop = (0.7/0.85);
+tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+I = ones(length(condn_data_overall),1);
+I([train_idx;test_idx])=0;
+val_idx = find(I~=0);val_idx=val_idx(:);
+
+% training options for NN
+[options,XTrain,YTrain] = ...
+    get_options(condn_data_overall,val_idx,train_idx);
+ 
+% design the neural net
+aa=condn_data_overall(1).neural;
+s=size(aa,1);
+layers = get_layers1(64,s,num_classes);
+
+% train the network
+net = trainNetwork(XTrain,YTrain,layers,options);
+
+% test performance on held out trials
+[cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx,num_classes);
+conf_matrix
+
+%%
 % code to grid search to best get MLP parameters
 % trying here for layer width and number of units
 

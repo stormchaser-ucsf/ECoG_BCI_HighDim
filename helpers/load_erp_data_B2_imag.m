@@ -20,6 +20,11 @@ for i=1:length(files)
         data(:,end+1:47) = repmat(data(:,end),1,l);
     end
 
+    % z-score to first few bins
+    m=mean(data(:,1:8),2);
+    s=std(data(:,1:8)',1)';
+    data = ((data'-m')./s')';
+
     % now get the ERPs
 
     if TrialData.TargetID == 1

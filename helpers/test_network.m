@@ -1,5 +1,9 @@
-function [cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx)
+function [cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx,num_classes)
 
+
+if nargin<4
+    num_classes=7;
+end
 
 XTest=[];
 YTest=[];
@@ -13,7 +17,7 @@ YTest=categorical((YTest));
 
 out=predict(net,XTest);
 decodes=[];
-conf_matrix=zeros(7);
+conf_matrix=zeros(num_classes);
 for i=1:size(out,1)
     [aa bb]=max(out(i,:));
     decodes=[decodes;bb];
