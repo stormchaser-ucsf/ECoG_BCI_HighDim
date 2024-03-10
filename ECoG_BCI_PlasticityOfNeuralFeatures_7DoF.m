@@ -6774,6 +6774,78 @@ b2_var_effsize = b2_var(1)./b2_var(2:3);
 sum(b2_var_effsize + b1_var_effsize)/4
 sum(b1_mean_effsize + b2_mean_effsize)/4
 
+%% STATS OF THE REAL ROBOT TASK FIG 8 WITH SPLITTING TASK INTO TWO HALVES (MAIN)
+
+clc;clear
+close all
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd(root_path)
+%load('wall_1_9.mat')
+load('wall_1_9_new')
+
+PnP_days_wall_task = [2,14,19,21,34,35,40,210,0];
+dist_total = cell2mat(dist);
+min_d = min(dist_total);
+max_d = max(dist_total);
+
+% plotting the accuracy of the wall task split by two sections, with linear
+% fit
+%%%%% plotting first half
+acc1=success1_rate;
+figure;hold on
+x = PnP_days_wall_task(1:7);
+t=x;
+y = acc1(1:7);
+plot(t,y,'ob','MarkerSize',15)
+ylim([0 1])
+hold on
+% logistic fit
+[b,p] = logistic_reg(x,y);
+xhat=[ones(length(x),1) x'];
+yhat = 1./(1 + exp(-(xhat*b)));
+plot(t,yhat,'--b')
+% plotting second half 
+acc2 = success2_rate;
+y = acc2(1:7);
+plot(t,y,'ob','MarkerSize',15)
+ylim([0 1])
+
+
+%%%%% plotting second half
+acc2=success2_rate;
+x = PnP_days_wall_task(1:8);
+t=x;
+y = acc2(1:8);
+plot(t,y,'om','MarkerSize',15)
+ylim([0 1])
+hold on
+% logistic fit
+[b,p] = logistic_reg(x,y);
+xhat=[ones(length(x),1) x'];
+yhat = 1./(1 + exp(-(xhat*b)));
+plot(t,yhat,'--m')
+t=1:750;
+x=t;
+xhat=[ones(length(x),1) x'];
+yhat = 1./(1 + exp(-(xhat*b)));
+plot(t,yhat,'--m')
+
+xlim([0 10])
+xticks(1:9)
+xticklabels(PnP_days_wall_task)
+ylim([0 1.05])
+yticks([0:.1:1.01])
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+xlabel('Days - PnP')
+ylabel('Accuracy')
+box off
+
+
+
 %% STATS OF THE REAL ROBOT TASKS (MAIN)
 
 
@@ -6783,9 +6855,12 @@ root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 addpath('C:\Users\nikic\Documents\MATLAB')
 cd(root_path)
-load('wall_1_9.mat')
+%load('wall_1_9.mat')
+load('wall_1_9_new')
+ttc=ttc2;
+success_rate = success2_rate;
 
-%PnP_days_wall_task = [2,14,19,21,34,35,40,210,0];
+PnP_days_wall_task = [2,14,19,21,34,35,40,210,0];
 
 % get the overall distances from target for the wall task
 dist_total = cell2mat(dist);
@@ -6898,7 +6973,7 @@ box off
 
 
 % plot the accuracy
-acc=successRate;
+acc=success_rate;
 figure;hold on
 plot(acc(1:9),'ok','MarkerSize',15)
 plot(acc,'k','LineWidth',1)
@@ -6938,8 +7013,8 @@ plot(tt,yhat,'r','LineWidth',1)
 vline(round(time_to_50per))
 
 % exponential fit with tau parameter on accuracy
-PnP_days_wall_task = [2    14    19    21    34    35    40   210     0];
-acc=[1	0.750000000000000	1	0.875000000000000	0.888888888888889	0.666666666666667	0.800000000000000	0.714285714285714	1];
+%PnP_days_wall_task = [2    14    19    21    34    35    40   210     0];
+%acc=[1	0.750000000000000	1	0.875000000000000	0.888888888888889	0.666666666666667	0.800000000000000	0.714285714285714	1];
 y = acc(1:8);
 x = PnP_days_wall_task(1:8);t=x;
 figure;plot(t,y,'ok','MarkerSize',20);
@@ -6973,7 +7048,7 @@ ylim([0 1])
 
 % testing the exponential curve
 t=1:1:150;tau=20;const=2;
-y = const*(exp(-t/tau)) + rand(size(t))*0.25;
+y = const*(exp(-t/tau)) + rand(size(t))*0.05;
 figure;plot(t,y,'.','MarkerSize',10);
 hold on
 f=fit(t(:),y(:),'exp1',Algorithm='Levenberg-Marquardt');
@@ -6981,7 +7056,8 @@ a=f.a;
 b=f.b;
 %c=f.c;
 %d=f.d;
-yhat = a*exp(b*t); % + c*exp(d*t);
+%yhat = a*exp(b*t) + c*exp(d*t);
+yhat = a*exp(b*t);
 plot(t,yhat,'k','LineWidth',1)
 
 
