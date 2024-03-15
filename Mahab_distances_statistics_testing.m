@@ -8,8 +8,8 @@
 % k-means to get two clusters. then find the mahab distance between the two
 % clusters
 %%% using all features
-a = Data{27};
-b = Data{28};
+a = Data{1};
+b = Data{13};
 d = mahal2(a',b',2);
 dboot=[];
 s1 = size(a,2);

@@ -20,7 +20,8 @@ I([train_idx;test_idx])=0;
 val_idx = find(I~=0);val_idx=val_idx(:);
 
 % build a classifier between the two
-layers = get_layers1(4,2,4);
+%layers = get_layers1_simulation(20,2,4);
+layers = get_layers2_simulation(2,30,2,4);
 
 % training options for NN
 [options,XTrain,YTrain] = ...

@@ -35,17 +35,28 @@ end
 % cv_perf=mean(acc)
 
 %%%% CASE 1 now add a sysmetatic drift and see how it changes acrsos days
-drift = 4.5*rand(1,2); % add this to each day
+drift = 0.5*randn(1,2); % add this to each day
 data_old = data;
 idx_old  = idx;
 across_day_data={};
 across_day_data{1} = data_old;
 cmap=parula(10);
-figure;hold on
+figure;
+subplot(2,1,1)
+hold on
 for days=2:10
-     drift = 4.5*rand(1,2); % add this to each day
+     %%%%% drift around an attractor state
+     drift = 0.5*randn(1,2); % add this to each day
      data_new = data_old + (drift);
-     %data_new = data_old + ((days-1) * drift);
+
+     %%%% systematic varying constant drift
+     %data_new = data_old + ((days) * drift);     
+
+     %%%% random walk 
+     %drift = 0.5*randn(1,2); % add this to each day
+     %tmp = across_day_data{days-1};     
+     %data_new = tmp + drift;
+
      across_day_data{days} = data_new;
      plot(data_new(1:100,1),data_new(1:100,2),'.','MarkerSize',20,'Color',cmap(days,:))
      plot(data_new(101:200,1),data_new(101:200,2),'o','MarkerSize',20,'Color',cmap(days,:))
@@ -101,11 +112,11 @@ for days=1:10-1
     end
 
     across_day_acc{days} = acc;
-    median(acc)
+    %median(acc)
     
 end
 
-figure;hold on
+subplot(2,1,2);hold on
 for i=1:length(across_day_acc)
     tmp = across_day_acc{i};
     I = i*ones(length(tmp),1);
@@ -113,4 +124,5 @@ for i=1:length(across_day_acc)
     plot(i,median(tmp),'.r','MarkerSize',30)
 end
 ylim([0 1])
-
+sgtitle('Random Walk')
+set(gcf,'Color','w')

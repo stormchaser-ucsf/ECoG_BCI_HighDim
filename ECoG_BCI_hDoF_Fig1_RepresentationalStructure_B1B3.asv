@@ -820,20 +820,20 @@ for n=1:size(bins_size,1)%n=10:18
 
 end
 
-
-close all
-D = squeeze(mean(D_overall,1));
-Z = linkage(squareform(D),'complete');
-figure
-dendrogram(Z,0)
-x = string(get(gca,'xticklabels'));
-x1=[];
-for i=1:length(x)
-    tmp = str2num(x{i});
-    x1 = [x1 ImaginedMvmt(tmp)];
-end
-xticklabels(x1)
-set(gcf,'Color','w')
+% % 
+% % close all
+% % D = squeeze(mean(D_overall,1));
+% % Z = linkage(squareform(D),'complete');
+% % figure
+% % dendrogram(Z,0)
+% % x = string(get(gca,'xticklabels'));
+% % x1=[];
+% % for i=1:length(x)
+% %     tmp = str2num(x{i});
+% %     x1 = [x1 ImaginedMvmt(tmp)];
+% % end
+% % xticklabels(x1)
+% % set(gcf,'Color','w')
 
 % correlation between B1 and B3
 %     DB3=D;
@@ -847,90 +847,90 @@ set(gcf,'Color','w')
 %     end
 %     %figure;hist(boot_corr)
 %     %vline(stat)
-% 
-% figure;
-% subplot(1,2,1)
-% imagesc(D)
-% xticks(1:size(D,1))
-% yticks(1:size(D,1))
-% xticklabels(ImaginedMvmt)
-% yticklabels(ImaginedMvmt)
-% set(gcf,'Color','w')
-% colormap turbo
-% %caxis([0 200])
-% 
-% subplot(1,2,2)
-% 
-% Z = linkage(squareform(D),'complete');
-% dendrogram(Z,0)
-% x = string(get(gca,'xticklabels'));
-% x1=[];
-% for i=1:length(x)
-%     tmp = str2num(x{i});
-%     x1 = [x1 ImaginedMvmt(tmp)];
-% end
-% xticklabels(x1)
-% set(gcf,'Color','w')
-% sgtitle(['Bins till ' num2str(bins_size(end))])
-% 
-% % MD scaling
-% figure;
-% [Y,~,disparities] = mdscale(D,2,'Start','random');
-% subplot(2,1,1);hold on
-% cmap = turbo(length(ImaginedMvmt));
-% idx=[1,10,19,20,28,29,30];
-% for i=1:size(Y,1)
-%     plot(Y(i,1),Y(i,2),'.','Color',cmap(i,:),'MarkerSize',20)
-%     if sum(i==idx)==1
-%         text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontWeight','bold','FontSize',10);
-%     else
-%         text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontSize',10);
-%     end
-% end
-% 
-% 
-% 
-% % t-sne on average
-% subplot(2,1,2);hold on
-% A=[];idx=[];samples=20;
-% for i=1:length(ImaginedMvmt)
-%     tmp = Data{i}';
-%     bins = bins_per_mvmt{i};
-%     bins = [0 cumsum(bins)];
-%     %bins = [0 (bins)];
-%     A1=[];
-%     for j=1:length(bins)-1
-%         trial_bins = tmp(bins(j)+1:bins(j+1),1:end);
-%         A1=  [A1; median(trial_bins,1)];
-%         idx=[idx;i];
-%     end
-%     A1 = bootstrp(samples,@mean,A1);
-%     A = [A;A1];
-% end
-% Y = tsne(A,'Perplexity',40);
-% 
-% 
-% % plotting with ellipses
-% cmap = parula(length(ImaginedMvmt));
-% idx=[1,10,19,20,28,29,30];
-% len = 1:samples:size(Y,1)+1;
-% for i=1:length(len)-1
-%     tmp = Y(len(i):len(i+1)-1,:);
-%     C=  cov(tmp);
-%     plot_gaussian_ellipsoid(mean(tmp),C);
-%     %plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
-%     x=mean(tmp,1);
-%     if sum(i==idx)==1
-%         text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold','FontSize',8);
-%     else
-%         text(x(1),x(2),ImaginedMvmt{i},'FontSize',8);
-%     end
-% end
-% sgtitle(['Bins till ' num2str(bins_size(end))])
-% 
-% 
-% 
-% end
+
+figure;
+subplot(1,2,1)
+imagesc(D)
+xticks(1:size(D,1))
+yticks(1:size(D,1))
+xticklabels(ImaginedMvmt)
+yticklabels(ImaginedMvmt)
+set(gcf,'Color','w')
+colormap turbo
+%caxis([0 200])
+
+subplot(1,2,2)
+
+Z = linkage(squareform(D),'complete');
+dendrogram(Z,0)
+x = string(get(gca,'xticklabels'));
+x1=[];
+for i=1:length(x)
+    tmp = str2num(x{i});
+    x1 = [x1 ImaginedMvmt(tmp)];
+end
+xticklabels(x1)
+set(gcf,'Color','w')
+sgtitle(['Bins till ' num2str(bins_size(end))])
+
+% MD scaling
+figure;
+[Y,~,disparities] = mdscale(D,2,'Start','random');
+subplot(2,1,1);hold on
+cmap = turbo(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+for i=1:size(Y,1)
+    plot(Y(i,1),Y(i,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    if sum(i==idx)==1
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontWeight','bold','FontSize',10);
+    else
+        text(Y(i,1),Y(i,2),ImaginedMvmt{i},'FontSize',10);
+    end
+end
+
+
+
+% t-sne on average
+subplot(2,1,2);hold on
+A=[];idx=[];samples=20;
+for i=1:length(ImaginedMvmt)
+    tmp = Data{i}';
+    bins = bins_per_mvmt{i};
+    bins = [0 cumsum(bins)];
+    %bins = [0 (bins)];
+    A1=[];
+    for j=1:length(bins)-1
+        trial_bins = tmp(bins(j)+1:bins(j+1),1:end);
+        A1=  [A1; median(trial_bins,1)];
+        idx=[idx;i];
+    end
+    A1 = bootstrp(samples,@mean,A1);
+    A = [A;A1];
+end
+Y = tsne(A,'Perplexity',40);
+
+
+% plotting with ellipses
+cmap = parula(length(ImaginedMvmt));
+idx=[1,10,19,20,28,29,30];
+len = 1:samples:size(Y,1)+1;
+for i=1:length(len)-1
+    tmp = Y(len(i):len(i+1)-1,:);
+    C=  cov(tmp);
+    plot_gaussian_ellipsoid(mean(tmp),C);
+    %plot(tmp(:,1),tmp(:,2),'.','Color',cmap(i,:),'MarkerSize',20)
+    x=mean(tmp,1);
+    if sum(i==idx)==1
+        text(x(1),x(2),ImaginedMvmt{i},'FontWeight','bold','FontSize',8);
+    else
+        text(x(1),x(2),ImaginedMvmt{i},'FontSize',8);
+    end
+end
+sgtitle(['Bins till ' num2str(bins_size(end))])
+
+
+
+end
 
 
 

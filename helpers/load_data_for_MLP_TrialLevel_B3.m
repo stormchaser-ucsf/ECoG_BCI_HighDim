@@ -2,6 +2,9 @@ function [trial_data,coeff,score,latent] = load_data_for_MLP_TrialLevel_B3(files
     trial_type,pooling)
 %function [condn_data] = load_data_for_MLP(files)
 
+if nargin<4
+    pooling=0;
+end
 
 trial_data=[];
 tmp_data=[];
