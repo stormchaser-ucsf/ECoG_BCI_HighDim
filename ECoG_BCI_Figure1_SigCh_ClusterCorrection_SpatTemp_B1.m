@@ -723,6 +723,12 @@ imagesc(tt,1:128,abs(t_scores1));
 set(gcf,'Color','w')
 xlim([-3 3])
 
+% plotting sig channels with size determined by t-scores
+aa=  sum(abs(t_scores1(:,3000:5000)),2);
+ii = find(aa>0);
+aa(ii)=log10(aa(ii));
+plot_elec_wts(2*(aa),cortex,elecmatrix,chMap)
+
 % 
 % figure;
 % for ii=3e3:size(aa,2)

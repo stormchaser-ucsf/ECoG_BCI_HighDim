@@ -5396,7 +5396,75 @@ end
 xlabel('Mahalanobis Distance')
 ylabel('Neural variance')
 zlabel('Decoding Accuracy')
-legend({'Open loop','CL1','CL2'})
+
+
+% logistic regression
+data_overall = cell2mat(data');
+x = data_overall(:,1:2);
+y = data_overall(:,3);
+[b,p,b1]=logistic_reg(x,y);
+mdl = fitglm(x,y,'Distribution','Binomial');
+mdl = mdl.Coefficients.Estimate;
+bhat = mdl;
+% plot as surface
+xx = linspace(min(x(:,1)),max(x(:,1)),1e2);
+yy = linspace(min(x(:,2)),max(x(:,2)),1e2);
+[X,Y]=meshgrid(xx,yy);
+zhat = [ones(length(X(:)),1) X(:) Y(:)];
+zhat = 1./(1 + exp(-zhat*bhat));
+zhat= reshape(zhat,size(X));
+%figure;hold on
+%grid on
+%scatter3(x(:,1),x(:,2),y,'filled')
+s=surf(X,Y,zhat,'FaceAlpha',.25);
+s.EdgeColor = 'none';
+s.FaceColor='cyan';
+legend({'Open loop','CL1','CL2','Logistic Fit'})
+set(gcf,'Color','w')
+grid on
+title('Neural Variance and Mahab distance predicts Decoding Acc')
+
+
+boot=[];
+parfor iter=1:5000
+    x1=x;
+    [bb,bint,r]=regress(x(:,2),[ones(length(x),1) x(:,1)]);
+    x1(:,2)=r;
+    x1(:,2) = x1(randperm(numel(y)),2);
+    %y1=y(randperm(numel(y)));
+    out = fitglm(x1,y,'Distribution','Binomial');
+    boot = [boot out.Coefficients.Estimate];
+end
+pval=[];
+for i=1:size(boot,1)
+    figure;
+    hist(abs(boot(i,:)));
+    vline(abs(mdl(i)));
+    pval(i) = sum(abs(boot(i,:)) >= abs(mdl(i)))/ length(boot(i,:));
+    title(num2str(pval(i)))
+end
+
+% plot surface
+xhat = [ones(size(x,1),1) x];
+[xx,yy]=meshgrid(min(xhat(:,2)):0.1:max(xhat(:,2)), min(xhat(:,3)):1:max(xhat(:,3)));
+yhat_1 = 1./(1+ exp(mdl(1) + mdl(2)*xx + mdl(3)*yy));
+figure;
+%mesh(xhat(:,2),xhat(:,3),yhat)
+mesh(yy,xx,yhat_1)
+
+
+x=randn(20,1);
+y=randn(20,1);
+z=2*x+3*y+2*randn(20,1);
+[bhat]=regress(z,[ones(size(x,1),1) x y]);
+zhat = [ones(size(x,1),1) x y]*bhat;
+figure;
+[X,Y]=meshgrid(-3:.01:3,-3:.01:3);
+zhat = [ones(length(X(:)),1) X(:) Y(:)]*bhat;
+zhat= reshape(zhat,size(X));
+figure;hold on
+scatter3(x,y,z,'filled')
+mesh(X,Y,zhat,'FaceAlpha',.5)
 
 % mahalanobis distance
 D=zeros(length(data));
@@ -5409,16 +5477,39 @@ for i=1:length(data)
     end
 end
 
+% 2-means cluster index pairwise with swapping of labels 
+a = data{3};
+b = data{2};
+stat = two_means_ci(a,b);
+% swap labels
+boot=[];
+d=[a;b];
+s = size(a,1);
+for i=1:5000
+    idx = randperm(length(d));
+    tmp = d(idx,:);
+    atmp = tmp(1:s,:);
+    btmp = tmp(s+1:end,:);
+    boot(i) = two_means_ci(atmp,btmp);
+end
+figure;hist(boot)
+vline(stat)
+sum(stat>=boot)/length(boot)
+
 % 2-means cluster index pairwise and null hypothesis testing for the
-% two-means cluster index
+% two-means cluster index using gaussian distribution
 K=zeros(length(data));
 P=zeros(length(data));
 D=zeros(length(data));
 P_d=zeros(length(data));
 for i=1:length(data)
     a = data{i};
-    for j=i+1:length(data)
+    for j=i+1:length(data)        
         b = data{j};  
+        if j==3
+            b=b(2:end,:);
+        end
+
 
         % 2 means ci
         K(i,j) = two_means_ci(a,b);
@@ -5473,25 +5564,111 @@ for i=1:length(data)
 end
 
 
-% using LDA
-a =data{1};
-b = data{2};
+% using LDA on random split
+a =data{2};
+b = data{3};
 d = [a;b];
-idx = [0*ones(size(a,1),1);ones(size(a,1),1)];
+idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
 acc=[];
-for iter=1:100
+res_acc=[];pval_acc=[];
+for iter=1:25
     % randomly select 18 for training and 4 for testing
-    idx_train = randperm(size(d,1),18);
+    idx = idx_main(randperm(numel(idx_main)));
+    idx_train = randperm(size(d,1),16);
     I =  ones(size(d,1),1);
     I(idx_train)=0;
     idx_test = find(I==1);
-    W = LDA(d(idx_train,:),idx(idx_train,:))
 
+    % train the LDA
+    data_train = d(idx_train,:);
+    idx_train = idx(idx_train);
+    W = LDA(data_train,idx_train);
+
+    % apply on held out data
+    data_test = d(idx_test,:);
+    data_test = [ones(size(data_test,1),1) data_test];
+    idx_test = idx(idx_test);
+    L = data_test * W';
+    P = exp(L) ./ repmat(sum(exp(L),2),[1 2]);
+    [aa,bb]=max(P');bb=bb-1;
+    acc(iter) = sum(idx_test==bb')/length(bb);
+
+    % balanced accuracy
+    tp=0;tn=0;fp=0;fn=0;
+    p = idx_test;grp_test=bb';
+    for ii=1:length(p)
+        if p(ii)==1 && grp_test(ii)==1
+            tp=tp+1;
+        end
+
+        if p(ii)==0 && grp_test(ii)==0
+            tn=tn+1;
+        end
+
+        if p(ii)==1 && grp_test(ii)==0
+            fn=fn+1;
+        end
+
+        if p(ii)==0 && grp_test(ii)==1
+            fp=fp+1;
+        end
+    end
+    res_acc(iter) = 0.5* ( tp/(tp+fn) + tn/(tn+fp) );
+
+    % stats
+    alp1=1+tp;
+    bet1=1+fn;
+    alp2=1+tn;
+    bet2=1+fp;
+    res=0.001;
+    u=0:res:1;
+    a=betapdf(u,alp1,bet1);
+    b=betapdf(u,alp2,bet2);
+    x=conv(a,b);
+    z=2*x(1:2:end);
+    z=z/(sum(x*res));
+    % figure;plot(u,z);hold on;plot(u,a,'k');plot(u,b,'r')
+    % calculate p-value
+    querypt= 0.5;
+    I=(u>querypt);
+    pval(iter)=1-sum(z(I)*res);
 end
+figure;boxplot(bootstrp(1000,@mean,acc))
+acc=mean(acc)
 
 
 
-W = LDA(Input,Target,Priors)
+% using LDA on LOOCV
+a =data{2};
+b = data{3};
+d = [a;b];
+idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
+acc=[];
+res_acc=[];pval_acc=[];
+for i=1:length(d)
+    idx_test=i;
+    I =  ones(size(d,1),1);
+    I(idx_test)=0;
+    idx_train = find(I==1);
+
+    % train the LDA
+    data_train = d(idx_train,:);
+    idx_train = idx(idx_train);
+    W = LDA(data_train,idx_train);
+
+    % apply on held out data
+    data_test = d(idx_test,:);
+    data_test = [ones(size(data_test,1),1) data_test];
+    idx_test = idx(idx_test);
+    L = data_test * W';
+    P = exp(L) ./ repmat(sum(exp(L),2),[1 2]);
+    [aa,bb]=max(P');bb=bb-1;
+    acc(i) = sum(idx_test==bb);
+end
+acc=mean(acc)
+
+
+
 
 
 

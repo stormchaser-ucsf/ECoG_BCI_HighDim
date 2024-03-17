@@ -48,9 +48,9 @@ for i=1:length(root_idx)
     end
     parents = z(find(z(:,end)==root_idx(i)),1:2);
     children = [children parents(parents<=max_datapts)];
-    going_down= true;    
-    while going_down        
-        parents = get_children(z,parents)  ;      
+    going_down= true;
+    while going_down
+        parents = get_children(z,parents)  ;
         children = [children parents(parents<=max_datapts)];
         parents = parents(parents>max_datapts);
         if all(parents<=max_datapts) || isempty(parents)
@@ -92,10 +92,10 @@ parfor i=1:10
     g = randn(size(data));
     cnew = m + C12'*g;
 
-    
+
 
     % find clusters in the data for simulated movements using k-means
-    idx = kmeans(cnew', num_mvmts,'MaxIter',250,'Options',options);    
+    idx = kmeans(cnew', num_mvmts,'MaxIter',250,'Options',options);
 
     % find clusters using agglom clustering
     %Z = linkage(cnew','complete');
@@ -107,12 +107,12 @@ parfor i=1:10
 
 
     % random assignment
-%     data_tmp={};
-%     idx=randperm(size(data,2));
-%     cnew = data(:,idx);
-%     for j=1:length(num_bins)-1
-%         data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
-%     end
+    %     data_tmp={};
+    %     idx=randperm(size(data,2));
+    %     cnew = data(:,idx);
+    %     for j=1:length(num_bins)-1
+    %         data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
+    %     end
 
     Dboot=zeros(size(data_tmp));
     for j=1:length(data_tmp)
@@ -130,7 +130,7 @@ end
 link_stat_boot
 link_stat
 
-% 
+%
 % %%% individually feature by feature
 % a = Data{1};
 % b = Data{3};
@@ -144,12 +144,12 @@ link_stat
 %         atmp = a(j:(j+128)-1,:);
 %         btmp = b(j:(j+128)-1,:);
 %         c = [atmp btmp];
-% 
-%         % permutation        
+%
+%         % permutation
 %         %I = randperm(size(c,2));
 %         %atmp = c(:,I(1:s1));
 %         %btmp = c(:,I(s1+1:end));
-% 
+%
 %         % simulating gaussian
 %         m = mean(c,2);
 %         X = cov(c');
@@ -158,12 +158,12 @@ link_stat
 %         cnew = m + C12'*g;
 %         %atmp = cnew(:,1:s1);
 %         %btmp = cnew(:,s1+1:end);
-% 
+%
 %         % now find two clusters from the simulated data
 %         idx = kmeans(cnew', 2);
 %         atmp = cnew(:,find(idx==1));
 %         btmp = cnew(:,find(idx==2));
-% 
+%
 %         % combine
 %         %a1 = [a1;atmp];
 %         %b1 = [b1;btmp];
@@ -210,7 +210,7 @@ parfor iter=1:10
     m = mean(c);
     s = std(c);
     dboot=[];
-    for i=1:1000 
+    for i=1:1000
         cnew = s.*randn(size(c)) + m;
         idx = kmeans(cnew, 2);
         a1 = cnew(idx==1);
@@ -226,3 +226,84 @@ parfor iter=1:10
     pval(iter) = sum(dboot>d)/length(dboot);
 end
 figure;hist(pval)
+
+%% MAIN going down the dendrogram one leaf node at a time
+
+%need to send Data, Z and the associated linked functions
+
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+
+Z(:,end+1) = ((size(D,1)+1):(max(max(Z(:,1:2)))+1))'
+figure;dendrogram(Z(:,1:3),0)
+
+pval_link=[];
+pval_2means=[];
+for i=0:length(Z)-1
+
+    % get the movements within the clusters
+    root_idx = Z(end-i,1:2);
+    link_stat = Z(end-i,3);
+    children_all = get_children_node(Z,root_idx); % the two clusters of mvmts
+
+    % get the data together
+    data=[];tmp_data={};num_bins={};
+    for ii=1:length(children_all)
+        idx = children_all{ii};
+        tmp = cell2mat(Data(idx));
+        data = cat(2,data,tmp);
+        tmp_data{ii}=tmp;
+        num_bins{ii}=size(tmp,2);
+    end
+
+    num_mvmts = length(cell2mat(children_all));    
+
+    % fit the gaussian to the overall data
+    m = mean(data,2);
+    X = cov(data');
+    C12 = chol(X);
+    link_stat_boot=[];
+    options = statset('UseParallel',true);
+    parfor ii=1:50
+        disp(ii)
+        g = randn(size(data));
+        cnew = m + C12'*g;
+
+
+
+        % find clusters in the data for simulated movements using k-means
+        idx = kmeans(cnew', num_mvmts,'MaxIter',250,'Options',options);
+
+        % find clusters using agglom clustering
+        %ZZ = linkage(cnew','complete');
+        %idx = cluster(ZZ,'maxclust',num_mvmts);
+        data_tmp={};
+        for j=1:length(unique(idx))
+            data_tmp{j} = cnew(:,find(idx==j));
+        end
+
+
+        % random assignment
+        %     data_tmp={};
+        %     idx=randperm(size(data,2));
+        %     cnew = data(:,idx);
+        %     for j=1:length(num_bins)-1
+        %         data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
+        %     end
+
+        Dboot=zeros(size(data_tmp));
+        for j=1:length(data_tmp)
+            A = data_tmp{j};
+            for k=j+1:length(data_tmp)
+                B = data_tmp{k};
+                Dboot(j,k) = mahal2(A',B',2);
+                Dboot(k,j)= Dboot(j,k);
+            end
+        end
+        Znull  = linkage(squareform(Dboot),'complete');
+        %figure;(dendrogram(Znull,0))
+        link_stat_boot(ii) = Znull(end,3);
+    end
+    pval_link(i+1) = sum(link_stat_boot>=link_stat)/length(link_stat_boot);
+end
+
+Z(:,end+1) = flipud(pval_link)

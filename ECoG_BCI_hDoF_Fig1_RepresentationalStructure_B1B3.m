@@ -223,6 +223,8 @@ end
 
 
 
+
+
 % for B1 -> looking at within and between cluster mahab distance rations
 idx1 = [1:9 19] ;% all rt hands and both hands
 idx2 = [10:18 23 24 25]; % all lt hand mvmts, both tricep and rt bicep
@@ -736,10 +738,10 @@ bins_size(11,:) = [2 17];
 bins_size(12,:) = [3 17];
 bins_size = bins_size(7:end,:);
 
-D_overall=[];
+D_overall=[]; % this is the best approach
 for n=1:size(bins_size,1)%n=10:18
-    %bins_size1=3:15; % 3 to 16 is good
-    bins_size1 = [bins_size(n,1):bins_size(n,2)];
+    bins_size1=3:16; % 3 to 16 is good
+    %bins_size1 = [bins_size(n,1):bins_size(n,2)];
 
     [Data,bins_per_mvmt,TrialData] = ...
         load_B3Data_RepresenatationalStruct_Fig1(bins_size1);
@@ -770,8 +772,8 @@ for n=1:size(bins_size,1)%n=10:18
         tmp_data = tmp(137,bins(i)+1:bins(i+1));
         erp(i,:) = tmp_data;
     end
-    %figure;plot(erp')
-    %figure;plot(mean(erp,1))
+    figure;plot(erp')
+    figure;plot(mean(erp,1))
 
 
 
