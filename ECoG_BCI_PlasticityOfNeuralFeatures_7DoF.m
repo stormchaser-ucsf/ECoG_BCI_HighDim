@@ -4906,10 +4906,14 @@ cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 load session_data_B3
 addpath 'C:\Users\nikic\Documents\MATLAB'
+addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=20;
+iterations=3;
 plot_true=false;
 for i=1:11% length(session_data) % 11 is first set of collected data
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -5042,7 +5046,8 @@ end
 %save hDOF_6days_accuracy_results_New_B2 -v7.3
 %save hDOF_11days_accuracy_results_B3 -v7.3
 %save hDOF_11days_accuracy_results_B3_corrected -v7.3 % not good
-
+%save hDOF_11days_accuracy_results_B3_v2 -v7.3 % new after old data got deleted: best of the lot 
+%save hDOF_11days_accuracy_results_B3_v3 -v7.3 % new after old data got deleted
 
 %acc_online_days = (acc_online_days + acc_batch_days)/2;
 figure;
@@ -5075,13 +5080,16 @@ acc_imagined_days=acc_imagined_days(:,1:end);
 acc_online_days=acc_online_days(:,1:end);
 acc_batch_days=acc_batch_days(:,1:end);
 
-m1 = (acc_imagined_days(:));
+%m1 = (acc_imagined_days(:));
+m1=mean(acc_imagined_days,1);
 m1b = sort(bootstrp(1000,@mean,m1));
 m11 = mean(acc_imagined_days,1);
-m2 = (acc_online_days(:));
+%m2 = (acc_online_days(:));
+m2=mean(acc_online_days,1);
 m2b = sort(bootstrp(1000,@mean,m2));
 m22 = mean(acc_online_days,1);
-m3 = (acc_batch_days(:));
+%m3 = (acc_batch_days(:));
+m3=mean(acc_batch_days,1);
 m3b = sort(bootstrp(1000,@nanmean,m3));
 m33 = nanmean(acc_batch_days,1);
 x=1:3;
@@ -5089,22 +5097,22 @@ y=[mean(m1) mean(m2) nanmean(m3)];
 s1=std(m1)/sqrt(length(m1));
 s2=std(m2)/sqrt(length(m2));
 s3=nanstd(m3)/sqrt(sum(~isnan(m3)));
-neg = [s1 s2 s3];
-pos= [s1 s2 s3];
-%neg = [y(1)-m1b(25) y(2)-m2b(25) y(3)-m3b(25)];
-%pos = [m1b(975)-y(1) m2b(975)-y(2) m3b(975)-y(3)];
+%neg = [s1 s2 s3];
+%pos= [s1 s2 s3];
+neg = [y(1)-m1b(25) y(2)-m2b(25) y(3)-m3b(25)];
+pos = [m1b(975)-y(1) m2b(975)-y(2) m3b(975)-y(3)];
 figure;
 hold on
 cmap = brewermap(6,'Blues');
 %cmap = (turbo(7));
-for i=1:3
-    errorbar(x(i),y(i),neg(i),pos(i),'Color','k','LineWidth',1)
-    plot(x(i),y(i),'o','MarkerSize',20,'Color','k','LineWidth',1,'MarkerFaceColor',[.5 .5 .5])
-end
 for i=1:size(acc_batch_days,2)
     plot(1+0.1*randn(1),m11(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',5,'Color',[cmap(end,:) .5])
     plot(2+0.1*randn(1),m22(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',5,'Color',[cmap(end,:) .5])
     plot(3+0.1*randn(1),m33(i),'o','MarkerFaceColor',cmap(end,:),'MarkerSize',5,'Color',[cmap(end,:) .5])
+end
+for i=1:3
+    errorbar(x(i),y(i),neg(i),pos(i),'Color','k','LineWidth',1)
+    plot(x(i),y(i),'o','MarkerSize',15,'Color','k','LineWidth',1,'MarkerFaceColor',[.5 .5 .5])
 end
 xlim([.5 3.5])
 ylim([0.7 1])
@@ -5112,7 +5120,7 @@ xticks(1:3)
 xticklabels({'Imagined','Online','Batch'})
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
-yticks(0:.1:1)
+yticks(0:.05:1)
 set(gca,'FontSize',12)
 h=hline(.25,'--');
 h.LineWidth=1;
@@ -5121,16 +5129,29 @@ ylabel('Accuracy')
 
 disp([mean(acc_imagined_days(:)) mean(acc_online_days(:)) mean(acc_batch_days(:))])
 
+% using logistic regression
+[b,p]=logistic_reg(mean(acc_imagined_days,1),mean(acc_online_days,1))
+
+% using bootstrapped test of the mean
+[p ]=bootstrap_diff_mean(mean(acc_imagined_days,1),mean(acc_online_days,1),1e3)
+x= mean(acc_batch_days,1);
+y = mean(acc_online_days,1);
+[b,p,b1]=logistic_reg(x,y);p
+
+[p, tvalue, bootstrp_tvalues]=bootstrp_ttest(mean(acc_online_days,1),...
+    mean(acc_imagined_days,1),1,1000);p
+
+
 tmp = [ m11' m22' m33'];
 figure;boxplot(tmp)
 
 tmp = [ m1 m2 m3];
 figure;boxplot(tmp)
 
-% mann whitent U test
-[P,H,STATS] = ranksum(mean(acc_batch_days,1),mean(acc_online_days,1))
-[P,H,STATS] = ranksum(mean(acc_imagined_days,1),mean(acc_online_days,1))
-[P,H,STATS] = ranksum(mean(acc_batch_days,1),mean(acc_imagined_days,1))
+% Signed rank test
+[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_online_days,1));
+[P,H,STATS] = signrank(mean(acc_imagined_days,1),mean(acc_online_days,1));
+[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));
 
 % regression lines for mahab distances in latent space
 imag = [15.0423
@@ -5844,6 +5865,93 @@ end
 
 data=table(acc_improv,exp_type,subject);
 glme = fitglme(data,'acc_improv ~ 1+ exp_type + (1|subject)')
+
+%% (MAIN) COMBINING AND PLOTTING DECODING ACC FOR B1 AND B3 OL -> CL1, CL2
+
+clc;clear;close all
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+
+% load B3 data
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+a=load('hDOF_11days_accuracy_results_B3_v2');
+
+% load B1 data 
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+b=load('hDOF_10days_accuracy_results_New');
+
+% get the data into variables
+acc_imagined_days= [a.acc_imagined_days';b.acc_imagined_days']';
+acc_online_days= [a.acc_online_days';b.acc_online_days']';
+acc_batch_days= [a.acc_batch_days';b.acc_batch_days']';
+idx = [ones(size(a.acc_imagined_days',1),1);2*ones(size(b.acc_imagined_days',1),1)];
+
+% plot the data
+%m1 = (acc_imagined_days(:));
+m11 = mean(acc_imagined_days,1);
+m1b = sort(bootstrp(1000,@mean,m11));
+%m2 = (acc_online_days(:));
+m22 = mean(acc_online_days,1);
+m2b = sort(bootstrp(1000,@mean,m22));
+%m3 = (acc_batch_days(:));
+m33 = mean(acc_batch_days,1);
+m3b = sort(bootstrp(1000,@mean,m33));
+x=1:3;
+y=[mean(m11) mean(m22) mean(m33)];
+% scatter B1 and B3 individually
+figure; hold on
+%boxplot([m11' m22' m33']);
+%box off
+%a = get(get(gca,'children'),'children');
+%for i=1:length(a)
+%    box1 = a(i);
+%    set(box1, 'Color', 'k');
+%end
+h=hline(median(m11),'k');
+h.LineWidth=3;
+h.XData = [0.75 1.25];
+h=hline(median(m22),'k');
+h.LineWidth=3;
+h.XData = [1.75 2.25];
+h=hline(median(m33),'k');
+h.LineWidth=3;
+h.XData = [2.75 3.25];
+aa = find(idx==1);
+x=(1:3) + 0.1*randn(length(aa),3);
+h=scatter(x,[m11(aa)' m22(aa)' m33(aa)'],'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'r';
+    h(i).MarkerFaceAlpha = 0.3;
+end
+aa = find(idx==2);
+x=(1:3) + 0.1*randn(length(aa),3);
+h=scatter(x,[m11(aa)' m22(aa)' m33(aa)'],'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'b';
+    h(i).MarkerFaceAlpha = 0.3;
+end
+ylim([0 1])
+yticks([0:.1:1])
+h=hline(1/7);
+set(h,'LineWidth',1)
+xlim([.5 3.5])
+xticks(1:3)
+xticklabels({'Imagined','Online','Batch'})
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+ylabel('Decoding Accuracy')
+
+
+% Signed rank test
+[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_online_days,1));
+[P,H,STATS] = signrank(mean(acc_imagined_days,1),mean(acc_online_days,1));
+[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));
+
+
 
 
 %% B3 PLASTICITY AND AE FRAMEWORK (MAIN MAIN)

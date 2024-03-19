@@ -740,7 +740,7 @@ bins_size = bins_size(7:end,:);
 
 D_overall=[]; % this is the best approach
 for n=1:size(bins_size,1)%n=10:18
-    bins_size1=3:16; % 3 to 16 is good
+    bins_size1=3:15; % 3 to 16 is good
     %bins_size1 = [bins_size(n,1):bins_size(n,2)];
 
     [Data,bins_per_mvmt,TrialData] = ...

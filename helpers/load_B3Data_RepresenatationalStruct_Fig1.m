@@ -102,8 +102,9 @@ for i=1:length(files)
             if size(temp,1)==1792
 
                 % hg and delta and beta
-                temp = temp([257:512 1025:1280 1537:1792],:);
+                %temp = temp([257:512 1025:1280 1537:1792],:);
                 %temp = temp([1537:1792],:);% only hg
+                temp = temp([257:end],:);% all features
 
                 % remove the bad channels 108, 113 118
                 bad_ch = [108 113 118];

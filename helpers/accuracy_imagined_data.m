@@ -68,7 +68,7 @@ for iter = 1:iterations % loop over 20 times
     T(aa(1):aa(end),7)=1;
 
     % train MLP
-    net = patternnet([64 64 64]) ;
+    net = patternnet([120]) ;
     net.performParam.regularization=0.2;
     net.divideParam.trainRatio = 0.85;
     net.divideParam.valRatio = 0.15;

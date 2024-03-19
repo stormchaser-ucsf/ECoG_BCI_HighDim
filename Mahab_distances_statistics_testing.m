@@ -8,8 +8,8 @@
 % k-means to get two clusters. then find the mahab distance between the two
 % clusters
 %%% using all features
-a = Data{1};
-b = Data{13};
+a = Data{13};
+b = Data{14};
 d = mahal2(a',b',2);
 dboot=[];
 s1 = size(a,2);
@@ -17,7 +17,7 @@ c = [a b];
 m = mean(c,2);
 X = cov(c');
 C12 = chol(X);
-parfor i=1:50
+parfor i=1:500
     g = randn(size(c));
     cnew = m + C12'*g;
 
@@ -66,8 +66,8 @@ end
 Z(:,end+1) = ((size(D,1)+1):(max(max(Z(:,1:2)))+1))';
 
 
-root_idx = Z(end-16,1:2);
-link_stat = Z(end-16,3);
+root_idx = Z(end-1,1:2);
+link_stat = Z(end-1,3);
 children_all = get_children_node(Z,root_idx); % the two clusters of mvmts
 
 data=[];tmp_data={};num_bins={};
@@ -95,24 +95,24 @@ parfor i=1:10
 
 
     % find clusters in the data for simulated movements using k-means
-    idx = kmeans(cnew', num_mvmts,'MaxIter',250,'Options',options);
+    %idx = kmeans(cnew', num_mvmts,'MaxIter',250,'Options',options);
 
     % find clusters using agglom clustering
     %Z = linkage(cnew','complete');
     %idx = cluster(Z,'maxclust',num_mvmts);
-    data_tmp={};
-    for j=1:length(unique(idx))
-        data_tmp{j} = cnew(:,find(idx==j));
-    end
+%     data_tmp={};
+%     for j=1:length(unique(idx))
+%         data_tmp{j} = cnew(:,find(idx==j));
+%     end
 
 
     % random assignment
-    %     data_tmp={};
-    %     idx=randperm(size(data,2));
-    %     cnew = data(:,idx);
-    %     for j=1:length(num_bins)-1
-    %         data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
-    %     end
+    data_tmp={};
+    idx=randperm(size(data,2));
+    cnew = data(:,idx);
+    for j=1:length(num_bins)-1
+        data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
+    end
 
     Dboot=zeros(size(data_tmp));
     for j=1:length(data_tmp)
@@ -129,6 +129,7 @@ parfor i=1:10
 end
 link_stat_boot
 link_stat
+sum(link_stat_boot>=link_stat)/length(link_stat_boot)
 
 %
 % %%% individually feature by feature
@@ -232,6 +233,7 @@ figure;hist(pval)
 %need to send Data, Z and the associated linked functions
 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+%cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 
 Z(:,end+1) = ((size(D,1)+1):(max(max(Z(:,1:2)))+1))'
 figure;dendrogram(Z(:,1:3),0)
@@ -263,7 +265,7 @@ for i=0:length(Z)-1
     C12 = chol(X);
     link_stat_boot=[];
     options = statset('UseParallel',true);
-    parfor ii=1:50
+    parfor ii=1:12
         disp(ii)
         g = randn(size(data));
         cnew = m + C12'*g;
@@ -290,7 +292,7 @@ for i=0:length(Z)-1
         %         data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
         %     end
 
-        Dboot=zeros(size(data_tmp));
+        Dboot=zeros(size(data_tmp,2));
         for j=1:length(data_tmp)
             A = data_tmp{j};
             for k=j+1:length(data_tmp)
