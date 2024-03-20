@@ -2499,17 +2499,20 @@ glm = fitglm(data,'acc ~ 1 + experiment');
 
 %%%%% IMPORTANT %%%%
 % correlating perfomance to neural variance and mahab
-mahab_dist=[7.44937	25.0954	46.8808
-    8.98259	23.0811	43.5335
-    8.53827	27.0567	34.1529
-    5.63418	30.2603	36.0458
-    7.84022	40.0723	50.1397
-    10.5456	44.6843	50.8638
-    8.78371	36.7279	49.353
-    6.72437	32.8186	39.9
-    9.00313	38.3491	53.8316
-    11.4657	44.171	61.1524
-    ];
+% mahab_dist=[7.44937	25.0954	46.8808
+%     8.98259	23.0811	43.5335
+%     8.53827	27.0567	34.1529
+%     5.63418	30.2603	36.0458
+%     7.84022	40.0723	50.1397
+%     10.5456	44.6843	50.8638
+%     8.78371	36.7279	49.353
+%     6.72437	32.8186	39.9
+%     9.00313	38.3491	53.8316
+%     11.4657	44.171	61.1524
+%     ];
+load mahab_dist_B1_latent
+mahab_dist=tmp;
+
 
 %[p,h]=ranksum(mahab_dist(:,2),mahab_dist(:,3))
 [p,h,stats]=signrank(mahab_dist(:,3),mahab_dist(:,2),'method','exact')
@@ -2526,7 +2529,11 @@ neural_var=[30.857	6.23092	4.2398
     46.8797	6.5413	4.60668
     ];
 
-[p,h,stats]=signrank(neural_var(:,2),neural_var(:,1))
+median(neural_var)
+
+[p,h,stats]=signrank(neural_var(:,1),neural_var(:,2));p
+[p,h,stats]=signrank(neural_var(:,1),neural_var(:,3));p
+[p,h,stats]=signrank(neural_var(:,3),neural_var(:,2));p
 
 % permutation test
 stat_val = abs(mean(neural_var(:,1)) - mean(neural_var(:,2)));
@@ -2548,33 +2555,346 @@ ylabel('Frequency')
 box off
 
 neural_var=neural_var(:);
+mahab_dist=mahab_dist(:);
 
-decoding_acc = [tmp' tmp1' tmp2'];
-decoding_acc = decoding_acc(:);
 
-figure;plot((neural_var),(decoding_acc),'.')
+tmp = [mean(acc_imagined_days,1)' mean(acc_online_days,1)' ...
+    mean(acc_batch_days,1)'];
 
+decoding_acc = tmp(:);
+
+figure;plot((neural_var),(decoding_acc),'.','MarkerSize',20)
+y=decoding_acc;
+x= [ones(length(neural_var),1) neural_var];
+[B,BINT,R,RINT,STATS] = regress(y,x)
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
+
+figure;plot((mahab_dist),(decoding_acc),'.','MarkerSize',20)
+y=decoding_acc;
+x= [ones(length(mahab_dist),1) mahab_dist];
+[B,BINT,R,RINT,STATS] = regress(y,x)
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
+
+
+%2D fit
 figure;
 hold on
-col={'r','g','b'};k=1;
+col={'b','k','r'};k=1;
+data={};
 for i=1:10:30
-    plot((neural_var(i:i+9)),(decoding_acc(i:i+9)),'.','MarkerSize',20,'color',col{k});
-    k=k+1;
+    plot((mahab_dist(i:i+9)),decoding_acc(i:i+9),'.','MarkerSize',20,'color',col{k});
+    tmp = [mahab_dist(i:i+9) decoding_acc(i:i+9)];
+    data{k}=tmp;
+    k=k+1;    
 end
 
+% logistic fit
+x= [ones(length(mahab_dist),1) mahab_dist];
+y=decoding_acc;
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
+xx = linspace(min(x(:,2)),max(x(:,2)),100);
+xx = [ones(length(xx),1) xx'];
+yhat = 1./(1+exp(-xx*b));
+plot(xx(:,2),yhat,'Color','k','LineWidth',1);
+xlim([0 70])
+yticks([0:.1:1])
+xlabel('Mahalanobis Distance')
+ylabel('Decoder Accuracy')
+set(gcf,'Color','w')
+
 % 3D plot
+neural_var = log(neural_var);
 figure;
 hold on
 col={'r','g','b'};k=1;
+data={};
 for i=1:10:30
-    plot3(neural_var(i:i+9),neural_var1(i:i+9),(decoding_acc(i:i+9)),'.',...
+    plot3(mahab_dist(i:i+9),neural_var(i:i+9),(decoding_acc(i:i+9)),'.',...
         'MarkerSize',30,'color',col{k});
+    tmp = [mahab_dist(i:i+9) neural_var(i:i+9) (decoding_acc(i:i+9)) ];
+    %tmp = [mahab_dist(i:i+10) neural_var(i:i+10) ];
+    data{k}=tmp;
     k=k+1;
 end
 xlabel('Mahalanobis Distance')
 ylabel('Neural variance')
 zlabel('Decoding Accuracy')
-legend({'Open loop','CL1','CL2'})
+
+
+% logistic regression
+data_overall = cell2mat(data');
+x = data_overall(:,1:2);
+y = data_overall(:,3);
+[b,p,b1]=logistic_reg(x,y);
+mdl = fitglm(x,y,'Distribution','Binomial');
+mdl = mdl.Coefficients.Estimate;
+bhat = mdl;
+% plot as surface
+xx = linspace(min(x(:,1)),max(x(:,1)),1e2);
+yy = linspace(min(x(:,2)),max(x(:,2)),1e2);
+[X,Y]=meshgrid(xx,yy);
+zhat = [ones(length(X(:)),1) X(:) Y(:)];
+zhat = 1./(1 + exp(-zhat*bhat));
+zhat= reshape(zhat,size(X));
+%figure;hold on
+%grid on
+%scatter3(x(:,1),x(:,2),y,'filled')
+s=surf(X,Y,zhat,'FaceAlpha',.25);
+s.EdgeColor = 'none';
+s.FaceColor='cyan';
+legend({'Open loop','CL1','CL2','Logistic Fit'})
+set(gcf,'Color','w')
+grid on
+title('Neural Variance and Mahab distance predicts Decoding Acc')
+
+
+boot=[];
+parfor iter=1:5000
+    x1=x;
+    [bb,bint,r]=regress(x(:,2),[ones(length(x),1) x(:,1)]);
+    x1(:,2)=r;
+    x1(:,2) = x1(randperm(numel(y)),2);
+    %y1=y(randperm(numel(y)));
+    out = fitglm(x1,y,'Distribution','Binomial');
+    boot = [boot out.Coefficients.Estimate];
+end
+pval=[];
+for i=1:size(boot,1)
+    figure;
+    hist(abs(boot(i,:)),20);
+    vline(abs(mdl(i)));
+    pval(i) = sum(abs(boot(i,:)) >= abs(mdl(i)))/ length(boot(i,:));
+    title(num2str(pval(i)))
+end
+
+% plot surface
+xhat = [ones(size(x,1),1) x];
+[xx,yy]=meshgrid(min(xhat(:,2)):0.1:max(xhat(:,2)), min(xhat(:,3)):1:max(xhat(:,3)));
+yhat_1 = 1./(1+ exp(mdl(1) + mdl(2)*xx + mdl(3)*yy));
+figure;
+%mesh(xhat(:,2),xhat(:,3),yhat)
+mesh(yy,xx,yhat_1)
+
+
+x=randn(20,1);
+y=randn(20,1);
+z=2*x+3*y+2*randn(20,1);
+[bhat]=regress(z,[ones(size(x,1),1) x y]);
+zhat = [ones(size(x,1),1) x y]*bhat;
+figure;
+[X,Y]=meshgrid(-3:.01:3,-3:.01:3);
+zhat = [ones(length(X(:)),1) X(:) Y(:)]*bhat;
+zhat= reshape(zhat,size(X));
+figure;hold on
+scatter3(x,y,z,'filled')
+mesh(X,Y,zhat,'FaceAlpha',.5)
+
+% mahalanobis distance
+D=zeros(length(data));
+for i=1:length(data)
+    a = data{i};
+    for j=i+1:length(data)
+        b = data{j};
+        D(i,j) = mahal2(a,b,2);
+        D(j,i) = D(i,j);
+    end
+end
+
+% 2-means cluster index pairwise with swapping of labels 
+a = data{3};
+b = data{2};
+stat = two_means_ci(a,b);
+% swap labels
+boot=[];
+d=[a;b];
+s = size(a,1);
+for i=1:5000
+    idx = randperm(length(d));
+    tmp = d(idx,:);
+    atmp = tmp(1:s,:);
+    btmp = tmp(s+1:end,:);
+    boot(i) = two_means_ci(atmp,btmp);
+end
+figure;hist(boot)
+vline(stat)
+sum(stat>=boot)/length(boot)
+
+% 2-means cluster index pairwise and null hypothesis testing for the
+% two-means cluster index using gaussian distribution
+K=zeros(length(data));
+P=zeros(length(data));
+D=zeros(length(data));
+P_d=zeros(length(data));
+for i=1:length(data)
+    a = data{i};
+    for j=i+1:length(data)        
+        b = data{j};  
+        if j==3
+            b=b(2:end,:);
+        end
+
+
+        % 2 means ci
+        K(i,j) = two_means_ci(a,b);
+        K(j,i) = K(i,j);
+        stat = K(i,j);       
+    
+        % null testing for each pairwise distance
+        % build a common distribution from the two datasets
+        a1=a';b1=b';
+        s1 = size(a1,2);
+        c1 = [a1 b1];
+        m = mean(c1,2);
+        X = cov(c1');
+        C12 = chol(X);
+        dboot=[];
+        parfor iter=1:5000
+            g = randn(size(c1));
+            cnew = m + C12'*g;
+            % find two clusters in the data
+            idx = kmeans(cnew', 2);
+            atmp = cnew(:,find(idx==1));
+            btmp = cnew(:,find(idx==2));
+            dboot(iter) =  two_means_ci(atmp',btmp');
+        end
+        P(i,j) = 1-sum(dboot>stat)/length(dboot);        
+
+        % mahab dist
+        D(i,j) = mahal2(a,b,2);
+        D(j,i) = D(i,j);
+        stat = D(i,j);
+
+        % null testing for each pairwise distance
+        % build a common distribution from the two datasets
+        a1=a';b1=b';
+        s1 = size(a1,2);
+        c1 = [a1 b1];
+        m = mean(c1,2);
+        X = cov(c1');
+        C12 = chol(X);
+        dboot=[];
+        parfor iter=1:5000
+            g = randn(size(c1));
+            cnew = m + C12'*g;
+            % find two clusters in the data
+            idx = kmeans(cnew', 2);
+            atmp = cnew(:,find(idx==1));
+            btmp = cnew(:,find(idx==2));
+            dboot(iter) =  mahal2(atmp',btmp',2);
+        end
+        P_d(i,j) = sum(dboot>stat)/length(dboot);
+    end
+end
+
+
+% using LDA on random split
+a =data{1};
+b = data{3};
+d = [a;b];
+idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
+acc=[];
+res_acc=[];pval_acc=[];
+for iter=1:25
+    % randomly select 18 for training and 4 for testing
+    idx = idx_main(randperm(numel(idx_main)));
+    idx_train = randperm(size(d,1),16);
+    I =  ones(size(d,1),1);
+    I(idx_train)=0;
+    idx_test = find(I==1);
+
+    % train the LDA
+    data_train = d(idx_train,:);
+    idx_train = idx(idx_train);
+    W = LDA(data_train,idx_train);
+
+    % apply on held out data
+    data_test = d(idx_test,:);
+    data_test = [ones(size(data_test,1),1) data_test];
+    idx_test = idx(idx_test);
+    L = data_test * W';
+    P = exp(L) ./ repmat(sum(exp(L),2),[1 2]);
+    [aa,bb]=max(P');bb=bb-1;
+    acc(iter) = sum(idx_test==bb')/length(bb);
+
+    % balanced accuracy
+    tp=0;tn=0;fp=0;fn=0;
+    p = idx_test;grp_test=bb';
+    for ii=1:length(p)
+        if p(ii)==1 && grp_test(ii)==1
+            tp=tp+1;
+        end
+
+        if p(ii)==0 && grp_test(ii)==0
+            tn=tn+1;
+        end
+
+        if p(ii)==1 && grp_test(ii)==0
+            fn=fn+1;
+        end
+
+        if p(ii)==0 && grp_test(ii)==1
+            fp=fp+1;
+        end
+    end
+    res_acc(iter) = 0.5* ( tp/(tp+fn) + tn/(tn+fp) );
+
+    % stats
+    alp1=1+tp;
+    bet1=1+fn;
+    alp2=1+tn;
+    bet2=1+fp;
+    res=0.001;
+    u=0:res:1;
+    a=betapdf(u,alp1,bet1);
+    b=betapdf(u,alp2,bet2);
+    x=conv(a,b);
+    z=2*x(1:2:end);
+    z=z/(sum(x*res));
+    % figure;plot(u,z);hold on;plot(u,a,'k');plot(u,b,'r')
+    % calculate p-value
+    querypt= 0.5;
+    I=(u>querypt);
+    pval(iter)=1-sum(z(I)*res);
+end
+figure;boxplot(bootstrp(1000,@mean,acc))
+acc=mean(acc)
+
+
+
+% using LDA on LOOCV
+a =data{1};
+b = data{2};
+d = [a;b];
+idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
+acc=[];
+res_acc=[];pval_acc=[];
+for i=1:length(d)
+    idx_test=i;
+    I =  ones(size(d,1),1);
+    I(idx_test)=0;
+    idx_train = find(I==1);
+
+    % train the LDA
+    data_train = d(idx_train,:);
+    idx_train = idx(idx_train);
+    W = LDA(data_train,idx_train);
+
+    % apply on held out data
+    data_test = d(idx_test,:);
+    data_test = [ones(size(data_test,1),1) data_test];
+    idx_test = idx(idx_test);
+    L = data_test * W';
+    P = exp(L) ./ repmat(sum(exp(L),2),[1 2]);
+    [aa,bb]=max(P');bb=bb-1;
+    acc(i) = sum(idx_test==bb);
+end
+acc=mean(acc)
+
+
+
+
+
+
 
 
 
@@ -5049,6 +5369,7 @@ end
 %save hDOF_11days_accuracy_results_B3_v2 -v7.3 % new after old data got deleted: best of the lot 
 %save hDOF_11days_accuracy_results_B3_v3 -v7.3 % new after old data got deleted
 
+%%%%%%%%% PLOTTING DECODING ACCURACIES FROM OL TO CL1 AND CL2
 %acc_online_days = (acc_online_days + acc_batch_days)/2;
 figure;
 ylim([0.0 1])
@@ -5153,204 +5474,107 @@ figure;boxplot(tmp)
 [P,H,STATS] = signrank(mean(acc_imagined_days,1),mean(acc_online_days,1));
 [P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));
 
-% regression lines for mahab distances in latent space
-imag = [15.0423
-21.7693
-18.7126
-22.8332
-23.4961
-17.6836
-24.1478
-22.3141
-24.0741
-25.988
-21.2023
-    ];
-online=[21.7351
-37.6585
-29.8865
-36.8177
-36.405
-28.0914
-39.3517
-39.2764
-37.1626
-39.8291
-41.1453
-    ];
-batch=[23.5318
-38.3169
-36.3582
-36.8336
-50.3386
-34.7854
-41.713
-38.7748
-55.4192
-50.7281
-51.2077
-    ]; % days 12 thru 5
-
-% PLOT REGRESSION LINES
-imag = tmp(2:end,1);
-online = tmp(2:end,2);
-batch = tmp(2:end,3);
+%%%% PLOTTING REGRESSION LINES FOR MAHAB DISTANCES AS A FUNCTION OF DAY %%%%
+% load tmp variable here from python
+num_days = size(tmp,1);
 figure;
+xlim([0 num_days+1])
 hold on
-days=1:length(imag)
-x=[ones(length(days),1) days'];
-%imag
-plot(days,imag,'.','MarkerSize',20)
-y=imag;
-[B,BINT,R,RINT,STATS1] = regress(y,x);
-yhat=x*B;
-plot(days,yhat,'b','LineWidth',1)
-%online
-plot(days,online,'.k','MarkerSize',20)
-y=online;
-[B,BINT,R,RINT,STATS2] = regress(y,x);
-yhat=x*B;
-plot(days,yhat,'k','LineWidth',1)
-%batch
-plot(days,batch,'.r','MarkerSize',20)
-y=batch;
-[B,BINT,R,RINT,STATS3] = regress(y,x);
-yhat=x*B;
-plot(days,yhat,'r','LineWidth',1)
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-xlim([.5 11.5])
-xticks(1:1)
-xticklabels(1:11)
-
-
-% PLOT REGRESSION LINES equal size in tmp
-imag = tmp(:,1);
-online = tmp(:,2);
-batch = tmp(:,3);
-figure;
-hold on
-days=1:4;
-x=[ones(length(days),1) days'];
-%imag
-plot(days,imag,'.','MarkerSize',20)
-y=imag;
-[B,BINT,R,RINT,STATS1] = regress(y,x);
-yhat=x*B;
-plot(days,yhat,'b','LineWidth',1)
-%online
-plot(days,online,'.k','MarkerSize',20)
-y=online;
-[B,BINT,R,RINT,STATS2] = regress(y,x);
-yhat=x*B;
-plot(days,yhat,'k','LineWidth',1)
-%batch
-plot(days,batch,'.r','MarkerSize',20)
-y=batch;
-[B,BINT,R,RINT,STATS3] = regress(y,x);
-yhat=x*B;
-plot(days,yhat,'r','LineWidth',1)
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-xlim([.5 4.5])
-xticks(1:4)
-xticklabels(1:4)
-
-
-
-% using robust regression in matlab equal size
-figure;
-hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 % imag
-plot(days,imag,'.b','MarkerSize',20)
-y=imag;
-lm=fitlm(x(:,2:end),y,'Robust','on');
-B=lm.Coefficients.Estimate;
+plot(1:num_days,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+[B,BINT,R,RINT,STATS1] = regress(y,x);
 yhat = x*B;
-plot(days,yhat,'b','LineWidth',1)
+plot(1:num_days,yhat,'b','LineWidth',1)
 % online
-plot(days,online,'.k','MarkerSize',20)
-y=online;
-lm=fitlm(x(:,2:end),y,'Robust','on');
-B=lm.Coefficients.Estimate;
+plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
+y = tmp(:,2);
+[B,BINT,R,RINT,STATS2] = regress(y,x);
 yhat = x*B;
-plot(days,yhat,'k','LineWidth',1)
+plot(1:num_days,yhat,'k','LineWidth',1)
 % batch
-plot(days,batch,'.r','MarkerSize',20)
-y=batch;
-lm=fitlm(x(:,2:end),y,'Robust','on');
-B=lm.Coefficients.Estimate;
-yhat=x*B;
-plot(days,yhat,'r','LineWidth',1)
-% beautify
+plot(1:num_days,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+[B,BINT,R,RINT,STATS3] = regress(y,x);
+yhat = x*B;
+plot(1:num_days,yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
-xticks([1:11])
-
-
+xticks([1:num_days])
+% yticks([5:5:35])
+% ylim([5 35])
 
 % using robust regression in matlab
 figure;
+xlim([0 num_days+1])
 hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 % imag
-plot(days,imag(2:5),'.b','MarkerSize',20)
-y=imag(2:5);
-lm=fitlm(x(:,2:end),y,'Robust','on');
+plot(1:num_days,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+lm=fitlm(x(:,2:end),y,'Robust','on')
 B=lm.Coefficients.Estimate;
 yhat = x*B;
-plot(days,yhat,'b','LineWidth',1)
+plot(1:num_days,yhat,'b','LineWidth',1)
 % online
-plot(days,online(2:5),'.k','MarkerSize',20)
-y=online(2:5);
-lm=fitlm(x(:,2:end),y,'Robust','on');
+plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
+y = tmp(:,2);
+lm=fitlm(x(:,2:end),y,'Robust','on')
 B=lm.Coefficients.Estimate;
 yhat = x*B;
-plot(days,yhat,'k','LineWidth',1)
+plot(1:num_days,yhat,'k','LineWidth',1)
 % batch
-plot(days,batch,'.r','MarkerSize',20)
-y=batch;
-lm=fitlm(x(:,2:end),y,'Robust','on');
+plot(1:num_days,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+lm=fitlm(x(:,2:end),y,'Robust','on')
 B=lm.Coefficients.Estimate;
-yhat=x*B;
-plot(days,yhat,'r','LineWidth',1)
-% beautify
+yhat = x*B;
+plot(1:num_days,yhat,'r','LineWidth',1)
 set(gcf,'Color','w')
 set(gca,'LineWidth',1)
-xticks([1:4])
-yticks([5:5:35])
-ylim([0 1])
+xticks([1:num_days+1])
+% yticks([5:5:35])
+% ylim([5 35])
+
 
 
 %%%%% IMPORTANT %%%%
 % correlating perfomance to neural variance and mahab
-mahab_dist=[15.0768	23.0341	25.5969
-    21.0006	35.7938	36.6155
-    19.838	32.3876	36.9021
-    23.3012	38.4087	36.7424
-    24.9293	39.2602	50.2872
-    17.9506	27.7369	35.1501
-    25.1043	40.5396	40.0646
-    23.7339	39.6258	38.6774
-    26.754	39.9261	58.23
-    26.0079	39.4577	53.3721
-    21.0177	39.0024	47.8239
-    ];
+% mahab_dist=[15.0768	23.0341	25.5969
+%     21.0006	35.7938	36.6155
+%     19.838	32.3876	36.9021
+%     23.3012	38.4087	36.7424
+%     24.9293	39.2602	50.2872
+%     17.9506	27.7369	35.1501
+%     25.1043	40.5396	40.0646
+%     23.7339	39.6258	38.6774
+%     26.754	39.9261	58.23
+%     26.0079	39.4577	53.3721
+%     21.0177	39.0024	47.8239
+%     ];
+
+load mahab_dist_b3_latent
+mahab_dist = tmp;
 
 %[p,h]=ranksum(mahab_dist(:,2),mahab_dist(:,3))
 [p,h,stats]=signrank(mahab_dist(:,3),mahab_dist(:,2),'method','exact')
 
-neural_var=[987.905	546.457	435.817
-    1032.13	564.041	489.257
-    1337.76	781.075	639.571
-    1637.73	795.645	769.213
-    1371.44	890.384	599.882
-    1189.63	790.712	752.482
-    1181.93	472.442	516.443
-    1304.32	751.878	684.07
-    1269.3	664.604	434.364
-    1489.88	791.045	531.593
-    1158.13	522.424	402.161
-    ];
+% neural_var=[987.905	546.457	435.817
+%     1032.13	564.041	489.257
+%     1337.76	781.075	639.571
+%     1637.73	795.645	769.213
+%     1371.44	890.384	599.882
+%     1189.63	790.712	752.482
+%     1181.93	472.442	516.443
+%     1304.32	751.878	684.07
+%     1269.3	664.604	434.364
+%     1489.88	791.045	531.593
+%     1158.13	522.424	402.161
+%     ];
+load neural_var_b3_latent
+neural_var=tmp;
+
 
 [p,h,stats]=signrank(neural_var(:,1),neural_var(:,2))
 [p,h,stats]=signrank(neural_var(:,1),neural_var(:,3))
@@ -5385,23 +5609,53 @@ tmp = [mean(acc_imagined_days,1)' mean(acc_online_days,1)' ...
 decoding_acc = tmp(:);
 
 figure;plot((neural_var),(decoding_acc),'.','MarkerSize',20)
+y=decoding_acc;
+x= [ones(length(neural_var),1) neural_var];
+[B,BINT,R,RINT,STATS] = regress(y,x);STATS
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
+
 figure;plot((mahab_dist),(decoding_acc),'.','MarkerSize',20)
+y=decoding_acc;
+x= [ones(length(mahab_dist),1) mahab_dist];
+[B,BINT,R,RINT,STATS] = regress(y,x);STATS
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
 
 
-% look at kmeans statistic i.e., within means sum of squares to mean
-% divided by total sum of squares of means 
+%2D fit
 figure;
 hold on
-col={'r','g','b'};k=1;
+col={'b','k','r'};k=1;
 data={};
 for i=1:11:33
-    plot((mahab_dist(i:i+10)),neural_var(i:i+10),'.','MarkerSize',20,'color',col{k});
-    tmp = [mahab_dist(i:i+10) neural_var(i:i+10)];
+    plot((mahab_dist(i:i+10)),decoding_acc(i:i+10),'.','MarkerSize',20,'color',col{k});
+    tmp = [mahab_dist(i:i+10) decoding_acc(i:i+10)];
     data{k}=tmp;
     k=k+1;    
 end
 
+% logistic fit
+x= [ones(length(mahab_dist),1) mahab_dist];
+y=decoding_acc;
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
+xx = linspace(min(x(:,2)),max(x(:,2)),100);
+xx = [ones(length(xx),1) xx'];
+yhat = 1./(1+exp(-xx*b));
+plot(xx(:,2),yhat,'Color','k','LineWidth',1);
+xlim([15 85])
+yticks([0:.05:1])
+xlabel('Mahalanobis Distance')
+ylabel('Decoder Accuracy')
+set(gcf,'Color','w')
+
+fitglm(x(:,2),y,'Distribution','Binomial')
+
+% linear regression
+[B,BINT,R,RINT,STATS] = regress(y,x);STATS
+lm = fitlm(x(:,2),y)
+
+
 % 3D plot
+% take the log of neural variance
 figure;
 hold on
 col={'r','g','b'};k=1;
@@ -5459,7 +5713,7 @@ end
 pval=[];
 for i=1:size(boot,1)
     figure;
-    hist(abs(boot(i,:)));
+    hist(abs(boot(i,:)),20);
     vline(abs(mdl(i)));
     pval(i) = sum(abs(boot(i,:)) >= abs(mdl(i)))/ length(boot(i,:));
     title(num2str(pval(i)))
@@ -5586,7 +5840,7 @@ end
 
 
 % using LDA on random split
-a =data{2};
+a =data{1};
 b = data{3};
 d = [a;b];
 idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
@@ -5660,7 +5914,7 @@ acc=mean(acc)
 
 
 % using LDA on LOOCV
-a =data{2};
+a =data{1};
 b = data{3};
 d = [a;b];
 idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
@@ -5687,36 +5941,6 @@ for i=1:length(d)
     acc(i) = sum(idx_test==bb);
 end
 acc=mean(acc)
-
-
-
-
-
-
-
-% stats on whether the clusters are different from each other in terms of 
-a = Data{27};
-b = Data{28};
-d = mahal2(a',b',2);
-dboot=[];
-s1 = size(a,2);
-c = [a b];
-m = mean(c,2);
-X = cov(c');
-C12 = chol(X);
-parfor i=1:50
-    g = randn(size(c));
-    cnew = m + C12'*g;
-
-    % find two clusters in the data
-    idx = kmeans(cnew', 2);
-    atmp = cnew(:,find(idx==1));
-    btmp = cnew(:,find(idx==2));
-    dboot(i) = mahal2(atmp',btmp',2);
-end
-figure;hist(dboot)
-vline(d)
-sum(dboot>d)/length(dboot)
 
 
 
@@ -5952,6 +6176,98 @@ ylabel('Decoding Accuracy')
 [P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));
 
 
+%% (MAIN) RUNNING LMM ON MAHAB DISTANCES FOR B1 AND B3
+% to show that there is or is not a systematic trend across days 
+
+
+clc;clear
+
+% load B1 data
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+a=load('mahab_dist_B1_latent');
+
+% load B3 data 
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+b=load('mahab_dist_b3_latent');
+
+b1 = a.tmp;
+b3 = b.tmp;
+
+
+% run LMM non parametric test
+pval=[];stat_overall=[];
+for context = 1:size(b1,2)
+    day_name=[];
+    mahab_dist=[];
+    subj=[];
+
+    % get B1 data
+    day_name = [day_name;(1:size(b1,1))';11];
+    mahab_dist = [mahab_dist;b1(:,context);NaN];
+    subj = [subj;ones(size(b1,1),1);1];
+
+    % get B3 data
+    day_name = [day_name;(1:size(b3,1))'];
+    mahab_dist = [mahab_dist;b3(:,context)];
+    subj = [subj;2*ones(size(b3,1),1)];
+
+    % collate
+    data = table(day_name,mahab_dist,subj);
+
+    % fit
+    glm = fitlme(data,'mahab_dist ~ 1+(day_name) + (1|subj)');
+
+    % run boot statistics 
+    stat = glm.Coefficients.tStat(2);
+    stat_overall(context)=stat;
+    pval(context) = glm.Coefficients.pValue(2);
+    stat_boot=[];
+    parfor i=1:1000
+        disp(i)
+        aa = day_name(1:11);
+        aa=aa(randperm(numel(aa)));
+        bb = day_name(12:end);
+        bb=bb(randperm(numel(bb)));
+        day_name_tmp = [aa;bb];
+        data_tmp = table(day_name_tmp,mahab_dist,subj);
+        glm_tmp = fitglme(data_tmp,'mahab_dist ~ 1 + (day_name_tmp) + (1|subj)');
+        stat_boot(i) = glm_tmp.Coefficients.tStat(2);
+    end
+
+    figure;
+    hist(abs(stat_boot),20);
+    vline(abs(stat),'r')
+    pval(context)= sum(abs(stat_boot)>stat)/length(stat_boot);
+end
+pval
+
+% boxplots comparing OL, CL1 and CL2 
+figure;hold on
+boxplot([b1;b3])
+a = get(get(gca,'children'),'children');
+for i=1:length(a)
+    box1 = a(i);
+    set(box1, 'Color', 'k');
+end
+x1= [1+ 0.1*randn(length(b1),1) 2+ 0.1*randn(length(b1),1) 3+ 0.1*randn(length(b1),1)];
+h=scatter(x1,b1,'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'r';
+    h(i).MarkerFaceAlpha = 0.5;
+end
+x1= [1+ 0.1*randn(length(b3),1) 2+ 0.1*randn(length(b3),1) 3+ 0.1*randn(length(b3),1)];
+h=scatter(x1,b3,'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'b';
+    h(i).MarkerFaceAlpha = 0.5;
+end
+xlim([0.5 3.5])
+xticks(1:3)
+xticklabels({'OL','CL1','CL2'})
+yticks([0:10:80])
+ylim([0 80])
+set(gcf,'Color','w')
+box off
 
 
 %% B3 PLASTICITY AND AE FRAMEWORK (MAIN MAIN)
