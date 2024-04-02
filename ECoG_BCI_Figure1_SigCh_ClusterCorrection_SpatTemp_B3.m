@@ -660,7 +660,7 @@ plot_elec_wts_B3(lt_hand,cortex,elecmatrix,chMap)
 title('Left Hand')
 
 % rt proximal
-rt_proximal = sig_ch_all([21:26],:);
+rt_proximal = sig_ch_all([21 23 25],:);
 rt_proximal = mean(rt_proximal,1);
 rt_proximal = (rt_proximal)*5;
 figure;imagesc(rt_proximal(chMap));
@@ -669,8 +669,8 @@ plot_elec_wts_B3(rt_proximal,cortex,elecmatrix,chMap)
 title('Rt Prox')
 
 % lt proximal
-%lt_proximal = sig_ch_all([22 22 26],:);
-lt_proximal = sig_ch_all([21:26],:);
+lt_proximal = sig_ch_all([22 22 26],:);
+%lt_proximal = sig_ch_all([21:26],:);
 lt_proximal = mean(lt_proximal,1);
 lt_proximal = (lt_proximal)*5;
 figure;imagesc(lt_proximal(chMap));
@@ -688,7 +688,7 @@ plot_elec_wts_B3(distal,cortex,elecmatrix,chMap)
 title('Distal')
 
 % Face (heads/lips/tongue)
-face = sig_ch_all([ 31 32 ],:);
+face = sig_ch_all([20 31 32 ],:);
 face = mean(face,1);
 face = (face)*5;
 figure;imagesc(face(chMap));
@@ -704,6 +704,7 @@ wts(2,:) = lt_hand;
 wts(3,:) = lt_proximal;
 wts(4,:) = distal;
 wts(5,:) = face;
+wts(6,:) = rt_proximal;
 %wts_alpha(1,:)=rt_hand./5;
 % scale between 30 and 200
 wts=50 +  (150-50)*( (wts - min(wts(:)))./( max(wts(:))-min(wts(:))));
@@ -783,6 +784,114 @@ end
 xticklabels(x1)
 set(gcf,'Color','w')
 
+
+%%%% FINER JACCARD %%%%%
+% within right hand (1)
+rt_idx=[1:9 ];
+within_effector_hands = [squareform(D(rt_idx,rt_idx))'];
+
+% b/w rt to lt. hand (2)
+lt_idx = [10:18];
+between_effector1 = D(1:9,lt_idx); 
+between_effector1=(between_effector1(:));
+
+% b/w rt to rt proximal movements (or all proximal) (3)
+rt_prox_idx=[21:26];
+between_effector2 = D(1:9,rt_prox_idx); 
+between_effector2=(between_effector2(:));
+
+% b/w rt to lt proximal movements (4)
+lt_prox_idx=[22 24 26];
+between_effector3 = D(1:9,lt_prox_idx);
+between_effector3=(between_effector3(:));
+
+% b/w rt to distal (5)
+distal_idx=[27:30];
+between_effector4 = D(1:9,distal_idx); 
+between_effector4=(between_effector4(:));
+
+% b/w rt to face (6)
+face_idx=[20 31 32];
+between_effector5 = D(1:9,face_idx);
+between_effector5=(between_effector5(:));
+
+% bootstrap difference of means
+[p ]=bootstrap_ttest(within_effector_hands,between_effector5,2,1e3)
+
+if length(between_effector1) > length(within_effector_hands)
+    within_effector_hands(end+1:length(between_effector1)) = NaN;
+    between_effector2(end+1:length(between_effector1)) = NaN;
+    between_effector3(end+1:length(between_effector1)) = NaN;
+    between_effector4(end+1:length(between_effector1)) = NaN;
+    between_effector5(end+1:length(between_effector1)) = NaN;
+else
+    between_effector(end+1:length(within_effector_hands)) = NaN;
+end
+
+tmp = [within_effector_hands between_effector1 between_effector2...
+    between_effector3 between_effector4 between_effector5];
+p = ranksum(within_effector_hands,between_effector1)
+p = ranksum(within_effector_hands,between_effector2)
+p = ranksum(within_effector_hands,between_effector3)
+p = ranksum(within_effector_hands,between_effector4)
+p = ranksum(within_effector_hands,between_effector5)
+figure;boxplot(tmp,'notch','off')
+
+% plot mean with 95% confidence intervals 
+y = nanmean(tmp);
+yboot = sort(bootstrp(1000,@nanmean,tmp));
+neg = yboot(500,:)-yboot(25,:);
+pos =  yboot(975,:)-yboot(500,:);
+x=1:6;
+figure;hold on
+errorbar(x,y,neg,pos,'LineStyle','none','LineWidth',1,'Color','k');
+plot(x,y,'o','MarkerSize',15,'Color','k','LineWidth',1)
+xlim([0.5 6.5])
+ylim([0.3 1])
+xticks(1:6)
+xticklabels({'Within Rt. Hand Mvmts','b/w Rt. Hand and Lt. Hand',...
+    'b/w Rt. Hand and Rt Prox','b/w Rt. Hand and Lt Prox',...
+    'b/w Rt. Hand and Distal','b/w Rt. Hand and Face'})
+set(gcf,'Color','w')
+ylabel('Jaccard spatial similarity coefficient')
+
+%%%% MAIN plot mean with 95% confidence intervals just for the main movements
+if ~exist('tmp_bkup')
+    tmp_bkup=tmp;
+    tmp = tmp(:,[1 2 3 5 6]);
+end
+y = nanmean(tmp);
+yboot = sort(bootstrp(1000,@nanmean,tmp));
+neg = yboot(500,:)-yboot(25,:);
+pos =  yboot(975,:)-yboot(500,:);
+x=1:5;
+figure;hold on
+errorbar(x,y,neg,pos,'LineStyle','none','LineWidth',1,'Color','k');
+plot(x,y,'o','MarkerSize',15,'Color','k','LineWidth',1)
+xlim([0.5 5.5])
+ylim([0.4 0.7])
+xticks(1:5)
+xticklabels({'Within Rt. Hand Mvmts','b/w Rt. Hand and Lt. Hand',...
+    'b/w Rt. Hand and Proximal','b/w Rt. Hand and Distal',...
+    'b/w Rt. Hand and Orofacial'})
+set(gcf,'Color','w')
+ylabel('Jaccard spatial similarity coefficient')
+
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,2),2,2e3)
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,3),2,2e3)
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,4),2,2e3)
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,5),2,1e4)
+
+% rank sum tests
+[p ]=ranksum(tmp(:,1),tmp(:,2))
+[p ]=ranksum(tmp(:,1),tmp(:,3))
+[p ]=ranksum(tmp(:,1),tmp(:,4))
+[p ]=ranksum(tmp(:,1),tmp(:,5))
+
+figure;boxplot(tmp,'notch','on')
+
+
+%%%%% COARSE JACCCARD %%%%%
 % distance between within effector to between effector movements
 within_effector_hands = [squareform(D(1:9,1:9))'];
 between_effector1 = D(1:9,10:18);

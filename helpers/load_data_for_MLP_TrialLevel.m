@@ -1,6 +1,9 @@
 function [trial_data] = load_data_for_MLP_TrialLevel(files,trial_type,pooling)
 %function [condn_data] = load_data_for_MLP(files)
 
+if nargin<3
+    pooling=true;
+end
 
 trial_data=[];
 kk=1;
@@ -45,7 +48,7 @@ for ii=1:length(files)
 
         else
 
-            % get unpooled data main 4 features
+            % get unpooled data main 3features
             temp=temp([129:256 513:640 769:896],:);
 
         end
@@ -65,6 +68,8 @@ for ii=1:length(files)
         trial_data(kk).trial_type = trial_type;
         if trial_type>0
             trial_data(kk).decodes = decodes;
+        else
+            trial_data(kk).decodes = [];
         end        
         kk=kk+1;
     end

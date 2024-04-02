@@ -2382,9 +2382,16 @@ for i=1:length(session_data)
     acc_batch_days(:,i) = diag(acc_batch);
 end
 
-save hDOF_10days_accuracy_results_New -v7.3
+%save hDOF_10days_accuracy_results_New -v7.3
+save hDOF_10days_accuracy_results_New_New -v7.3 % made some corrections on how accuracy is computed
 %save hDOF_10days_accuracy_results -v7.3
 
+
+a = load('hDOF_10days_accuracy_results_New');
+b = load('hDOF_10days_accuracy_results_New_New'); 
+[mean(a.acc_imagined_days,1)' mean(b.acc_imagined_days,1)' ]
+[mean(a.acc_online_days,1)' mean(b.acc_online_days,1)' ]
+[mean(a.acc_batch_days,1)' mean(b.acc_batch_days,1)' ]
 
 %acc_online_days = (acc_online_days + acc_batch_days)/2;
 figure;
@@ -2486,15 +2493,20 @@ acc = [acc;tmp2'];
 experiment =[experiment;3*ones(length(tmp),1)];
 
 data = table(experiment,acc);
-glm = fitglm(data,'acc ~ 1 + experiment');
+glm = fitglm(data,'acc ~ 1 + experiment','Distribution','binomial');
 
 % stats
 [h p tb st] = ttest(tmp,tmp1)
 [h p tb st] = ttest(tmp,tmp2)
 [h p tb st] = ttest(tmp1,tmp2)
 
-[p,h,stats]=ranksum(tmp,tmp1);
-[p,h,stats]=ranksum(tmp,tmp2);
+[p,h,stats]=signrank(tmp,tmp1);
+[p,h,stats]=signrank(tmp,tmp2);
+[p,h,stats]=signrank(tmp1,tmp2);
+
+p = bootstrp_ttest(tmp,tmp1,1)
+p = bootstrp_ttest(tmp,tmp2,1)
+p = bootstrp_ttest(tmp1,tmp2,1)
 
 
 %%%%% IMPORTANT %%%%
@@ -2601,6 +2613,67 @@ yticks([0:.1:1])
 xlabel('Mahalanobis Distance')
 ylabel('Decoder Accuracy')
 set(gcf,'Color','w')
+
+% doing LOOCV on the logistic regression fit
+cv_loss=[];
+I = ones(length(decoding_acc),1);
+for i=1:length(decoding_acc)
+    disp(i)
+    test_idx = i;
+    train_idx = I;
+    train_idx(test_idx)=0;
+    train_idx = find(train_idx>0);
+
+    % fit the model on training data
+    x=mahab_dist(train_idx);
+    x= [ones(length(x),1) x];
+    y=decoding_acc(train_idx);
+    [b,p,b1]=logistic_reg(x(:,2),y);
+
+    % prediction on held out data point
+    xtest = mahab_dist(test_idx);
+    xtest= [ones(length(xtest),1) xtest];
+    yhat =  1./(1+exp(-xtest*b));
+    ytest = decoding_acc(test_idx);
+    %cv_loss(i) = abs((yhat-ytest));
+    cv_loss(i) = -(ytest*log(yhat) + (1-ytest)*log(1-yhat));
+end
+cv_loss_stat = cv_loss;
+
+% doing it against a null distribution, 500 times
+cv_loss_boot=[];
+parfor iter =1:500
+    disp(iter)
+    cv_loss=[];
+    I = ones(length(decoding_acc),1);
+    decoding_acc_tmp = decoding_acc(randperm(numel(decoding_acc)));
+    for i=1:length(decoding_acc)
+        
+        test_idx = i;
+        train_idx = I;
+        train_idx(test_idx)=0;
+        train_idx = find(train_idx>0);
+
+        % fit the model on training data
+        x=mahab_dist(train_idx);
+        x= [ones(length(x),1) x];
+        y=decoding_acc_tmp(train_idx);
+        [b,p,b1]=logistic_reg(x(:,2),y);
+
+        % prediction on held out data point
+        xtest = mahab_dist(test_idx);
+        xtest= [ones(length(xtest),1) xtest];
+        yhat =  1./(1+exp(-xtest*b));
+        ytest = decoding_acc_tmp(test_idx);
+        %cv_loss(i) = abs((yhat-ytest));
+        cv_loss(i) = -(ytest*log(yhat) + (1-ytest)*log(1-yhat));
+    end
+    cv_loss_boot(iter,:)=cv_loss;
+end
+figure;
+hist(mean(cv_loss_boot,2))
+vline(mean(cv_loss_stat))
+sum(mean(cv_loss_boot,2) < mean(cv_loss_stat))/length(mean(cv_loss_boot,2))
 
 % 3D plot
 neural_var = log(neural_var);
@@ -2862,8 +2935,8 @@ acc=mean(acc)
 
 
 % using LDA on LOOCV
-a =data{1};
-b = data{2};
+a =data{2};
+b = data{3};
 d = [a;b];
 idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
 acc=[];
@@ -5233,7 +5306,7 @@ addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=3;
+iterations=1;
 plot_true=false;
 for i=1:11% length(session_data) % 11 is first set of collected data
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -5260,8 +5333,9 @@ for i=1:11% length(session_data) % 11 is first set of collected data
     condn_data = load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0);
 
     % get cross-val classification accuracy
-    [acc_imagined,train_permutations] = accuracy_imagined_data(condn_data, iterations);
-    acc_imagined=squeeze(nanmean(acc_imagined,1));
+    [acc_imagined,train_permutations,acc_imagined_bin] =...
+        accuracy_imagined_data(condn_data, iterations);
+    acc_imagined=squeeze(nanmean(acc_imagined_bin,1));
     %disp(mean(diag(acc_imagined)))
     if plot_true
         figure;imagesc(acc_imagined*100)
@@ -5320,7 +5394,7 @@ for i=1:11% length(session_data) % 11 is first set of collected data
         yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
         title(['CL1 Acc of ' num2str(100*mean(diag(acc_online)))])
     end
-    acc_online_days(:,i) = diag(acc_online);
+    acc_online_days(:,i) = diag(acc_online_bin);
 
 
     %%%%%% cross_val classification accuracy for batch data
@@ -5334,7 +5408,7 @@ for i=1:11% length(session_data) % 11 is first set of collected data
     end
 
     % get the classification accuracy
-    [acc_batch,acc_batch_bin] = accuracy_online_data_withNull(files);
+    [acc_batch,acc_batch_bin] = accuracy_online_data(files);
     if plot_true
         figure;imagesc(acc_batch*100)
         colormap(brewermap(128,'Blues'))
@@ -5358,7 +5432,7 @@ for i=1:11% length(session_data) % 11 is first set of collected data
         yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
         title(['CL2 Acc of ' num2str(100*mean(diag(acc_batch)))])
     end
-    acc_batch_days(:,i) = diag(acc_batch);
+    acc_batch_days(:,i) = diag(acc_batch_bin);
 
 end
 
@@ -5368,6 +5442,16 @@ end
 %save hDOF_11days_accuracy_results_B3_corrected -v7.3 % not good
 %save hDOF_11days_accuracy_results_B3_v2 -v7.3 % new after old data got deleted: best of the lot 
 %save hDOF_11days_accuracy_results_B3_v3 -v7.3 % new after old data got deleted
+%save hDOF_11days_accuracy_results_B3_v4 -v7.3 % new and correcting for errors in accuracy computation
+
+nanmean(acc_imagined_days,1)'
+mean(ans)
+
+
+a=load('hDOF_11days_accuracy_results_B3_v4');
+b=load('hDOF_11days_accuracy_results_B3_v2'); %imag acc 0.8386
+([nanmean(a.acc_batch_days,1)' nanmean(b.acc_batch_days,1)'])
+
 
 %%%%%%%%% PLOTTING DECODING ACCURACIES FROM OL TO CL1 AND CL2
 %acc_online_days = (acc_online_days + acc_batch_days)/2;
@@ -5448,7 +5532,8 @@ h.LineWidth=1;
 xlabel('Decoder Type')
 ylabel('Accuracy')
 
-disp([mean(acc_imagined_days(:)) mean(acc_online_days(:)) mean(acc_batch_days(:))])
+disp([nanmean(acc_imagined_days(:)) nanmean(acc_online_days(:))...
+    nanmean(acc_batch_days(:))])
 
 % using logistic regression
 [b,p]=logistic_reg(mean(acc_imagined_days,1),mean(acc_online_days,1))
@@ -5652,6 +5737,69 @@ fitglm(x(:,2),y,'Distribution','Binomial')
 % linear regression
 [B,BINT,R,RINT,STATS] = regress(y,x);STATS
 lm = fitlm(x(:,2),y)
+
+
+
+% doing LOOCV on the logistic regression fit
+cv_loss=[];
+I = ones(length(decoding_acc),1);
+for i=1:length(decoding_acc)
+    disp(i)
+    test_idx = i;
+    train_idx = I;
+    train_idx(test_idx)=0;
+    train_idx = find(train_idx>0);
+
+    % fit the model on training data
+    x=mahab_dist(train_idx);
+    x= [ones(length(x),1) x];
+    y=decoding_acc(train_idx);
+    [b,p,b1]=logistic_reg(x(:,2),y);
+
+    % prediction on held out data point
+    xtest = mahab_dist(test_idx);
+    xtest= [ones(length(xtest),1) xtest];
+    yhat =  1./(1+exp(-xtest*b));
+    ytest = decoding_acc(test_idx);
+    cv_loss(i) = abs((yhat-ytest));
+    %cv_loss(i) = -(ytest*log(yhat) + (1-ytest)*log(1-yhat));
+end
+cv_loss_stat = cv_loss;
+
+% doing it against a null distribution, 500 times
+cv_loss_boot=[];
+parfor iter =1:50
+    disp(iter)
+    cv_loss=[];
+    I = ones(length(decoding_acc),1);
+    decoding_acc_tmp = decoding_acc(randperm(numel(decoding_acc)));
+    for i=1:length(decoding_acc)
+        
+        test_idx = i;
+        train_idx = I;
+        train_idx(test_idx)=0;
+        train_idx = find(train_idx>0);
+
+        % fit the model on training data
+        x=mahab_dist(train_idx);
+        x= [ones(length(x),1) x];
+        y=decoding_acc_tmp(train_idx);
+        [b,p,b1]=logistic_reg(x(:,2),y);
+
+        % prediction on held out data point
+        xtest = mahab_dist(test_idx);
+        xtest= [ones(length(xtest),1) xtest];
+        yhat =  1./(1+exp(-xtest*b));
+        ytest = decoding_acc_tmp(test_idx);
+        cv_loss(i) = abs((yhat-ytest));
+        %cv_loss(i) = -(ytest*log(yhat) + (1-ytest)*log(1-yhat));
+    end
+    cv_loss_boot(iter,:)=cv_loss;
+end
+figure;
+hist(mean(cv_loss_boot,2))
+vline(mean(cv_loss_stat))
+sum(mean(cv_loss_boot,2) < mean(cv_loss_stat))/length(mean(cv_loss_boot,2))
 
 
 % 3D plot
@@ -5914,7 +6062,7 @@ acc=mean(acc)
 
 
 % using LDA on LOOCV
-a =data{1};
+a =data{2};
 b = data{3};
 d = [a;b];
 idx = [0*ones(size(a,1),1);ones(size(a,1),1)];idx_main=idx;
@@ -6102,11 +6250,13 @@ addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
 
 % load B3 data
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
-a=load('hDOF_11days_accuracy_results_B3_v2');
+%a=load('hDOF_11days_accuracy_results_B3_v2');
+a=load('hDOF_11days_accuracy_results_B3_v4');
 
 % load B1 data 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-b=load('hDOF_10days_accuracy_results_New');
+%b=load('hDOF_10days_accuracy_results_New');
+b=load('hDOF_10days_accuracy_results_New_New');
 
 % get the data into variables
 acc_imagined_days= [a.acc_imagined_days';b.acc_imagined_days']';

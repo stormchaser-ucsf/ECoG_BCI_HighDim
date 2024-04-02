@@ -85,6 +85,200 @@ net = trainNetwork(XTrain,YTrain,layers,options);
 [cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx,num_classes);
 conf_matrix
 
+%% LOOKING AT THE IMPORTANCE OF DIFFERENT FEATURES (MAIN)
+% code here is to look at trial level decoding accuracies with respect to 
+% all three features, each individual feature alone, and combination of
+% features -> delta+hg, delta+beta, beta+hg
+
+% get the data in trial format
+tic
+clc;clear
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data
+addpath 'C:\Users\nikic\Documents\MATLAB'
+condn_data={};
+for i=1:length(session_data)
+%     folders_imag =  strcmp(session_data(i).folder_type,'I');
+%     folders_online = strcmp(session_data(i).folder_type,'O');
+%     folders_batch = strcmp(session_data(i).folder_type,'B');
+% 
+%     imag_idx = find(folders_imag==1);
+%     online_idx = find(folders_online==1);
+%     batch_idx = find(folders_batch==1);
+
+
+    folders_imag =  strcmp(session_data(i).folder_type,'I');
+    folders_online = strcmp(session_data(i).folder_type,'O');
+    folders_batch = strcmp(session_data(i).folder_type,'B');
+    if i~=6
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_imag(folders_am==0)=0;
+        folders_online(folders_am==0)=0;
+    end
+
+    if i==3 || i==6 || i==8
+        folders_pm = strcmp(session_data(i).AM_PM,'pm');
+        folders_batch(folders_pm==0)=0;
+        if i==8
+            idx = find(folders_batch==1);
+            folders_batch(idx(3:end))=0;
+        end
+    else
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_batch(folders_am==0) = 0;
+    end
+
+    imag_idx = find(folders_imag==1);
+    online_idx = find(folders_online==1);
+    batch_idx = find(folders_batch==1);
+
+
+    %%%%%% load imagined data
+    folders = session_data(i).folders(imag_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+
+    condn_data = [condn_data;load_data_for_MLP_TrialLevel(files,0)];
+
+    %%%%%% load online data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+    condn_data = [condn_data;load_data_for_MLP_TrialLevel(files,1)];
+
+    %%%%%% load batch data
+    folders = session_data(i).folders(online_idx);
+    day_date = session_data(i).Day;
+    files=[];
+    for ii=1:length(folders)
+        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        %cd(folderpath)
+        files = [files;findfiles('',folderpath)'];
+    end
+    condn_data = [condn_data;load_data_for_MLP_TrialLevel(files,2)];
+end
+
+% make them all into one giant struct
+tmp=cell2mat(condn_data(i));
+condn_data_overall=tmp;
+err_idx=[];
+for i=2:length(condn_data)
+    tmp=cell2mat(condn_data(i));
+    for k=1:length(tmp)
+        condn_data_overall(end+1) =tmp(k);
+        if isempty(tmp(k))
+            err_idx = [err_idx; [i k]];
+        end
+    end
+end
+
+% different feeature combinations
+feat_idx{1}=[1:96]; 
+feat_idx{2}=[3:3:96]; % only hG
+feat_idx{3}=[1:3:96]; % only delta
+feat_idx{4}=[2:3:96]; % only beta
+feat_idx{5}=[1:3:96 2:3:96]; % delta and beta 
+feat_idx{6}=[1:3:96 3:3:96]; % delta and hg
+feat_idx{7}=[2:3:96 3:3:96]; % hg and beta
+
+feat_type = {'all','hG','delta','beta','delta and beta','delta and hG','hG and beta'};
+
+condn_data_overall_bkup=condn_data_overall;
+acc_overall={};
+for i=1:length(feat_idx)
+
+    condn_data_overall=condn_data_overall_bkup;
+    feat =  feat_idx{i};
+    for j=1:length(condn_data_overall)
+        tmp = condn_data_overall(j).neural;
+        tmp = tmp(feat,:);
+        condn_data_overall(j).neural = tmp;
+    end
+
+    cv_perf=[];
+    for iter=1:15
+        % split into training and testing trials, 15% test, 15% val, 70% test
+        prop = 0.15;
+        test_idx = randperm(length(condn_data_overall),round(prop*length(condn_data_overall)));
+        test_idx=test_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I(test_idx)=0;
+        train_val_idx = find(I~=0);
+        prop1 = (0.7/(1-prop));
+        tmp_idx = randperm(length(train_val_idx),round(prop1*length(train_val_idx)));
+        train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I([train_idx;test_idx])=0;
+        val_idx = find(I~=0);val_idx=val_idx(:);
+
+        % training options for NN
+        [options,XTrain,YTrain] = ...
+            get_options(condn_data_overall,val_idx,train_idx);
+
+
+        %layers = get_layers2(128,128,size(condn_data_overall(1).neural,1));
+        layers = get_layers1(128,size(condn_data_overall(1).neural,1));
+        net = trainNetwork(XTrain,YTrain,layers,options);
+        %[cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx);
+        [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+        cv_perf(iter) = mean(diag(conf_matrix));
+    end
+    acc_overall(i).acc = cv_perf;
+    acc_overall(i).feat_type = feat_type{i};
+
+end
+
+save Feature_Importance_Decoding_B1_new acc_overall -v7.3
+toc
+
+% plotting
+tmp=[];
+for i=1:length(acc_overall)
+    tmp = [tmp acc_overall(i).acc'];
+end
+figure;
+idx = [1 6 7 5 2 3 4];
+boxplot(tmp(:,idx))
+xticks(1:size(tmp,2))
+xticklabels(feat_type(idx))
+ylim([0 0.85])
+hline(1/7,'--r')
+xlabel('Neural Feature')
+ylabel('Offline Cross. Val Decoding Acc')
+yticks([0:.1:1])
+set(gcf,'Color','w')
+box off
+set(gca,'LineWidth',1)
+a = get(get(gca,'children'),'children');   
+for i=15:21%length(a)
+    a(i).Color='k';    
+end
+
+mean(tmp(:,idx))
+
+% running the stats pairwise, rank sum test
+tmp=tmp(:,idx);
+for i=1:size(tmp,2)
+    p = ranksum(tmp(:,4),tmp(:,5))
+
+
+end
+ 
+
+
 %%
 % code to grid search to best get MLP parameters
 % trying here for layer width and number of units
@@ -314,7 +508,7 @@ ylim([.0 .9])
 tmp=NaN(64,3);
 tmp(1:4,1) = acc(1:4)';
 tmp(1:16,2) = acc(5:20)';
-tmp(1:end,3) = acc(21:end)';
+tmp(1:end,3) = acc(21:end-1)';
 figure;boxplot(tmp)
 ylim([.5 .7])
 

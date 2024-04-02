@@ -1,6 +1,107 @@
 
 % COME HERE FROM THE REPRESENTATIONAL STRUCURE ANALYSES CODE
-% testong between mvmts 2 and 7
+
+%% SIMULATION OF THE TESTING SCHEME
+% create two datasets 
+
+a= randn(200,2);
+b=randn(200,2)+[-2.25,-2.25];
+figure;plot(a(:,1),a(:,2),'.','MarkerSize',20)
+hold on
+plot(b(:,1),b(:,2),'.r','MarkerSize',20)
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xlabel('Feature 1')
+ylabel('Feature 2')
+legend({'Mvmt 1','Mvmt 2'})
+box on
+% compute mahal distance
+dstat = mahal2(a,b,2);
+title(['Mahalanobis distance of ' num2str(dstat)])
+
+a=a';b=b';
+s1 = size(a,2);
+c = [a b];
+m = mean(c,2);
+X = cov(c');
+C12 = chol(X);
+
+% plot the ellipse
+[v,d]=eigs(X); % ellipse length is sqrt(e.value) in direction of e.vector
+d=diag(d);
+ra=sqrt(5.991*d(1));
+rb=sqrt(5.991*d(2));
+v1=v(:,1);
+ang = atan(v1(2)/v1(1));
+c0=mean(c,2);
+xlim([min(c(1,:))-1 max(c(1,:))+1])
+ylim([min(c(2,:))-1 max(c(2,:))+1])
+figure;plot(a(1,:),a(2,:),'.','MarkerSize',20)
+hold on
+plot(b(1,:),b(2,:),'.r','MarkerSize',20)
+ellipse(ra,rb,ang,c0(1),c0(2),'k');
+title(['Gaussian fit to overall data'])
+xlim([min(c(1,:))-1 max(c(1,:))+1])
+ylim([min(c(2,:))-1 max(c(2,:))+1])
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xlabel('Feature 1')
+ylabel('Feature 2')
+legend({'Mvmt 1','Mvmt 2'})
+
+% example plotting
+g = randn(size(c));
+cnew = m + C12'*g;
+
+% just plot it
+figure;hold on
+plot(cnew(1,:),cnew(2,:),'.k','MarkerSize',20)
+ellipse(ra,rb,ang,c0(1),c0(2),'k');
+xlim([min(c(1,:))-1 max(c(1,:))+1])
+ylim([min(c(2,:))-1 max(c(2,:))+1])
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xlabel('Feature 1')
+ylabel('Feature 2')
+legend('Sampling from Gaussian Fit')
+box on
+
+
+% find two clusters in the data
+idx = kmeans(cnew', 2);
+atmp = cnew(:,find(idx==1));
+btmp = cnew(:,find(idx==2));
+figure;plot(atmp(1,:),atmp(2,:),'.','MarkerSize',20)
+hold on
+plot(btmp(1,:),btmp(2,:),'.r','MarkerSize',20)
+ellipse(ra,rb,ang,c0(1),c0(2),'k');
+dd= mahal2(atmp',btmp',2);
+title(['K-means parcellation, Mahalanobis dist of ' num2str(dd)])
+xlim([min(c(1,:))-1 max(c(1,:))+1])
+ylim([min(c(2,:))-1 max(c(2,:))+1])
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xlabel('Feature 1')
+ylabel('Feature 2')
+legend({'Cluster 1','Cluster 2'})
+box on
+
+parfor i=1:500
+    g = randn(size(c));
+    cnew = m + C12'*g;
+
+    % find two clusters in the data
+    idx = kmeans(cnew', 2);
+    atmp = cnew(:,find(idx==1));
+    btmp = cnew(:,find(idx==2));
+    dboot(i) = mahal2(atmp',btmp',2);
+
+end
+figure;hist(dboot)
+vline(dstat)
+sum(dboot>dstat)/length(dboot)
+
+
 
 %%
 %%%% null hypothesis testing -> permutation of each freq feature mvmt 1 and
@@ -31,7 +132,55 @@ figure;hist(dboot)
 vline(d)
 sum(dboot>d)/length(dboot)
 
-%% Going down the dendrogram , smulation
+%% SAME AS ABOVE BUT NOW FOR ALL PAIRWISE MOVEMENTS
+tic
+D_p=zeros(length(Data));
+D_boot=[];
+for i=1:length(Data)
+    disp(i)
+    a = Data{i};
+    for j=i+1:length(Data)
+        b = Data{j};
+        d = mahal2(a',b',2);
+        dboot=[];
+        s1 = size(a,2);
+        c = [a b];
+        m = mean(c,2);
+        X = cov(c');
+        C12 = chol(X);
+        parfor ii=1:750
+            g = randn(size(c));
+            cnew = m + C12'*g;
+
+            % find two clusters in the data
+            idx = kmeans(cnew', 2);
+            atmp = cnew(:,find(idx==1));
+            btmp = cnew(:,find(idx==2));
+
+            % get mahab distance
+            dboot(ii) = mahal2(atmp',btmp',2);
+        end
+        D_boot = [D_boot;dboot];
+        D_p(i,j) = sum(dboot>d)/length(dboot);        
+    end
+end
+
+Dtmp=squareform(D);
+Db = D_boot(:);
+Dtmp(end+1:length(Db))=NaN;
+figure;boxplot(log10([Dtmp(:) Db(:)]),'Whisker',3)
+
+sum(squareform(D_p')<=0.01)/length(squareform(D_p'))
+
+%cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+%save pairwise_Mahab_Dist_Stats_B1 -v7.3
+
+clear Data Data_bkup TrialData
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+save pairwise_Mahab_Dist_Stats_B3 -v7.3
+toc
+
+%% Going down the dendrogram , simulation
 a = rand(18,2);
 z=linkage(a);
 figure;dendrogram(z)
@@ -66,8 +215,8 @@ end
 Z(:,end+1) = ((size(D,1)+1):(max(max(Z(:,1:2)))+1))';
 
 
-root_idx = Z(end-1,1:2);
-link_stat = Z(end-1,3);
+root_idx = Z(end,1:2);
+link_stat = Z(end,3);
 children_all = get_children_node(Z,root_idx); % the two clusters of mvmts
 
 data=[];tmp_data={};num_bins={};
@@ -80,6 +229,8 @@ for i=1:length(children_all)
 end
 
 num_mvmts = length(cell2mat(children_all));
+num_bins = cumsum(cell2mat(num_bins));
+num_bins = num_bins(end)/num_mvmts
 num_bins = 1:735:(num_mvmts*735+1);
 
 % fit the gaussian to the overall data
@@ -98,12 +249,14 @@ parfor i=1:10
     %idx = kmeans(cnew', num_mvmts,'MaxIter',250,'Options',options);
 
     % find clusters using agglom clustering
-    %Z = linkage(cnew','complete');
+    %Z = linkage(cnew','complete');    
     %idx = cluster(Z,'maxclust',num_mvmts);
-%     data_tmp={};
-%     for j=1:length(unique(idx))
-%         data_tmp{j} = cnew(:,find(idx==j));
-%     end
+
+    % create the dataset
+    %data_tmp={};
+    %for j=1:length(unique(idx))
+    %    data_tmp{j} = cnew(:,find(idx==j));
+    %end
 
 
     % random assignment
@@ -111,7 +264,7 @@ parfor i=1:10
     idx=randperm(size(data,2));
     cnew = data(:,idx);
     for j=1:length(num_bins)-1
-        data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
+       data_tmp{j}=cnew(:, num_bins(j):num_bins(j+1)-1);
     end
 
     Dboot=zeros(size(data_tmp));
@@ -124,7 +277,7 @@ parfor i=1:10
         end
     end
     Znull  = linkage(squareform(Dboot),'complete');
-    figure;(dendrogram(Znull))
+    %figure;(dendrogram(Znull))
     link_stat_boot(i) = Znull(end,3);
 end
 link_stat_boot

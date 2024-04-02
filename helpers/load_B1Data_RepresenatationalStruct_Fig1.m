@@ -96,8 +96,8 @@ for i=1:length(files)
         %temp=temp(:,3:end); % ignore the first 600ms
 
         % hg and delta and beta
-        temp = temp([129:end],:); % all features
-        %temp = temp([129:256 513:640 769:end],:);
+        %temp = temp([129:end],:); % all features
+        temp = temp([129:256 513:640 769:end],:); % the three main features
         %temp = temp([ 769:end],:);% only hG
         %temp = temp([ 129:256],:);% only delta
         %temp = temp([ 513:640],:);% only beta

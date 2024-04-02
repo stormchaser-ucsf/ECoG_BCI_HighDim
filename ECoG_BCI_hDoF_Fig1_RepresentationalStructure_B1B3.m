@@ -98,6 +98,9 @@ for n=1:size(bins_size,1)%10:18
     set(gcf,'Color','w')
     colormap turbo
     caxis([0 140])
+    %cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+    % D_B1=D;
+    %save representational_similarity_matrix_B1 D_B1 ImaginedMvmt
 
     subplot(1,2,2)
     Z = linkage(squareform(D),'complete');
@@ -221,11 +224,19 @@ for n=1:size(bins_size,1)%10:18
     end
 end
 
+dim = size(Data{1},1);
+%D_all = squareform(D)./sqrt(dim);
+%D_3feat = squareform(D)./sqrt(dim);
+%D_hg = squareform(D)./sqrt(dim);
+%D_delta = squareform(D)./sqrt(dim);
+D_beta = squareform(D)./sqrt(dim);
 
 
+D_feat_compare = [D_3feat' D_hg' D_delta' D_beta' ];
+figure;boxplot(log10(D_feat_compare))
 
 
-% for B1 -> looking at within and between cluster mahab distance rations
+% for B1 -> looking at within and between cluster mahab distance ratios
 idx1 = [1:9 19] ;% all rt hands and both hands
 idx2 = [10:18 23 24 25]; % all lt hand mvmts, both tricep and rt bicep
 idx3 = [20 21 22 26:30]; % head, face and other proximal and distal mvmts
@@ -290,6 +301,9 @@ for i=1:length(idx)
     Dbetween=Dtmp;
     Dratio = [Dratio mean(Dwithin')./mean(Dbetween')];
 end
+
+
+
 figure;boxplot(Dratio)
 
 % now after randomly simulating
@@ -654,6 +668,7 @@ d = mahal2(a',b',2);
 
 
 %% for B3
+
 clc;clear
 
 addpath('C:\Users\nikic\Documents\MATLAB')
@@ -736,11 +751,11 @@ bins_size(9,:) = [3 16];
 bins_size(10,:) = [1 17];
 bins_size(11,:) = [2 17];
 bins_size(12,:) = [3 17];
-bins_size = bins_size(7:end,:);
+bins_size = bins_size(7:end,:); % this may be optimal? 
 
 D_overall=[]; % this is the best approach
 for n=1:size(bins_size,1)%n=10:18
-    bins_size1=3:15; % 3 to 16 is good
+    bins_size1=3:16; % 3 to 16 is good
     %bins_size1 = [bins_size(n,1):bins_size(n,2)];
 
     [Data,bins_per_mvmt,TrialData] = ...
@@ -772,8 +787,8 @@ for n=1:size(bins_size,1)%n=10:18
         tmp_data = tmp(137,bins(i)+1:bins(i+1));
         erp(i,:) = tmp_data;
     end
-    figure;plot(erp')
-    figure;plot(mean(erp,1))
+    figure;plot(erp');close
+    figure;plot(mean(erp,1));close
 
 
 
@@ -806,6 +821,10 @@ for n=1:size(bins_size,1)%n=10:18
         end
     end
     D_overall(n,:,:)=D;
+    %cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+    %D_B3_3to16=D;
+    %save D_B3_3to16 D_B3_3to16
+
 
     Z = linkage(squareform(D),'complete');
     figure
@@ -819,12 +838,18 @@ for n=1:size(bins_size,1)%n=10:18
     xticklabels(x1)
     set(gcf,'Color','w')
     sgtitle(['Bins till ' [num2str(bins_size1(1)) ' ' num2str(bins_size1(end))]])
-
+    close
 end
 
 
 close all
 D = squeeze(mean(D_overall,1));
+figure;imagesc(D)
+colormap turbo
+xticks(1:length(ImaginedMvmt))
+yticks(1:length(ImaginedMvmt))
+xticklabels(ImaginedMvmt)
+yticklabels(ImaginedMvmt)
 Z = linkage(squareform(D),'complete');
 figure
 dendrogram(Z,0)
@@ -836,19 +861,40 @@ for i=1:length(x)
 end
 xticklabels(x1)
 set(gcf,'Color','w')
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+%D_B3_Avg = D;
+%save representational_similarity_matrix_B3 D_B3_Avg ImaginedMvmt
 
-% correlation between B1 and B3
-%     DB3=D;
-%     stat = corr(squareform(DB3)',squareform(DB1)')
-%     a=squareform(DB3)';b=squareform(DB1)';
-%     boot_corr=[];
-%     for iter=1:1000
-%         a1 = a(randperm(length(a)));
-%         b1 = b(randperm(length(b)));
-%         boot_corr(iter) = corr(a1,b1);
-%     end
-%     %figure;hist(boot_corr)
-%     %vline(stat)
+%%%% correlation between B1 and B3
+% load D_B3_3to16; D = D_B3_3to16;
+% load representational_similarity_matrix_B3
+load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\representational_similarity_matrix_B1.mat','D_B1');
+DB1=D_B1;
+% extract just the movements that are common to both B1 and B3
+bad_idx=[29:30];
+I = ones(size(D,1),1);
+I(bad_idx)=0;I=logical(I);
+DB3=D;
+DB3 = DB3(:,I);
+DB3 = DB3(I,:);
+[stat,pval] = corr(squareform(DB3)',squareform(DB1)')
+a=squareform(DB3)';b=squareform(DB1)';
+boot_corr=[];
+for iter=1:1000
+    a1 = a(randperm(length(a)));
+    b1 = b(randperm(length(b)));
+    boot_corr(iter) = corr(a1,b1);
+end
+figure;hist(boot_corr)
+vline(stat)
+
+m = mean(boot_corr);
+s = std(boot_corr);
+r = m + s*randn(1000,1);
+hold on
+ksdensity(r)
+
+
 % 
 % figure;
 % subplot(1,2,1)

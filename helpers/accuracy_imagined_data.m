@@ -76,11 +76,7 @@ for iter = 1:iterations % loop over 20 times
     net.trainParam.showWindow = 0; 
     net = train(net,N,T');
 
-    % get the bin level decoding accuracy
-    acc_bin=zeros(7);
-
-
-
+    
     % test it out on the held out trials using a mode filter
     acc = zeros(7);
     acc_bin = zeros(7);
@@ -97,7 +93,14 @@ for iter = 1:iterations % loop over 20 times
                 decodes_sum(ii) = sum(decodes==ii);
             end
             [aa bb]=max(decodes_sum);
-            acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+            if sum(aa==decodes_sum)==1
+                 acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+            else
+                %disp(['error trial ' num2str(i)])
+                xx=mean(out,2);
+                [aa bb]=max(xx);
+                acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+            end
 
             % bin level 
             for j=1:length(idx)
