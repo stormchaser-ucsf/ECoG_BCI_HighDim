@@ -134,6 +134,7 @@ sum(dboot>d)/length(dboot)
 
 %% SAME AS ABOVE BUT NOW FOR ALL PAIRWISE MOVEMENTS
 tic
+options = statset('UseParallel',true);
 D_p=zeros(length(Data));
 D_boot=[];
 for i=1:length(Data)
@@ -169,8 +170,17 @@ Dtmp=squareform(D);
 Db = D_boot(:);
 Dtmp(end+1:length(Db))=NaN;
 figure;boxplot(log10([Dtmp(:) Db(:)]),'Whisker',3)
+set(gcf,'Color','w')
+xticks(1:2)
+xticklabels({'Real Data','Null distribution'})
+ylabel('Log Distance')
+title('B1')
+set(gca,'FontSize',12)
+box off
+set(gca,'LineWidth',1)
 
-sum(squareform(D_p')<=0.01)/length(squareform(D_p'))
+[pfdr,pval]=fdr(squareform(D_p')',0.05);pfdr
+sum(squareform(D_p')<=pfdr)/length(squareform(D_p'))
 
 %cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %save pairwise_Mahab_Dist_Stats_B1 -v7.3
