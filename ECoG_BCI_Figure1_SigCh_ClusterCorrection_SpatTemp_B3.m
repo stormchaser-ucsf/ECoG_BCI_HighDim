@@ -421,11 +421,19 @@ save ERPs_sig_ch_LMP -v7.3
 
 
 % B3 grid layout
-filepath='/media/reza/ResearchDrive/B3 Data for ERP Analysis';
-cd(filepath)
-load('ECOG_Grid_8596_000067_B3.mat')    
-chMap=ecog_grid;
-grid_layout = chMap;
+% filepath='/media/reza/ResearchDrive/B3 Data for ERP Analysis';
+% cd(filepath)
+% load('ECOG_Grid_8596_000067_B3.mat')    
+% chMap=ecog_grid;
+% grid_layout = chMap;
+
+if isunix
+    filepath='/media/reza/ResearchDrive/B3 Data for ERP Analysis/delta';
+    cd(filepath)
+    load('ECOG_Grid_8596_000067_B3.mat')
+    chMap=ecog_grid;
+    grid_layout = chMap;
+end
 
 % rename all the channels after accounting for 108,113,118
 for i=109:112
@@ -458,11 +466,11 @@ figure;
 imagesc(neighb)
 
 tic
-
+load('ImaginedMvmt.mat')
 idx = [1:length(ImaginedMvmt)];
 %idx =  [1,10,30,25,20,28];
 sig_ch_all=zeros(32,253);
-loop_iter=500;
+loop_iter=750;
 tfce_flag=false;
 
 % parallel cluster
@@ -471,7 +479,8 @@ clus.NumWorkers = 16;
 par_clus = clus.parpool(16)
 
 for i=1:length(idx)    
-    filename = [ImaginedMvmt{i} '.mat'];
+    %filename = [ImaginedMvmt{i} '.mat'];
+     filename = [ImaginedMvmt{i} '_Delta.mat'];
     
     load(filename)
     data = double(data);
@@ -566,7 +575,7 @@ for i=1:length(idx)
         LIMO.data.neighbouring_matrix=neighb;
         [mask,cluster_p,max_th] = ...
             limo_clustering((t_scores.^2),p_scores,...
-            (tboot.^2),pboot,LIMO,2,0.01,0);
+            (tboot.^2),pboot,LIMO,2,0.05,0);
         figure;subplot(3,1,1)
         tt=linspace(-3,5,size(t_scores,2));
         imagesc(tt,1:253,t_scores);
@@ -610,7 +619,7 @@ end
 
 toc
 
-save B3_hG_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
+save B3_delta_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
 
 %% PLOTTING SIG CHANNELS ON  BRAIN
 
