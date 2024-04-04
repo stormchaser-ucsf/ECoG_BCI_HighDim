@@ -465,6 +465,11 @@ sig_ch_all=zeros(32,253);
 loop_iter=500;
 tfce_flag=false;
 
+% parallel cluster
+clus = parcluster;
+clus.NumWorkers = 16;
+par_clus = clus.parpool(16)
+
 for i=1:length(idx)    
     filename = [ImaginedMvmt{i} '.mat'];
     
@@ -664,7 +669,7 @@ lt_hand = sig_ch_all(10:18,:);
 lt_hand = mean(lt_hand,1);
 lt_hand = (lt_hand)*5;
 figure;imagesc(lt_hand(chMap));
-%colormap parula
+%colormap par           ula
 plot_elec_wts_B3(lt_hand,cortex,elecmatrix,chMap)
 title('Left Hand')
 
@@ -1182,4 +1187,3 @@ mask(mask>0)=1;
 %figure;plot(pval);
 %hold on; plot(mask/2)
 plot(tt,mask,'r','LineWidth',2)
-
