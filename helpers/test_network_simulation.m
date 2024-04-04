@@ -1,4 +1,4 @@
-function [cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx,num_classes)
+function [cv_perf,conf_matrix] = test_network_simulation(net,condn_data_overall,test_idx,num_classes)
 
 
 if nargin<4
@@ -9,9 +9,9 @@ XTest=[];
 YTest=[];
 for i=1:length(test_idx)
     tmp=condn_data_overall(test_idx(i)).neural;
-    XTest = [XTest;tmp'];
+    XTest = [XTest;tmp];
     tmp1 = condn_data_overall(test_idx(i)).targetID;
-    YTest = [YTest;repmat(tmp1,size(tmp,2),1)];
+    YTest = [YTest;tmp1];
 end
 YTest=categorical((YTest));
 

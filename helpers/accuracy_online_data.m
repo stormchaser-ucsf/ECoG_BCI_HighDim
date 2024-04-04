@@ -19,7 +19,25 @@ for i=1:length(files)
             decodes(ii) = sum(out==ii);
         end
         [aa bb]=max(decodes);
-        acc(tid,bb) = acc(tid,bb)+1; % trial level
+
+        if sum(aa==decodes)==1
+            acc(tid,bb) = acc(tid,bb)+1; % trial level
+        else
+            disp(['error trial ' num2str(i)])
+            % get the actions that have same number of max decodes
+            idx=find(decodes==aa);
+            prob_sum=[];
+            prob_val = TrialData.ClickerDistance;
+            for j=1:length(idx)
+                xx =  (idx(j) == out);
+                prob_sum(j) = sum(prob_val(xx));
+            end
+
+            [~, bb]=max(prob_sum);
+            bb = idx(bb);
+            acc(tid,bb) = acc(tid,bb)+1; % trial level
+        end
+        
         for j=1:length(out)
             if out(j)>0
                 acc1(tid,out(j)) = acc1(tid,out(j))+1; % bin level

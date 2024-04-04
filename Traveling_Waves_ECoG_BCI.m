@@ -20,13 +20,19 @@ clc;clear
 close all
 
 
-%% ROBOT 3D ARROW TASK
+%% ROBOT 3D ARROW TASK/OR Robot Tasl 
 % see if traveling waves emerge during state 3 and not during other states
 
 clc;clear
 addpath 'C:\Users\nikic\Documents\MATLAB'
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 % get all the files on this particular session for target 1
-filepath = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220803\Robot3DArrow\110025\BCI_Fixed';
+%filepath = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20220803\Robot3DArrow\110025\BCI_Fixed';
+
+% for robot task 
+filepath='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20240209\RealRobotBatch\143043\BCI_Fixed';
+
+
 D=dir(filepath);
 files={};
 for j=3:length(D)
@@ -37,6 +43,9 @@ for j=3:length(D)
     end
 end
 
+% imaging
+imaging_B1;close all
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 bpFilt = designfilt('bandpassiir','FilterOrder',4, ...
     'HalfPowerFrequency1',4,'HalfPowerFrequency2',8, ...
     'SampleRate',1e3);
@@ -46,23 +55,27 @@ bpFilt2 = designfilt('bandpassiir','FilterOrder',4, ...
 col={'k','r','g'};
 pow_stat2=[];
 pow_stat3=[];
+
+% in the robot tasks, the first two seconds are task state 1, which is full
+% rest
+
 for i=1:length(files)
     load(files{i})
     raw_data=TrialData.BroadbandData(1:end);
     raw_data = cell2mat(raw_data');
     chmap = TrialData.Params.ChMap;
     raw_data = filtfilt(bpFilt,raw_data);
-    raw_data = abs(hilbert(raw_data));
+    %raw_data = abs(hilbert(raw_data));
     %raw_data = abs(hilbert(filtfilt(bpFilt2,raw_data)));
     %raw_data = filtfilt(bpFilt,raw_data);
     task_state = TrialData.TaskState;
     idx = [0 diff(task_state)];
     idx=find(idx>0);
 
-    state1 = raw_data(1:1000,:);
-    state2 = raw_data(1001:2000,:);
-    state3 = raw_data(2001:3400,:);
-    state4 = raw_data(3401:end,:);
+    state1 = raw_data(1:2000,:);
+    state2 = raw_data(2001:2800,:);
+    state3 = raw_data(2801:11000,:);
+    state4 = raw_data(11001:end,:);
 
     %[P, f ,Phi, lambda, Xhat, z0, Z,rf]=dmd_alg(state1',1e3,0,200);
     [P1, f1 ,Phi, lambda, Xhat, z0, Z,rf]=dmd_alg(state2',1e3,0,200);
@@ -73,9 +86,9 @@ for i=1:length(files)
     %     plot(f2,P2)
 
     % normalize the data at each channel to be within 0 and 1
-    for j=1:size(raw_data,2)
-        raw_data(:,j) = rescale(raw_data(:,j));
-    end
+%     for j=1:size(raw_data,2)
+%         raw_data(:,j) = rescale(raw_data(:,j));
+%     end
     
     % get power within 1Hz increments
     xx=0:500;
@@ -92,20 +105,68 @@ for i=1:length(files)
     pow_stat3=[pow_stat3;P2x];
 
 
-    % traveling wave movie
+    % traveling wave movie       
+    v=VideoWriter('traveing_wave_B1_Robot_theta');
+    open(v)
     figure;
-    for j=1:size(raw_data,1)
+    tt=linspace(-500,2500,3000);
+    tt=round((tt.*100),2)/100;
+    % round to 2 decimals
+    for j=500:2:3000%size(raw_data,1) % first 2000ms is preparatatory
         tmp=raw_data(j,:);
-        imagesc(tmp(chmap))
-        %caxis([0 1])
-        colormap bone
-        colorbar
-        axis off
-        textboxHandle = uicontrol('Style', 'text', 'Position', [0, 0, 200, 30]);
-        newText = sprintf('Bin: %d', ceil( (j-200)/200 +1));
+        imagesc(tmp(chmap))                
+        colormap bone        
+        axis off        
+        textboxHandle = uicontrol('Style', 'text', 'Position', [0, 0, 200, 40]);
+        UIControl_FontSize_bak = get(0, 'DefaultUIControlFontSize');
+        set(0, 'DefaultUIControlFontSize', 12);
+
+        %textboxHandle2 = uicontrol('Style', 'text', 'Position', [0, 0, 600, 30]);
+        %UIControl_FontSize_bak = get(0, 'DefaultUIControlFontSize');
+        %set(0, 'DefaultUIControlFontSize', 20);
+
+        %newText = sprintf('Bin: %d', ceil( (j-200)/200 +1));
+        if j<=1000
+            txt = ['Preparatory:  ' num2str(j-1000) 'ms'];
+        elseif j>1000 
+            txt = ['Active Control:  ' num2str(j-1000) 'ms'];        
+        end        
+        newText = sprintf(txt);        
+        
         set(textboxHandle, 'String', newText);
-        pause(0.000001)
+        %set(textboxHandle2, 'String', newText1);
+        %set(gcf,'Color','grey')        
+        A=getframe(gcf);
+        %pause(0.000001)
+        writeVideo(v,A)
     end
+    close(v)
+
+    % plotting on the brain
+    M={};figure
+    figure;k=1;
+    %e_h = el_add(elecmatrix([1:length(ch)],:), 'color', 'b', 'numbers', ch);
+    for j=500:1:2000
+        tmp=(raw_data(j,:));
+        ctmr_gauss_plot(cortex,elecmatrix,tmp,'lh',1,1,1);
+         M{k}=getframe;
+         k=k+1;
+        clf
+    end
+
+    % store it
+    vidObj = VideoWriter('Traveling waves on brain.avi');
+    vidObj.FrameRate = 75;
+    open(vidObj);
+    figure;
+    for i=1:size(M,2)
+        %imagesc(frame2im(M{i}));
+        %text(7.2,7.2,[num2str(i) ' ms']);        
+        writeVideo(vidObj,M{i});
+    end
+    close(vidObj);
+
+
 end
 figure;plot(nanmean(pow_stat2,1))
 hold on

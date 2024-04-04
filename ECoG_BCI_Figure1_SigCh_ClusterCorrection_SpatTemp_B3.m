@@ -115,9 +115,9 @@ for i=1:length(files)
 
 
             %get hG through filter bank approach
-            filtered_data=zeros(size(features,1),size(features,2),2);
+            filtered_data=zeros(size(features,1),size(features,2),1);
             k=1;
-            for ii=9:16 %9:16 is hG, 4:5 is beta
+            for ii=1%9:16 is hG, 4:5 is beta, 1 is delta
                 filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
                     Params.FilterBank(ii).b, ...
                     Params.FilterBank(ii).a, ...
@@ -127,14 +127,14 @@ for i=1:length(files)
             %tmp_hg = squeeze(mean(filtered_data.^2,3));
             tmp_hg = squeeze(mean(filtered_data,3));   
 
-            % low pass filter the data or low pass filter hG data
-            %features1 = [randn(4000,128);features;randn(4000,128)];
-            features1 = [std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg);...
-                tmp_hg;...
-                std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg)];
-            tmp_hg = ((filtfilt(lpFilt,features1)));
-            %tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
-            tmp_hg = tmp_hg(4001:end-4000,:);
+%             % low pass filter the data or low pass filter hG data
+%             %features1 = [randn(4000,128);features;randn(4000,128)];
+%             features1 = [std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg);...
+%                 tmp_hg;...
+%                 std(tmp_hg(:))*randn(4000,256) + mean(tmp_hg)];
+%             tmp_hg = ((filtfilt(lpFilt,features1)));
+%             %tmp_hg = abs(hilbert(filtfilt(lpFilt,features1)));
+%             tmp_hg = tmp_hg(4001:end-4000,:);
             
 
             task_state = TrialData.TaskState;
@@ -186,7 +186,7 @@ end
 
 %save high_res_erp_beta_imagined_data -v7.3
 %save high_res_erp_LMP_imagined_data -v7.3
-save B3_high_res_erp_imagined_data -v7.3
+save B3_delta_high_res_erp_imagined_data -v7.3
 
 % get the number of epochs used
 ep=[];
@@ -199,11 +199,13 @@ xticks(1:32)
 xticklabels(ImaginedMvmt)
 
 %% SAVING THE DATA FILES
+mkdir('C:\Data from F drive\B3 data\delta')
+cd('C:\Data from F drive\B3 data\delta')
 for i=1:length(ImaginedMvmt)
     disp(['Saving Movement ' num2str(i)])
     data=ERP_Data{i};
     data = single(data);
-    filename = ([ImaginedMvmt{i} '.mat']);
+    filename = ([ImaginedMvmt{i} '_Delta.mat']);
     save(filename,'data','-v7.3')
 end
 
@@ -460,7 +462,7 @@ tic
 idx = [1:length(ImaginedMvmt)];
 %idx =  [1,10,30,25,20,28];
 sig_ch_all=zeros(32,253);
-loop_iter=750;
+loop_iter=500;
 tfce_flag=false;
 
 for i=1:length(idx)    
@@ -559,9 +561,9 @@ for i=1:length(idx)
         LIMO.data.neighbouring_matrix=neighb;
         [mask,cluster_p,max_th] = ...
             limo_clustering((t_scores.^2),p_scores,...
-            (tboot.^2),pboot,LIMO,2,0.01,1);
+            (tboot.^2),pboot,LIMO,2,0.01,0);
         figure;subplot(3,1,1)
-        tt=linspace(-3,4,size(t_scores,2));
+        tt=linspace(-3,5,size(t_scores,2));
         imagesc(tt,1:253,t_scores);
         title('Uncorrected for multiple comparisons')    
         ylabel('Channels')
@@ -604,4 +606,580 @@ end
 toc
 
 save B3_hG_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
+
+%% PLOTTING SIG CHANNELS ON  BRAIN
+
+
+clc;clear
+imaging_B3;close all
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+load B3_hG_Imagined_SpatTemp_New_ArtfCorr
+
+load('ECOG_Grid_8596_000063_B3.mat')
+chMap=ecog_grid;
+
+ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right Pinky',...
+    'Rotate Right Wrist','Right Pinch Grasp','Right Tripod Grasp','Right Power Grasp',...
+    'Left Thumb','Left Index','Left Middle','Left Ring','Left Pinky',...
+    'Rotate Left Wrist','Left Pinch Grasp','Left Tripod Grasp','Left Power Grasp',...
+    'Squeeze Both Hands',...
+    'Imagined Head Movement',...
+    'Right Shoulder Shrug',...
+    'Left Shoulder Shrug',...
+    'Right Tricep','Left Tricep',...
+    'Right Bicep','Left Bicep',...
+    'Right Knee','Left Knee',...
+    'Right Ankle','Left Ankle',...
+    'Lips','Tongue'};
+
+% rename all the channels after accounting for 108,113,118
+grid_layout = chMap;
+for i=109:112
+    [x, y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-1;
+end
+
+for i=114:117
+    [x ,y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-2;
+end
+
+for i=119:256
+    [x ,y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-3;
+end
+chMap = grid_layout;
+
+% rt hand, both as image and as electrode size
+rt_hand = sig_ch_all(1:9,:);
+rt_hand = mean(rt_hand,1);
+rt_hand = rt_hand*5;
+figure;imagesc(rt_hand(chMap));
+%colormap parula
+plot_elec_wts_B3(rt_hand,cortex,elecmatrix,chMap)
+title('Right Hand')
+
+% lt hand
+lt_hand = sig_ch_all(10:18,:);
+lt_hand = mean(lt_hand,1);
+lt_hand = (lt_hand)*5;
+figure;imagesc(lt_hand(chMap));
+%colormap parula
+plot_elec_wts_B3(lt_hand,cortex,elecmatrix,chMap)
+title('Left Hand')
+
+% rt proximal
+rt_proximal = sig_ch_all([21 23 25],:);
+rt_proximal = mean(rt_proximal,1);
+rt_proximal = (rt_proximal)*5;
+figure;imagesc(rt_proximal(chMap));
+colormap parula
+plot_elec_wts_B3(rt_proximal,cortex,elecmatrix,chMap)
+title('Rt Prox')
+
+% lt proximal
+lt_proximal = sig_ch_all([22 22 26],:);
+%lt_proximal = sig_ch_all([21:26],:);
+lt_proximal = mean(lt_proximal,1);
+lt_proximal = (lt_proximal)*5;
+figure;imagesc(lt_proximal(chMap));
+%colormap parula
+plot_elec_wts_B3(lt_proximal,cortex,elecmatrix,chMap)
+title('Left Prox')
+
+% distal
+distal = sig_ch_all([27:30],:);
+distal = mean(distal,1);
+distal = (distal)*5;
+figure;imagesc(distal(chMap));
+colormap parula
+plot_elec_wts_B3(distal,cortex,elecmatrix,chMap)
+title('Distal')
+
+% Face (heads/lips/tongue)
+face = sig_ch_all([20 31 32 ],:);
+face = mean(face,1);
+face = (face)*5;
+figure;imagesc(face(chMap));
+%colormap parula
+plot_elec_wts_B3(face,cortex,elecmatrix,chMap)
+title('Face')
+
+
+
+clear wts;
+wts(1,:) = rt_hand;
+wts(2,:) = lt_hand;
+wts(3,:) = lt_proximal;
+wts(4,:) = distal;
+wts(5,:) = face;
+wts(6,:) = rt_proximal;
+%wts_alpha(1,:)=rt_hand./5;
+% scale between 30 and 200
+wts=50 +  (150-50)*( (wts - min(wts(:)))./( max(wts(:))-min(wts(:))));
+for j=1:size(wts,1)
+    wts1=wts(j,:);
+    figure
+
+    ha=tight_subplot(size(chMap,1),size(chMap,2));
+    d = 1;
+    set(gcf,'Color','w')
+    set(gcf,'WindowState','maximized')
+    %alp = wts_alpha(j,:);
+    for ch=1:length(wts1)
+
+        [x y] = find(chMap==ch);
+        if x == 1
+            axes(ha(y));
+            %subplot(8, 16, y)
+        else
+            s = 23*(x-1) + y;
+            axes(ha(s));
+            %subplot(8, 16, s)
+        end
+        hold on
+
+        if wts1(ch)==50
+            col = 'k';
+        else
+            col = 'r';
+        end
+
+        plot(0,0,'.','Color',col,'MarkerSize',wts1(ch));
+        %scatter(0,0,wts1(ch),col,'filled')
+        %alpha(alp(ch));
+        axis off
+    end
+end
+
+
+
+%% Jaccard distances
+
+
+D=zeros(length(ImaginedMvmt));
+k=(1/4)*ones(2);
+for i=1:length(ImaginedMvmt)
+    a=sig_ch_all(i,:);
+    %a=conv2(a(chMap),k,'same');
+    a=a(:);    
+    for j=i+1:length(ImaginedMvmt)
+        b=sig_ch_all(j,:);
+        %b=conv2(b(chMap),k,'same');
+        b=b(:);
+        x=[a';b'];
+        x= pdist(x,'jaccard');
+        if isnan(x)
+            x=0.005;
+        end
+        D(i,j) = x;
+        D(j,i) = x;
+    end
+end
+figure;imagesc(D)
+xticks(1:length(ImaginedMvmt))
+yticks(1:length(ImaginedMvmt))
+xticklabels(ImaginedMvmt)
+yticklabels(ImaginedMvmt)
+
+Z = linkage(D,'ward');
+figure;dendrogram(Z,0)
+x = string(get(gca,'xticklabels'));
+x1=[];
+for i=1:length(x)
+    tmp = str2num(x{i});
+    x1 = [x1 ImaginedMvmt(tmp)];
+end
+xticklabels(x1)
+set(gcf,'Color','w')
+
+
+%%%% FINER JACCARD %%%%%
+% within right hand (1)
+rt_idx=[1:9 ];
+within_effector_hands = [squareform(D(rt_idx,rt_idx))'];
+
+% b/w rt to lt. hand (2)
+lt_idx = [10:18];
+between_effector1 = D(1:9,lt_idx); 
+between_effector1=(between_effector1(:));
+
+% b/w rt to rt proximal movements (or all proximal) (3)
+rt_prox_idx=[21:26];
+between_effector2 = D(1:9,rt_prox_idx); 
+between_effector2=(between_effector2(:));
+
+% b/w rt to lt proximal movements (4)
+lt_prox_idx=[22 24 26];
+between_effector3 = D(1:9,lt_prox_idx);
+between_effector3=(between_effector3(:));
+
+% b/w rt to distal (5)
+distal_idx=[27:30];
+between_effector4 = D(1:9,distal_idx); 
+between_effector4=(between_effector4(:));
+
+% b/w rt to face (6)
+face_idx=[20 31 32];
+between_effector5 = D(1:9,face_idx);
+between_effector5=(between_effector5(:));
+
+% bootstrap difference of means
+[p ]=bootstrap_ttest(within_effector_hands,between_effector5,2,1e3)
+
+if length(between_effector1) > length(within_effector_hands)
+    within_effector_hands(end+1:length(between_effector1)) = NaN;
+    between_effector2(end+1:length(between_effector1)) = NaN;
+    between_effector3(end+1:length(between_effector1)) = NaN;
+    between_effector4(end+1:length(between_effector1)) = NaN;
+    between_effector5(end+1:length(between_effector1)) = NaN;
+else
+    between_effector(end+1:length(within_effector_hands)) = NaN;
+end
+
+tmp = [within_effector_hands between_effector1 between_effector2...
+    between_effector3 between_effector4 between_effector5];
+p = ranksum(within_effector_hands,between_effector1)
+p = ranksum(within_effector_hands,between_effector2)
+p = ranksum(within_effector_hands,between_effector3)
+p = ranksum(within_effector_hands,between_effector4)
+p = ranksum(within_effector_hands,between_effector5)
+figure;boxplot(tmp,'notch','off')
+
+% plot mean with 95% confidence intervals 
+y = nanmean(tmp);
+yboot = sort(bootstrp(1000,@nanmean,tmp));
+neg = yboot(500,:)-yboot(25,:);
+pos =  yboot(975,:)-yboot(500,:);
+x=1:6;
+figure;hold on
+errorbar(x,y,neg,pos,'LineStyle','none','LineWidth',1,'Color','k');
+plot(x,y,'o','MarkerSize',15,'Color','k','LineWidth',1)
+xlim([0.5 6.5])
+ylim([0.3 1])
+xticks(1:6)
+xticklabels({'Within Rt. Hand Mvmts','b/w Rt. Hand and Lt. Hand',...
+    'b/w Rt. Hand and Rt Prox','b/w Rt. Hand and Lt Prox',...
+    'b/w Rt. Hand and Distal','b/w Rt. Hand and Face'})
+set(gcf,'Color','w')
+ylabel('Jaccard spatial similarity coefficient')
+
+%%%% MAIN plot mean with 95% confidence intervals just for the main movements
+if ~exist('tmp_bkup')
+    tmp_bkup=tmp;
+    tmp = tmp(:,[1 2 3 5 6]);
+end
+y = nanmean(tmp);
+yboot = sort(bootstrp(1000,@nanmean,tmp));
+neg = yboot(500,:)-yboot(25,:);
+pos =  yboot(975,:)-yboot(500,:);
+x=1:5;
+figure;hold on
+errorbar(x,y,neg,pos,'LineStyle','none','LineWidth',1,'Color','k');
+plot(x,y,'o','MarkerSize',15,'Color','k','LineWidth',1)
+xlim([0.5 5.5])
+ylim([0.4 0.7])
+xticks(1:5)
+xticklabels({'Within Rt. Hand Mvmts','b/w Rt. Hand and Lt. Hand',...
+    'b/w Rt. Hand and Proximal','b/w Rt. Hand and Distal',...
+    'b/w Rt. Hand and Orofacial'})
+set(gcf,'Color','w')
+ylabel('Jaccard spatial similarity coefficient')
+
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,2),2,2e3)
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,3),2,2e3)
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,4),2,2e3)
+[p ]=bootstrap_ttest(tmp(:,1),tmp(:,5),2,1e4)
+
+% rank sum tests
+[p ]=ranksum(tmp(:,1),tmp(:,2))
+[p ]=ranksum(tmp(:,1),tmp(:,3))
+[p ]=ranksum(tmp(:,1),tmp(:,4))
+[p ]=ranksum(tmp(:,1),tmp(:,5))
+
+figure;boxplot(tmp,'notch','on')
+
+
+%%%%% COARSE JACCCARD %%%%%
+% distance between within effector to between effector movements
+within_effector_hands = [squareform(D(1:9,1:9))'];
+between_effector1 = D(1:9,10:18);
+between_effector1=(between_effector1(:));
+between_effector2 = D(1:9,20:end);
+between_effector2=(between_effector2(:));
+
+% bootstrap difference of means
+[p ]=bootstrap_ttest(between_effector1,between_effector2,2,1e3)
+[p ]=bootstrap_diff_mean(within_effector_hands,between_effector1,1e3)
+[p ]=bootstrap_diff_mean(between_effector1,between_effector2,1e3)
+
+if length(between_effector2) > length(within_effector_hands)
+    within_effector_hands(end+1:length(between_effector2)) = NaN;
+    between_effector1(end+1:length(between_effector2)) = NaN;
+else
+    between_effector(end+1:length(within_effector_hands)) = NaN;
+end
+
+tmp = [within_effector_hands between_effector1 between_effector2];
+p = ranksum(within_effector_hands,between_effector1)
+p = ranksum(within_effector_hands,between_effector2)
+p = ranksum(between_effector1,between_effector2)
+figure;boxplot(tmp,'notch','on')
+
+% plot mean with 95% confidence intervals 
+y = nanmean(tmp);
+yboot = sort(bootstrp(1000,@nanmean,tmp));
+neg = yboot(500,:)-yboot(25,:);
+pos =  yboot(975,:)-yboot(500,:);
+x=1:3;
+figure;hold on
+errorbar(x,y,neg,pos,'LineStyle','none','LineWidth',1,'Color','k');
+plot(x,y,'o','MarkerSize',15,'Color','k','LineWidth',1)
+xlim([0.5 3.5])
+ylim([0.4 0.65])
+xticks(1:3)
+xticklabels({'Within Rt. Hand Mvmts','b/w Rt. Hand and Lt. Hand','b/w Rt. Hand and all other'})
+set(gcf,'Color','w')
+ylabel('Jaccard spatial similarity coefficient')
+
+
+%% (MAIN) PLOTTING DIFFERENCES BETWEEN MOVEMENTS AT THE SINGLE CHANNEL LEVEL
+% with temporal clustering of ANOVA F-values 
+
+
+clc;clear
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath('C:\Users\nikic\Documents\MATLAB')
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+
+
+addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+
+
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+load('C:\Data from F drive\B3 data\B3_high_res_erp_imagined_data')
+
+
+load('ECOG_Grid_8596_000067_B3.mat')    
+chMap=ecog_grid;
+grid_layout = chMap;
+
+% rename all the channels after accounting for 108,113,118
+for i=109:112
+    [x, y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-1;
+end
+
+for i=114:117
+    [x ,y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-2;
+end
+
+for i=119:256
+    [x ,y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-3;
+end
+
+neighb=zeros(size(grid_layout));
+for i=1:numel(grid_layout)
+    [x y]=find(grid_layout == i);
+    Lx=[x-1 x+1];
+    Ly=[y-1 y+1];
+    Lx=Lx(logical((Lx<=size(grid_layout,1)) .* (Lx>0)));
+    Ly=Ly(logical((Ly<=size(grid_layout,2)) .* (Ly>0)));
+    temp=grid_layout(Lx,Ly);
+    ch1=[grid_layout(x,Ly)';grid_layout(Lx,y);];
+    neighb(i,ch1)=1;
+end
+figure;
+imagesc(neighb)
+
+% downsample the data to 50Hz 
+idx=1:length(ImaginedMvmt);
+for i=1:length(idx)
+    data = ERP_Data{idx(i)};    
+    bad_ch = [108 113 118];
+    good_ch_idx=ones(256,1);
+    good_ch_idx(bad_ch)=0;
+    good_ch_idx=logical(good_ch_idx);
+    data=data(:,good_ch_idx,:);
+    % downsample 
+    tmp_data=[];
+    for j=1:size(data,3)
+        tmp =  squeeze(data(:,:,j));
+        tmp = resample(tmp,50,1e3);
+        tmp_data(:,:,j) = tmp;
+    end
+    ERP_Data{idx(i)} = tmp_data;
+end
+
+
+%ch=103;% rt hand
+ch=219; % face
+figure;hold on
+set(gcf,'Color','w')
+%cmap={'r','g','b','y','m'};
+cmap={'m','b','k'};
+opt=statset('UseParallel',true);
+data_overall=[];
+idx = [10 12 16];
+for ch=1:253
+    for i=1:length(idx)
+
+        data = ERP_Data{idx(i)};
+        data=squeeze(data(:,ch,:));
+
+        % bad trial removal
+        %tmp_bad=zscore(data')';
+        %artifact_check = logical(abs(tmp_bad)>3.0);
+        %data(artifact_check)=NaN;
+        %[h,p,ci,stats] = ttest(chdata');
+
+        data=data';
+        %smooth data
+        parfor j=1:size(data,1)
+            data(j,:) = smooth(data(j,:),10);
+        end
+
+        %data_overall(i,:,:)=data';
+
+        m=nanmean(data,1);
+        mb = sort(bootstrp(1000,@nanmean,data,'Options',opt));
+        tt=linspace(-3,5,size(data,2));
+        [fillhandle,msg]=jbfill(tt,mb(25,:),mb(975,:)...
+            ,cmap{i},cmap{i},1,.2);
+        hold on
+        plot(tt,m,'Color',cmap{i},'LineWidth',1)
+    end
+    h=vline([0]);
+    h.LineWidth=1.5;
+    h.Color='r';
+    h=vline([5]);
+    h.LineWidth=1.5;
+    h.Color='g';
+    hline(0,'k')
+    xlim([-1 3])
+    title(num2str(ch))
+    waitforbuttonpress
+    clf
+end
+
+
+% run the ANOVA test at each time-point and do temporal clustering
+% dependent variable -> erp
+% independent variable -> movement type
+% fitrm
+% 
+% Fvalues=[];
+% parfor i=1:size(data_overall,2)
+%     disp(i)
+%     a = (squeeze(data_overall(1:3,i,:)))';
+%     tmp_bad = zscore(a);
+%     artifact_check = logical(abs(tmp_bad)>3);
+%     a(artifact_check)=NaN;   
+%     a=a(:);
+%     erps=a;
+%     mvmt = num2str([ones(size(a,1)/3,1);2*ones(size(a,1)/3,1);3*ones(size(a,1)/3,1)]);
+%     subj = table([1],'VariableNames',{'Subject'});
+%     data = table(mvmt,erps);
+%     rm=fitrm(data,'erps~mvmt');
+%     ranovatbl = anova(rm);
+%     Fvalues(i) = ranovatbl{2,6};
+% end
+% 
+% % get the boot values
+% Fvalues_boot=[];
+% parfor i=1:size(data_overall,2)
+%     disp(i)
+%     a = (squeeze(data_overall(1:3,i,:)))';
+%     tmp_bad = zscore(a);
+%     artifact_check = logical(abs(tmp_bad)>3);
+%     a(artifact_check)=NaN;
+% 
+%     % center the data
+%     a = a-nanmean(a);
+% 
+%     % now sample with replacement for each column to create new data
+%     % matrix over 1000 iterations
+%     Fvalues_tmp=[];
+%     for iter=1:750      
+%         a_tmp=[];
+%         for j=1:size(a,2)
+%             a1 = randi([1,size(a,1)],size(a,1),1);
+%             a_tmp(:,j) = a(a1,j);
+%         end
+%         a_tmp=a_tmp(:);
+%         erps=a_tmp;
+%         mvmt = num2str([ones(size(erps,1)/3,1);...
+%             2*ones(size(erps,1)/3,1);3*ones(size(erps,1)/3,1)]);
+%         data = table(mvmt,erps);
+%         rm=fitrm(data,'erps~mvmt');
+%         ranovatbl = anova(rm);
+%         Fvalues_tmp(iter) = ranovatbl{2,6};
+%     end
+%     Fvalues_boot(i,:) = Fvalues_tmp;
+% end
+
+
+%%% using just simple regular anova instead of repeated measures
+Fvalues=[];pval=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:3,i,:)))';
+    tmp_bad = zscore(a);
+    artifact_check = logical(abs(tmp_bad)>3);
+    a(artifact_check)=NaN;   
+    [P,ANOVATAB,STATS]  = anova1(a,[],'off');   
+    Fvalues(i) = ANOVATAB{2,5};
+    pval(i) = ANOVATAB{2,6};
+end
+%figure;plot(Fvalues)
+%figure;plot(pval);hline(0.05)
+
+% get the boot values using simple anova1
+Fvalues_boot=[];p_boot=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:3,i,:)))';
+    tmp_bad = zscore(a);
+    artifact_check = logical(abs(tmp_bad)>3);
+    a(artifact_check)=NaN;
+
+    % center the data
+    a = a-nanmean(a);
+
+    % now sample with replacement for each column to create new data
+    % matrix over 1000 iterations
+    Fvalues_tmp=[];ptmp=[];
+    for iter=1:750      
+        a_tmp=[];
+        for j=1:size(a,2)
+            a1 = randi([1,size(a,1)],size(a,1),1);
+            a_tmp(:,j) = a(a1,j);
+        end
+
+        [P,ANOVATAB,STATS]  = anova1(a_tmp,[],'off');
+        Fvalues_tmp(iter) = ANOVATAB{2,5};
+        ptmp(iter)  = ANOVATAB{2,6};
+    end
+    Fvalues_boot(i,:) = Fvalues_tmp;
+    p_boot(i,:) = ptmp;
+end
+
+
+% perform limo clustering, 1 in first dimension , and iterations in last
+% dimension
+Fvalues_boot = reshape(Fvalues_boot,[1 size(Fvalues_boot)]);
+p_boot = reshape(p_boot,[ 1 size(p_boot)]);
+ LIMO.data.chanlocs=[];
+        LIMO.data.neighbouring_matrix=neighb;
+[mask,cluster_p,max_th] = ...
+    limo_clustering(Fvalues,pval,Fvalues_boot,p_boot,...
+    LIMO,3,0.05,0);
+mask(mask>0)=1;
+%figure;plot(pval);
+%hold on; plot(mask/2)
+plot(tt,mask,'r','LineWidth',2)
 
