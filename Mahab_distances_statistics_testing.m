@@ -138,6 +138,8 @@ sum(dboot>d)/length(dboot)
 clus = parcluster;
 clus.NumWorkers = 18;
 par_clus = clus.parpool(18);
+load('/media/reza/ResearchDrive/B3 Data for ERP Analysis/Data_B3_ForMahabStats.mat')
+
 tic
 options = statset('UseParallel',true);
 D_p=zeros(length(Data));
@@ -184,11 +186,15 @@ set(gca,'FontSize',12)
 box off
 set(gca,'LineWidth',1)
 
-[pfdr,pval]=fdr(squareform(D_p')',0.05);pfdr
+[pfdr,pval]=mafdr(squareform(D_p')',0.05);pfdr
 sum(squareform(D_p')<=pfdr)/length(squareform(D_p'))
 
 %cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %save pairwise_Mahab_Dist_Stats_B1 -v7.3
+
+clear Data
+cd('/media/reza/ResearchDrive/B3 Data for ERP Analysis/')
+save pairwise_Mahab_Dist_Stats_B3 -v7.3
 
 %clear Data Data_bkup TrialData
 %cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
