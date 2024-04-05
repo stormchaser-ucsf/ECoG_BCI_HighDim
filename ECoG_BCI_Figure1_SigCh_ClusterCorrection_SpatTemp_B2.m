@@ -211,6 +211,13 @@ D{4}=D4;
 D{5}=D5;
 D{6}=D6;
 
+% number of movements 
+num_mvmts=[];
+for i=1:length(D)
+    num_mvmts(i) = size(D{i},3);
+end
+num_mvmts
+
 load('ECOG_Grid_8596-002131.mat')
 grid_layout=ecog_grid;
 chMap=grid_layout;

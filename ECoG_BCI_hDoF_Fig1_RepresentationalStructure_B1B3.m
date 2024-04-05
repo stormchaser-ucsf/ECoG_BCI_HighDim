@@ -35,6 +35,7 @@ for n=1:size(bins_size,1)%10:18
     chMap = TrialData.Params.ChMap;
     Data_bkup=Data;
 
+   
     % artfiact correction
     for i=1:length(Data)
         tmp=Data{i};
@@ -45,6 +46,13 @@ for n=1:size(bins_size,1)%10:18
         end
         Data{i}=tmp;
     end
+
+    % average number of movements
+    num_mvmts=[];
+    for i=1:length(Data)
+        num_mvmts(i) = size(Data{i},2)/15;
+    end
+
 
 
     % plot average ERP for a single movement at a specific channel
@@ -775,6 +783,13 @@ for n=1:size(bins_size,1)%n=10:18
             tmp(j,idx) = median(tmp(j,:));
         end
         Data{i}=tmp;
+    end
+
+
+    % average number of movements
+    num_mvmts=[];
+    for i=1:length(Data)
+        num_mvmts(i) = size(Data{i},2)/14;
     end
 
 

@@ -841,6 +841,12 @@ load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20230421\HandO
 imaging_B1;close all
 chMap =  TrialData.Params.ChMap;
 
+% plotting individual maps
+for i=1:size(sig_ch_all,1)
+
+
+end
+
 % rt hand, both as image and as electrode size
 rt_hand = sig_ch_all([1:9 ],:);
 rt_hand = mean(rt_hand,1);
