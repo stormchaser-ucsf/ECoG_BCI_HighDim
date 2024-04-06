@@ -181,12 +181,12 @@ set(gcf,'Color','w')
 xticks(1:2)
 xticklabels({'Real Data','Null distribution'})
 ylabel('Log Distance')
-title('B1')
+title('B3')
 set(gca,'FontSize',12)
 box off
 set(gca,'LineWidth',1)
 
-[pfdr,pval]=mafdr(squareform(D_p')',0.05);pfdr
+[pfdr,pval]=fdr(squareform(D_p')',0.05);pfdr
 sum(squareform(D_p')<=pfdr)/length(squareform(D_p'))
 
 %cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
