@@ -139,7 +139,7 @@ clus = parcluster;
 clus.NumWorkers = 18;
 par_clus = clus.parpool(18);
 load('/media/reza/ResearchDrive/B3 Data for ERP Analysis/Data_B3_ForMahabStats.mat')
-
+addpath(genpath('/home/reza/Repositories/ECoG_BCI_HighDim'))
 tic
 options = statset('UseParallel',true);
 D_p=zeros(length(Data));
@@ -173,6 +173,35 @@ for i=1:length(Data)
     end
 end
 
+
+% for B3
+ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right Pinky',...
+    'Rotate Right Wrist','Right Pinch Grasp','Right Tripod Grasp','Right Power Grasp',...
+    'Left Thumb','Left Index','Left Middle','Left Ring','Left Pinky',...
+    'Rotate Left Wrist','Left Pinch Grasp','Left Tripod Grasp','Left Power Grasp',...
+    'Squeeze Both Hands',...
+    'Head Movement',...
+    'Right Shoulder Shrug',...
+    'Left Shoulder Shrug',...
+    'Right Tricep','Left Tricep',...
+    'Right Bicep','Left Bicep',...
+    'Right Knee','Left Knee',...%
+    'Right Ankle','Left Ankle',...
+    'Lips','Tongue'};
+
+D=zeros(length(ImaginedMvmt));
+for i=1:length(Data)
+    %disp(['Processing Mvmt ' num2str(i) ...
+    %    ' with bins till '  num2str(bins_size(end))])
+    A = Data{i}';
+    for j=i+1:length(Data)
+        B = Data{j}';
+        d = mahal2(A,B,2);
+        D(i,j)=d;
+        D(j,i)=d;
+    end
+end
+
 Dtmp=squareform(D);
 Db = D_boot(:);
 Dtmp(end+1:length(Db))=NaN;
@@ -186,11 +215,12 @@ set(gca,'FontSize',12)
 box off
 set(gca,'LineWidth',1)
 
-[pfdr,pval]=mafdr(squareform(D_p')',0.05);pfdr
+[pfdr,pval]=fdr(squareform(D_p')',0.05);pfdr
 sum(squareform(D_p')<=pfdr)/length(squareform(D_p'))
 
 %cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %save pairwise_Mahab_Dist_Stats_B1 -v7.3
+
 
 clear Data
 cd('/media/reza/ResearchDrive/B3 Data for ERP Analysis/')
