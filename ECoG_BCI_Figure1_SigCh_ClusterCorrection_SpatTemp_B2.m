@@ -377,6 +377,9 @@ save B2_hG_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
 
 clc;clear
 close all
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB')
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B2')
 load B2_hG_Imagined_SpatTemp_New_New_ArtfCorr
 
 ImaginedMvmt = {'Rt. Thumb','Leg','Lt Thumb','Head','Tongue','Lips'};
@@ -389,28 +392,31 @@ chMap =  ecog_grid;
 % rt hand, both as image and as electrode size
 rt_hand = sig_ch_all([1],:);
 rt_hand = mean(rt_hand,1);
-rt_hand = rt_hand*10;
+rt_hand = rt_hand*5;
 figure;imagesc(rt_hand(chMap));
 colormap parula
 plot_elec_wts_B2(rt_hand,cortex,elecmatrix,chMap)
 title('Right Hand')
+view(-100,5)
 
 % lt hand
 lt_hand = sig_ch_all(3,:);
 lt_hand = mean(lt_hand,1);
-lt_hand = (lt_hand)*10;
+lt_hand = (lt_hand)*5;
 figure;imagesc(lt_hand(chMap));
 colormap parula
 plot_elec_wts_B2(lt_hand,cortex,elecmatrix,chMap)
 title('Left Hand')
+view(-100,5)
 
 % distal
 distal = sig_ch_all([2],:);
 distal = mean(distal,1);
-distal = (distal)*10;
+distal = (distal)*5;
 figure;imagesc(distal(chMap));
 colormap parula
 plot_elec_wts_B2(distal,cortex,elecmatrix,chMap)
+view(-100,5)
 title('Distal')
 
 % Face (heads/lips/tongue)
@@ -422,6 +428,7 @@ colormap parula
 caxis([0 1])
 plot_elec_wts_B2(face,cortex,elecmatrix,chMap)
 title('Face')
+view(-100,5)
 
 % plot as filled circles
 clear wts;

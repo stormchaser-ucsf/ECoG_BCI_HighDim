@@ -700,7 +700,7 @@ for i=1:length(idx)
         ylabel('Channels')
         xlabel('Time')
         a=mask;
-        aa=sum(a(:,3000:6000),2);
+        aa=sum(a(:,1000:end),2);
         sig_ch_idx = find(aa>0);
         sig_ch = zeros(numel(chMap),1);
         sig_ch(sig_ch_idx)=1;
@@ -840,12 +840,14 @@ load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20230421\HandO
 
 imaging_B1;close all
 chMap =  TrialData.Params.ChMap;
-
-% plotting individual maps
-for i=1:size(sig_ch_all,1)
-
-
-end
+% 
+% % plotting individual maps
+% for i=1:size(sig_ch_all,1)
+%     tmp=sig_ch_all(i,:);
+%     %figure;imagesc(tmp(chMap));
+%     plot_elec_wts(tmp*5,cortex,elecmatrix,chMap)
+%     title(ImaginedMvmt{i})
+% end
 
 % rt hand, both as image and as electrode size
 rt_hand = sig_ch_all([1:9 ],:);
@@ -857,7 +859,7 @@ plot_elec_wts(rt_hand,cortex,elecmatrix,chMap)
 title('Right Hand')
 
 % lt hand
-lt_hand = sig_ch_all(10:14,:);
+lt_hand = sig_ch_all(10:18,:);
 lt_hand = mean(lt_hand,1);
 lt_hand = (lt_hand)*10;
 figure;imagesc(lt_hand(chMap));
@@ -887,7 +889,7 @@ plot_elec_wts(lt_proximal,cortex,elecmatrix,chMap)
 title('Left Prox')
 
 % distal
-distal = sig_ch_all([27 28],:);
+distal = sig_ch_all([27 28 ],:);
 distal = mean(distal,1);
 distal = (distal)*10;
 figure;imagesc(distal(chMap));
@@ -1095,14 +1097,14 @@ if ~exist('tmp_bkup')
     tmp_bkup=tmp;
     tmp = tmp(:,[1 2 3 5 6]);
 end
-y = nanmedian(tmp);
-yboot = sort(bootstrp(1000,@nanmedian,tmp));
+y = nanmean(tmp);
+yboot = sort(bootstrp(1000,@nanmean,tmp));
 neg = yboot(500,:)-yboot(25,:);
 pos =  yboot(975,:)-yboot(500,:);
 x=1:5;
 figure;hold on
 errorbar(x,y,neg,pos,'LineStyle','none','LineWidth',1,'Color','k');
-plot(x,y,'o','MarkerSize',15,'Color','k','LineWidth',1)
+plot(x,y,'o','MarkerSize',12,'Color','k','LineWidth',1)
 xlim([0.5 5.5])
 ylim([0.5 1])
 xticks(1:5)
@@ -1134,9 +1136,9 @@ between_effector2 = D(1:9,20:end); % to all other movements
 between_effector2=(between_effector2(:));
 
 % bootstrap difference of means
-[p ]=bootstrap_ttest(within_effector_hands,between_effector1,2,1e3)
-[p ]=bootstrap_diff_mean(within_effector_hands,between_effector1,1e3)
-[p ]=bootstrap_diff_mean(between_effector1,between_effector2,1e3)
+[p ]=bootstrap_ttest(within_effector_hands,between_effector1,2,2e3)
+[p ]=bootstrap_ttest(within_effector_hands,between_effector1,2,2e3)
+[p ]=bootstrap_ttest(between_effector1,between_effector2,2,2e3)
 
 if length(between_effector2) > length(within_effector_hands)
     within_effector_hands(end+1:length(between_effector2)) = NaN;
@@ -1146,22 +1148,22 @@ else
 end
 
 tmp = [within_effector_hands between_effector1 between_effector2];
-p = ranksum(within_effector_hands,between_effector1)
-p = ranksum(within_effector_hands,between_effector2)
+[p,h,stats] = ranksum(within_effector_hands,between_effector1)
+[p,h,stats] = ranksum(within_effector_hands,between_effector2)
 p = ranksum(between_effector1,between_effector2)
 figure;boxplot(tmp,'notch','on')
 
 % plot mean with 95% confidence intervals 
-y = nanmean(tmp);
-yboot = sort(bootstrp(1000,@nanmean,tmp));
-neg = yboot(500,:)-yboot(25,:);
-pos =  yboot(975,:)-yboot(500,:);
+y = nanmedian(tmp);
+yboot = sort(bootstrp(1000,@nanmedian,tmp));
+neg = y-yboot(25,:);
+pos =  yboot(975,:)-y;
 x=1:3;
 figure;hold on
 errorbar(x,y,neg,pos,'LineStyle','none','LineWidth',1,'Color','k');
 plot(x,y,'o','MarkerSize',15,'Color','k','LineWidth',1)
 xlim([0.5 3.5])
-ylim([0.5 0.85])
+ylim([0.6 0.88])
 xticks(1:3)
 xticklabels({'Within Rt. Hand Mvmts','b/w Rt. Hand and Lt. Hand','b/w Rt. Hand and all other'})
 set(gcf,'Color','w')
