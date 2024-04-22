@@ -1,8 +1,11 @@
-function [acc,train_permutations,acc_bin] = accuracy_imagined_data(condn_data, iterations)
+function [acc,train_permutations,acc_bin,bino_pdf,bino_pdf_chance] = ...
+    accuracy_imagined_data(condn_data, iterations)
 
 num_trials = length(condn_data);
 train_permutations = zeros(num_trials,iterations)';
 acc_permutations=[];
+bino_pdf={};
+bino_pdf_chance={};
 for iter = 1:iterations % loop over 20 times
     train_idx = randperm(num_trials,round(0.8*num_trials));
     test_idx = ones(num_trials,1);
@@ -96,7 +99,7 @@ for iter = 1:iterations % loop over 20 times
             if sum(aa==decodes_sum)==1
                  acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
             else
-                %disp(['error trial ' num2str(i)])
+                disp(['error trial ' num2str(i)])
                 xx=mean(out,2);
                 [aa bb]=max(xx);
                 acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
@@ -109,6 +112,31 @@ for iter = 1:iterations % loop over 20 times
             end
         end
     end
+
+    % binomial distribution around the actual results, that acc. chance or
+    % worse than chance
+    n = length(test_data);
+    succ = sum(diag(acc));
+    p = succ/n;
+    xx = 0:n;
+    bp = binopdf(xx,n,p);
+    %figure;plot(xx,bp)
+    ch = ceil((1/7)*n);
+    %vline(ch)
+    [aa,bb] = find(xx==ch);
+    %title(num2str(sum(bp(1:bb))))
+    bino_pdf_chance(iter).n=n;
+    bino_pdf_chance(iter).succ=succ;
+    bino_pdf_chance(iter).pval=sum(bp(1:bb));
+
+    % binomial distribution stuff
+    n = length(test_data);
+    succ = sum(diag(acc));
+    pval = binopdf(succ,n,(1/7));
+    bino_pdf(iter).n =  n;
+    bino_pdf(iter).succ = succ;
+    bino_pdf(iter).pval = pval;
+
     for i=1:size(acc,1)
         acc1(i,:) = acc(i,:)/sum(acc(i,:));
     end

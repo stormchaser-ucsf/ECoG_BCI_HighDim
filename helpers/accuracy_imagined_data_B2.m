@@ -1,8 +1,11 @@
-function [acc,train_permutations] = accuracy_imagined_data_B2(condn_data, iterations)
+function [acc,train_permutations,acc_bin,bino_pdf,bino_pdf_chance] = ...
+    accuracy_imagined_data_B2(condn_data, iterations)
 
 num_trials = length(condn_data);
 train_permutations = zeros(num_trials,iterations)';
 acc_permutations=[];
+bino_pdf={};
+bino_pdf_chance={};
 for iter = 1:iterations % loop over 20 times
     train_idx = randperm(num_trials,round(0.8*num_trials));
     test_idx = ones(num_trials,1);
@@ -16,7 +19,7 @@ for iter = 1:iterations % loop over 20 times
     D1=[];
     D2=[];
     D3=[];
-    D4=[];    
+    D4=[];
     for i=1:length(train_data)
         temp = train_data(i).neural;
         if train_data(i).targetID == 1
@@ -26,13 +29,13 @@ for iter = 1:iterations % loop over 20 times
         elseif train_data(i).targetID == 3
             D3 = [D3 temp];
         elseif train_data(i).targetID == 4
-            D4 = [D4 temp];        
+            D4 = [D4 temp];
         end
     end
     A = D1';
     B = D2';
     C = D3';
-    D = D4';    
+    D = D4';
 
     % organize data
     clear N
@@ -46,37 +49,86 @@ for iter = 1:iterations % loop over 20 times
     [aa bb]=find(T1==3);
     T(aa(1):aa(end),3)=1;
     [aa bb]=find(T1==4);
-    T(aa(1):aa(end),4)=1;    
+    T(aa(1):aa(end),4)=1;
 
     % train MLP
-    net = patternnet([64 64 64 ]) ;
+    net = patternnet([64 64  ]) ;
     net.performParam.regularization=0.2;
+    net.divideParam.trainRatio = 0.85;
+    net.divideParam.valRatio = 0.15;
+    net.divideParam.testRatio = 0;
+    net.trainParam.showWindow = 0;
     net = train(net,N,T');
+
 
     % test it out on the held out trials using a mode filter
     acc = zeros(4);
+    acc_bin = zeros(4);
     for i=1:length(test_data)
         features = test_data(i).neural;
         if ~isempty(features)
             out = net(features);
             out(out<0.4)=0; % thresholding
             [prob,idx] = max(out); % getting the decodes
-            decodes = mode_filter(idx); % running it through a 5 sample mode filter
-            %decodes=idx;
+            %decodes = mode_filter(idx,7); % running it through a 5 sample mode filter
+            decodes = idx;
             decodes_sum=[];
             for ii=1:4
                 decodes_sum(ii) = sum(decodes==ii);
             end
             [aa bb]=max(decodes_sum);
-            acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1;
+            if sum(aa==decodes_sum)==1
+                acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+            else
+                disp(['error trial ' num2str(i)])
+                xx=mean(out,2);
+                [aa bb]=max(xx);
+                acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+            end
+
+            % bin level
+            for j=1:length(idx)
+                acc_bin(test_data(i).targetID,idx(j)) = ...
+                    acc_bin(test_data(i).targetID,idx(j))+1;
+            end
         end
     end
+
+    % binomial distribution around the actual results, that acc. chance or
+    % worse than chance
+    n = length(test_data);
+    succ = sum(diag(acc));
+    p = succ/n;
+    xx = 0:n;
+    bp = binopdf(xx,n,p);
+    %figure;plot(xx,bp)
+    ch = ceil((1/4)*n);
+    %vline(ch)
+    [aa,bb] = find(xx==ch);
+    %title(num2str(sum(bp(1:bb))))
+    bino_pdf_chance(iter).n=n;
+    bino_pdf_chance(iter).succ=succ;
+    bino_pdf_chance(iter).pval=sum(bp(1:bb));
+
+    % binomial distribution stuff
+    n = length(test_data);
+    succ = sum(diag(acc));
+    pval = binopdf(succ,n,(1/4));
+    bino_pdf(iter).n =  n;
+    bino_pdf(iter).succ = succ;
+    bino_pdf(iter).pval = pval;
+
     for i=1:size(acc,1)
         acc1(i,:) = acc(i,:)/sum(acc(i,:));
     end
-    %acc1
+    for i=1:size(acc_bin,1)
+        acc_bin1(i,:) = acc_bin(i,:)/sum(acc_bin(i,:));
+    end
+
     acc_permutations(iter,:,:) = acc1;
+    acc_bin_permutations(iter,:,:) = acc_bin1;
 end
 acc=acc_permutations;
+acc_bin = acc_bin_permutations;
 end
 

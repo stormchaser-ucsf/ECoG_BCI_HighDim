@@ -28,7 +28,7 @@ cd(root_path)
 
 
 
-%% looking at changes in real time neural features in response to errors
+
 
 
 %% looking at changes in cosine distance between decoders across learning from first init.
@@ -2244,8 +2244,12 @@ session_data = session_data([1:9 11]); % removing bad days
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=50;
+iterations=10;
 plot_true=false;
+num_trials_imag=[];
+num_trials_online=[];
+num_trials_batch=[];
+binomial_res={};
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
@@ -2283,14 +2287,17 @@ for i=1:length(session_data)
         files = [files;findfiles('',folderpath)'];
     end
 
+    % save the number of trials
+    num_trials_imag = [num_trials_imag length(files)];
+
     %load the data
-    condn_data = load_data_for_MLP_TrialLevel(files,0,1);
+    condn_data = load_data_for_MLP_TrialLevel(files,0,1);    
     % save the data
     %filename = ['condn_data_ImaginedTrials_Day' num2str(i)];
     %save(filename, 'condn_data', '-v7.3')
 
     % get cross-val classification accuracy
-    [acc_imagined,train_permutations] = accuracy_imagined_data(condn_data, iterations);
+    [acc_imagined,train_permutations,~,bino_pdf] = accuracy_imagined_data(condn_data, iterations);
     acc_imagined=squeeze(nanmean(acc_imagined,1));    
     if plot_true
         figure;imagesc(acc_imagined*100)
@@ -2311,8 +2318,12 @@ for i=1:length(session_data)
         xticklabels ''
         yticklabels ''
     end
-    acc_imagined_days(:,i) = diag(acc_imagined);
-
+    acc_imagined_days(:,:,i) = (acc_imagined);
+    % store binomial results
+    n = round(median([bino_pdf(1:end).n]));
+    succ = round(median([bino_pdf(1:end).succ]));
+    pval = binopdf(succ,n,(1/7));
+    binomial_res(i).Imagined = [pval];
 
     %%%%%% get classification accuracy for online data
     folders = session_data(i).folders(online_idx);
@@ -2322,10 +2333,11 @@ for i=1:length(session_data)
         folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
-    end
+    end    
+    num_trials_online = [num_trials_online length(files)];
 
     % get the classification accuracy
-    acc_online = accuracy_online_data(files);
+    [acc_online,~,bino_pdf] = accuracy_online_data(files);
     if plot_true
         figure;imagesc(acc_online*100)
         colormap(brewermap(128,'Blues'))
@@ -2345,7 +2357,8 @@ for i=1:length(session_data)
         xticklabels ''
         yticklabels ''        
     end
-    acc_online_days(:,i) = diag(acc_online);
+    acc_online_days(:,:,i) = (acc_online);
+    binomial_res(i).online = [bino_pdf.pval];
 
 
     %%%%%% cross_val classification accuracy for batch data
@@ -2357,9 +2370,10 @@ for i=1:length(session_data)
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
+    num_trials_batch = [num_trials_batch length(files)];
 
     % get the classification accuracy
-    acc_batch = accuracy_online_data(files);
+    [acc_batch,~,bino_pdf] = accuracy_online_data(files);
     if plot_true
         figure;imagesc(acc_batch*100)
         colormap(brewermap(128,'Blues'))
@@ -2379,13 +2393,39 @@ for i=1:length(session_data)
         xticklabels ''
         yticklabels ''
     end
-    acc_batch_days(:,i) = diag(acc_batch);
+    %acc_batch_days(:,i) = diag(acc_batch);
+    acc_batch_days(:,:,i) = (acc_batch);
+    binomial_res(i).batch = [bino_pdf.pval];
+
 end
+
+tmp = squeeze(nanmean(acc_imagined_days,3));
+mean(diag(tmp))
+tmp = squeeze(nanmean(acc_online_days,3));
+mean(diag(tmp))
+tmp = squeeze(nanmean(acc_batch_days,3));
+mean(diag(tmp))
 
 %save hDOF_10days_accuracy_results_New -v7.3
 save hDOF_10days_accuracy_results_New_New -v7.3 % made some corrections on how accuracy is computed
 %save hDOF_10days_accuracy_results -v7.3
+%save hDOF_10days_accuracy_results_New_New_v2 -v7.3 %corrections and using all confusion matrices
+save hDOF_10days_accuracy_results_New_New_v3 -v7.3 %corrections and using all confusion matrices and with binomial
 
+
+% binomial distribution p-value testing
+for i=1:size(acc_imagined_days,3)
+   x = squeeze(acc_imagined_days(:,:,i));
+   x = mean(diag(x));
+   n = num_trials_imag(i);
+   p = 1/7;
+   binopdf()
+
+
+end
+bpdf = binopdf(1:28,28,0.8);
+figure;
+plot(1:28,bpdf)
 
 a = load('hDOF_10days_accuracy_results_New');
 b = load('hDOF_10days_accuracy_results_New_New'); 
@@ -2404,7 +2444,12 @@ plot(mean(acc_batch_days,1),'k')
 
 % linear model for time to see if improvement in decoding accuracy
 days=1:10;
-y=mean(acc_imagined_days,1)';
+tmp=[];
+for i=1:length(days)
+    a=squeeze(acc_batch_days(:,:,i));
+    tmp = [tmp diag(a)];
+end
+y=mean(tmp,1)';
 figure;hold on
 plot(days,y,'.k','MarkerSize',20)
 x = [ones(length(days),1) days'];
@@ -4819,8 +4864,9 @@ addpath 'C:\Users\nikic\Documents\MATLAB'
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=5;
+iterations=10;
 plot_true=false;
+binomial_res={};
 for i=1:length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
@@ -4846,7 +4892,8 @@ for i=1:length(session_data)
     condn_data = load_data_for_MLP_TrialLevel_B2(files,ecog_grid);
 
     % get cross-val classification accuracy
-    [acc_imagined,train_permutations] = accuracy_imagined_data_B2(condn_data, iterations);
+    [acc_imagined,train_permutations,~,bino_pdf] = ...
+        accuracy_imagined_data_B2(condn_data, iterations);
     acc_imagined=squeeze(nanmean(acc_imagined,1));
     if plot_true
         figure;imagesc(acc_imagined)
@@ -5306,7 +5353,7 @@ addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=1;
+iterations=5;
 plot_true=false;
 for i=1:11% length(session_data) % 11 is first set of collected data
     folders_imag =  strcmp(session_data(i).folder_type,'I');
@@ -5359,7 +5406,8 @@ for i=1:11% length(session_data) % 11 is first set of collected data
         yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
         title(['OL Acc of ' num2str(100*mean(diag(acc_imagined)))])
     end
-    acc_imagined_days(:,i) = diag(acc_imagined);
+    %acc_imagined_days(:,i) = diag(acc_imagined);
+    acc_imagined_days(:,:,i) = (acc_imagined);
 
 
     %%%%%% get classification accuracy for online data
@@ -5394,7 +5442,8 @@ for i=1:11% length(session_data) % 11 is first set of collected data
         yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
         title(['CL1 Acc of ' num2str(100*mean(diag(acc_online)))])
     end
-    acc_online_days(:,i) = diag(acc_online_bin);
+    %acc_online_days(:,i) = diag(acc_online_bin);
+    acc_online_days(:,:,i) = (acc_online);
 
 
     %%%%%% cross_val classification accuracy for batch data
@@ -5432,8 +5481,8 @@ for i=1:11% length(session_data) % 11 is first set of collected data
         yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
         title(['CL2 Acc of ' num2str(100*mean(diag(acc_batch)))])
     end
-    acc_batch_days(:,i) = diag(acc_batch_bin);
-
+    %acc_batch_days(:,i) = diag(acc_batch);
+    acc_batch_days(:,:,i) = (acc_batch);
 end
 
 %load ('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\b1_acc_rel_imagined_prop.mat')
@@ -5443,9 +5492,22 @@ end
 %save hDOF_11days_accuracy_results_B3_v2 -v7.3 % new after old data got deleted: best of the lot 
 %save hDOF_11days_accuracy_results_B3_v3 -v7.3 % new after old data got deleted
 %save hDOF_11days_accuracy_results_B3_v4 -v7.3 % new and correcting for errors in accuracy computation
+save hDOF_11days_accuracy_results_B3_V5 -v7.3 %new and getting confusion matrix of each day 
 
-nanmean(acc_imagined_days,1)'
-mean(ans)
+tmp=[];
+for i=1:size(acc_imagined_days,3)
+    x=squeeze(acc_imagined_days(:,:,i));
+    tmp = [tmp diag(x)];
+end
+
+tmp = squeeze(nanmean(acc_imagined_days,3))
+mean(diag(tmp))
+
+tmp = squeeze(nanmean(acc_online_days,3))
+mean(diag(tmp))
+
+tmp = squeeze(nanmean(acc_batch_days,3))
+mean(diag(tmp))
 
 
 a=load('hDOF_11days_accuracy_results_B3_v4');
@@ -6251,12 +6313,59 @@ addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
 % load B3 data
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
 %a=load('hDOF_11days_accuracy_results_B3_v2');
-a=load('hDOF_11days_accuracy_results_B3_v4');
+%a=load('hDOF_11days_accuracy_results_B3_v4');
+a=load('hDOF_11days_accuracy_results_B3_V5');
 
 % load B1 data 
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %b=load('hDOF_10days_accuracy_results_New');
-b=load('hDOF_10days_accuracy_results_New_New');
+%b=load('hDOF_10days_accuracy_results_New_New');
+b=load('hDOF_10days_accuracy_results_New_New_v2');
+
+a1=[];
+for i=1:size(a.acc_imagined_days,3)
+    x = squeeze(a.acc_imagined_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+a.acc_imagined_days = a1;
+a1=[];
+for i=1:size(b.acc_imagined_days,3)
+    x = squeeze(b.acc_imagined_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+b.acc_imagined_days = a1;
+
+a1=[];
+for i=1:size(a.acc_online_days,3)
+    x = squeeze(a.acc_online_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+a.acc_online_days = a1;
+a1=[];
+for i=1:size(b.acc_online_days,3)
+    x = squeeze(b.acc_online_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+b.acc_online_days = a1;
+
+a1=[];
+for i=1:size(a.acc_batch_days,3)
+    x = squeeze(a.acc_batch_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+a.acc_batch_days = a1;
+a1=[];
+for i=1:size(b.acc_batch_days,3)
+    x = squeeze(b.acc_batch_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+b.acc_batch_days = a1;
 
 % get the data into variables
 acc_imagined_days= [a.acc_imagined_days';b.acc_imagined_days']';
@@ -6325,99 +6434,48 @@ ylabel('Decoding Accuracy')
 [P,H,STATS] = signrank(mean(acc_imagined_days,1),mean(acc_online_days,1));
 [P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));
 
-
-%% (MAIN) RUNNING LMM ON MAHAB DISTANCES FOR B1 AND B3
-% to show that there is or is not a systematic trend across days 
-
-
-clc;clear
-
-% load B1 data
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-a=load('mahab_dist_B1_latent');
-
-% load B3 data 
-cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
-b=load('mahab_dist_b3_latent');
-
-b1 = a.tmp;
-b3 = b.tmp;
-
-
-% run LMM non parametric test
-pval=[];stat_overall=[];
-for context = 1:size(b1,2)
-    day_name=[];
-    mahab_dist=[];
-    subj=[];
-
-    % get B1 data
-    day_name = [day_name;(1:size(b1,1))';11];
-    mahab_dist = [mahab_dist;b1(:,context);NaN];
-    subj = [subj;ones(size(b1,1),1);1];
-
-    % get B3 data
-    day_name = [day_name;(1:size(b3,1))'];
-    mahab_dist = [mahab_dist;b3(:,context)];
-    subj = [subj;2*ones(size(b3,1),1)];
-
-    % collate
-    data = table(day_name,mahab_dist,subj);
-
-    % fit
-    glm = fitlme(data,'mahab_dist ~ 1+(day_name) + (1|subj)');
-
-    % run boot statistics 
-    stat = glm.Coefficients.tStat(2);
-    stat_overall(context)=stat;
-    pval(context) = glm.Coefficients.pValue(2);
-    stat_boot=[];
-    parfor i=1:1000
-        disp(i)
-        aa = day_name(1:11);
-        aa=aa(randperm(numel(aa)));
-        bb = day_name(12:end);
-        bb=bb(randperm(numel(bb)));
-        day_name_tmp = [aa;bb];
-        data_tmp = table(day_name_tmp,mahab_dist,subj);
-        glm_tmp = fitglme(data_tmp,'mahab_dist ~ 1 + (day_name_tmp) + (1|subj)');
-        stat_boot(i) = glm_tmp.Coefficients.tStat(2);
+% linear mixed effect model test with bootstrapping to get null distribution 
+subj=[];
+decoding_acc=[];
+mvmt_type=[];
+tmp=mean(acc_online_days,1);
+tmp1=mean(acc_batch_days,1);
+for i=1:length(tmp)
+    if i<=11
+        subj =[subj;1];
+    else
+        subj =[subj;2];
     end
+    mvmt_type=[mvmt_type;1];
+    decoding_acc= [decoding_acc;tmp(i)];
+end
+for i=1:length(tmp1)
+    if i<=11
+        subj =[subj;1];
+    else
+        subj =[subj;2];
+    end
+    mvmt_type=[mvmt_type;2];
+    decoding_acc= [decoding_acc;tmp1(i)];
+end
 
-    figure;
-    hist(abs(stat_boot),20);
-    vline(abs(stat),'r')
-    pval(context)= sum(abs(stat_boot)>stat)/length(stat_boot);
+data = table(subj,mvmt_type,decoding_acc);
+glm = fitglme(data,'decoding_acc ~ 1 + mvmt_type + (1|subj)');
+%glm = fitlm(data,'mahab_dist ~ 1+ day_name');
+stat = glm.Coefficients.tStat(2);
+stat_boot=[];
+for i=1:1000
+    disp(i)
+    mvmt_type_tmp = mvmt_type(randperm(numel(mvmt_type)));
+    data = table(subj,mvmt_type_tmp,decoding_acc);
+    glm_tmp =  fitglme(data,'decoding_acc ~ 1 + mvmt_type_tmp + (1|subj)');
+    stat_boot(i) = glm_tmp.Coefficients.tStat(2);
 end
-pval
+figure;hist(stat_boot)
+vline(stat)
+sum(stat_boot>stat)/length(stat_boot)
 
-% boxplots comparing OL, CL1 and CL2 
-figure;hold on
-boxplot([b1;b3])
-a = get(get(gca,'children'),'children');
-for i=1:length(a)
-    box1 = a(i);
-    set(box1, 'Color', 'k');
-end
-x1= [1+ 0.1*randn(length(b1),1) 2+ 0.1*randn(length(b1),1) 3+ 0.1*randn(length(b1),1)];
-h=scatter(x1,b1,'filled');
-for i=1:3
-    h(i).MarkerFaceColor = 'r';
-    h(i).MarkerFaceAlpha = 0.5;
-end
-x1= [1+ 0.1*randn(length(b3),1) 2+ 0.1*randn(length(b3),1) 3+ 0.1*randn(length(b3),1)];
-h=scatter(x1,b3,'filled');
-for i=1:3
-    h(i).MarkerFaceColor = 'b';
-    h(i).MarkerFaceAlpha = 0.5;
-end
-xlim([0.5 3.5])
-xticks(1:3)
-xticklabels({'OL','CL1','CL2'})
-yticks([0:10:80])
-ylim([0 80])
-set(gcf,'Color','w')
-box off
+
 
 
 %% B3 PLASTICITY AND AE FRAMEWORK (MAIN MAIN)

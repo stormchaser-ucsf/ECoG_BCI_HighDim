@@ -1,7 +1,12 @@
-function [acc,acc1] = accuracy_online_data(files)
+function [acc,acc1,bino_pdf] = accuracy_online_data(files,num_targets)
 
-acc=zeros(7);
-acc1=zeros(7);
+if nargin<2
+    num_targets=7;
+end
+
+acc=zeros(num_targets);
+acc1=zeros(num_targets);
+bino_pdf={};
 for i=1:length(files)
     file_loaded=1;
     try
@@ -45,8 +50,11 @@ for i=1:length(files)
         end
     end
 end
+bino_pdf.n = length(files);
+bino_pdf.succ = sum(diag(acc));
+bino_pdf.pval = binopdf(sum(diag(acc)),length(files),(1/num_targets));
 
-for i=1:7
+for i=1:num_targets
     acc(i,:) = acc(i,:)/sum(acc(i,:));
     acc1(i,:) = acc1(i,:)/sum(acc1(i,:));
 end
