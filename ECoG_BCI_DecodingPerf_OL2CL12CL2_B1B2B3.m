@@ -1530,6 +1530,149 @@ data=table(acc_improv,exp_type,subject);
 glme = fitglme(data,'acc_improv ~ 1+ exp_type + (1|subject)')
 
 
+%%%%% PREDICTING DECODING PERFORMANCE FROM MAHAB DISTANCES IN LATENT SPACE
+% get all the accuracy data in correct format
+a1=[];
+for i=1:size(acc_imagined_days,3)
+    x = squeeze(acc_imagined_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+acc_imagined_days = a1;
+
+a1=[];
+for i=1:size(acc_online_days,3)
+    x = squeeze(acc_online_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+acc_online_days = a1;
+
+a1=[];
+for i=1:size(acc_batch_days,3)
+    x = squeeze(acc_batch_days(:,:,i));
+    x = diag(x);
+    a1 = [a1 x];
+end
+acc_batch_days = a1;
+
+
+b=load('mahab_dist_B2_latent.mat');
+mahab_dist = b.tmp;
+mahab_dist=mahab_dist(:);
+
+tmp = [mean(acc_imagined_days(:,2:5),1)' mean(acc_online_days(:,2:5),1)' ...
+    mean(acc_batch_days(:,2:5),1)'];
+
+decoding_acc = tmp(:);
+
+% linear regresssion prelims
+figure;plot((mahab_dist),(decoding_acc),'.','MarkerSize',20)
+y=decoding_acc;
+x= [ones(length(mahab_dist),1) mahab_dist];
+[B,BINT,R,RINT,STATS] = regress(y,x);STATS
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
+
+
+%2D fit
+figure;
+hold on
+col={'b','k','r'};k=1;
+data={};
+for i=1:4:length(mahab_dist)
+    plot((mahab_dist(i:i+3)),decoding_acc(i:i+3),'.','MarkerSize',20,'color',col{k});
+    tmp = [mahab_dist(i:i+3) decoding_acc(i:i+3)];
+    data{k}=tmp;
+    k=k+1;
+end
+
+% logistic fit
+x= [ones(length(mahab_dist),1) mahab_dist];
+y=decoding_acc;
+[b,p,b1]=logistic_reg(x(:,2),y);[b p']
+xx = linspace(min(x(:,2)),max(x(:,2)),100);
+xx = [ones(length(xx),1) xx'];
+yhat = 1./(1+exp(-xx*b));
+plot(xx(:,2),yhat,'Color','k','LineWidth',1);
+xlim([0 0.9])
+yticks([0:.05:1])
+xlabel('Mahalanobis Distance')
+ylabel('Decoder Accuracy')
+set(gcf,'Color','w')
+
+fitglm(x(:,2),y,'Distribution','Binomial')
+fitlm(x(:,2),y,'Robust','on')
+
+% linear regression
+[B,BINT,R,RINT,STATS] = regress(y,x);STATS
+lm = fitlm(x(:,2),y)
+
+
+
+% doing LOOCV on the logistic regression fit
+cv_loss=[];
+I = ones(length(decoding_acc),1);
+for i=1:length(decoding_acc)
+    disp(i)
+    test_idx = i;
+    train_idx = I;
+    train_idx(test_idx)=0;
+    train_idx = find(train_idx>0);
+
+    % fit the model on training data
+    x=mahab_dist(train_idx);
+    x= [ones(length(x),1) x];
+    y=decoding_acc(train_idx);
+    [b,p,b1]=logistic_reg(x(:,2),y);
+
+    % prediction on held out data point
+    xtest = mahab_dist(test_idx);
+    xtest= [ones(length(xtest),1) xtest];
+    yhat =  1./(1+exp(-xtest*b));
+    ytest = decoding_acc(test_idx);
+    cv_loss(i) = abs((yhat-ytest));
+    %cv_loss(i) = -(ytest*log(yhat) + (1-ytest)*log(1-yhat));
+end
+cv_loss_stat = cv_loss;
+
+% doing it against a null distribution, 500 times
+cv_loss_boot=[];
+parfor iter =1:50
+    disp(iter)
+    cv_loss=[];
+    I = ones(length(decoding_acc),1);
+    decoding_acc_tmp = decoding_acc(randperm(numel(decoding_acc)));
+    for i=1:length(decoding_acc)
+
+        test_idx = i;
+        train_idx = I;
+        train_idx(test_idx)=0;
+        train_idx = find(train_idx>0);
+
+        % fit the model on training data
+        x=mahab_dist(train_idx);
+        x= [ones(length(x),1) x];
+        y=decoding_acc_tmp(train_idx);
+        [b,p,b1]=logistic_reg(x(:,2),y);
+
+        % prediction on held out data point
+        xtest = mahab_dist(test_idx);
+        xtest= [ones(length(xtest),1) xtest];
+        yhat =  1./(1+exp(-xtest*b));
+        ytest = decoding_acc_tmp(test_idx);
+        cv_loss(i) = abs((yhat-ytest));
+        %cv_loss(i) = -(ytest*log(yhat) + (1-ytest)*log(1-yhat));
+    end
+    cv_loss_boot(iter,:)=cv_loss;
+end
+figure;
+hist(mean(cv_loss_boot,2))
+vline(mean(cv_loss_stat))
+sum(mean(cv_loss_boot,2) < mean(cv_loss_stat))/length(mean(cv_loss_boot,2))
+
+
+
+
 %% B3: looking at decoding performance from imagined -> online -> batch (MAIN)
 % across days
 

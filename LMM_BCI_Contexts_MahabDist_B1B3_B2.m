@@ -282,7 +282,9 @@ sum(stat_boot>stat)/length(stat_boot)
 glm = fitlme(data,'mahab_dist ~ mvmt_type + (1|subj)')
 
 
-%% LOOKING AT THE NEURAL VARIANCES VIA MIXED EFFECT MODEL 
+%% LOOKING AT THE NEURAL VARIANCES VIA MIXED EFFECT MODEL, B1 and B3
+
+
 
 
 %% LOOKING AT THE MAHAB DISTANCES FOR B2
