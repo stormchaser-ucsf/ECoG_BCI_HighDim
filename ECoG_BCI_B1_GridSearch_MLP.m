@@ -279,7 +279,7 @@ end
  
 
 
-%%
+%% MAIN GRID SEARCH CODE 
 % code to grid search to best get MLP parameters
 % trying here for layer width and number of units
 
@@ -355,7 +355,8 @@ end
 %cv_acc2_overall={};
 %cv_acc3_overall={};
 cv_acc3={};
-for iter=1:1
+cv_acc3_trialLevel={};
+for iter=1:5
 
     % split into training and testing trials, 15% test, 15% val, 70% test
     test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
@@ -375,7 +376,7 @@ for iter=1:1
         get_options(condn_data_overall,val_idx,train_idx);
 
     % grid search
-    num_units = [64,96,128,256];
+    num_units = [32,64,128];
     num_layers = [1,2,3];
     %cv_acc={};
     %cv_acc2={};
@@ -389,15 +390,21 @@ for iter=1:1
                 % net.performParam.regularization=0.2;
                 % net = train(net,N,T','useParallel','yes');
                 % cv_acc{j} = cv_perf;
-                layers = get_layers1(num_units(j),384);
+                layers = get_layers1(num_units(j),96);
                 net = trainNetwork(XTrain,YTrain,layers,options);
                 cv_perf = test_network(net,condn_data_overall,test_idx);
+                [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+                cv_perf_trialLevel = nanmean(diag(conf_matrix));
                 if iter==1
                     cv_acc3(i3).cv_perf = cv_perf;
                     cv_acc3(i3).layers=[num_units(j),0,0];
+                    cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+                    cv_acc3_trialLevel(i3).layers=[num_units(j),0,0];                    
                     i3=i3+1;
                 else
                     cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+                    cv_acc3_trialLevel(i3).cv_perf_trialLevel = ...
+                        [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];                    
                     %cv_acc3(i3).layers=[num_units(j),0,0];
                     i3=i3+1;
                 end
@@ -413,15 +420,21 @@ for iter=1:1
                     %net.performParam.regularization=0.2;
                     %net = train(net,N,T','useParallel','yes');
                     %cv_acc2{j,k} = cv_perf;
-                    layers = get_layers2(num_units(j),num_units(k),384);
+                    layers = get_layers2(num_units(j),num_units(k),96);
                     net = trainNetwork(XTrain,YTrain,layers,options);
                     cv_perf = test_network(net,condn_data_overall,test_idx);
+                    [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+                    cv_perf_trialLevel = mean(diag(conf_matrix));
                     if iter==1
                         cv_acc3(i3).cv_perf = cv_perf;
                         cv_acc3(i3).layers=[num_units(j),num_units(k),0];
+                        cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+                        cv_acc3_trialLevel(i3).layers=[num_units(j),num_units(k),0];
                         i3=i3+1;
                     else
                         cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+                        cv_acc3_trialLevel(i3).cv_perf_trialLevel = ...
+                            [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
                         %cv_acc3(i3).layers=[num_units(j),num_units(k),0];
                         i3=i3+1;
                     end
@@ -437,15 +450,21 @@ for iter=1:1
                         %net = patternnet([num_units(j) num_units(k) num_units(l)]) ;
                         %net.performParam.regularization=0.2;
                         %net = train(net,N,T','useParallel','yes');
-                        layers = get_layers(num_units(j),num_units(k),num_units(l),384);
+                        layers = get_layers(num_units(j),num_units(k),num_units(l),96);
                         net = trainNetwork(XTrain,YTrain,layers,options);
                         cv_perf = test_network(net,condn_data_overall,test_idx);
+                        [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+                        cv_perf_trialLevel = mean(diag(conf_matrix));
                         if iter==1
                             cv_acc3(i3).cv_perf = cv_perf;
                             cv_acc3(i3).layers=[num_units(j),num_units(k),num_units(l)];
+                            cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+                            cv_acc3_trialLevel(i3).layers=[num_units(j),num_units(k),num_units(l)];
                             i3=i3+1;
                         else
                             cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+                            cv_acc3_trialLevel(i3).cv_perf_trialLevel =...
+                                [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
                             i3=i3+1;
                         end
 
@@ -454,7 +473,7 @@ for iter=1:1
             end
         end
     end
-    save B1_MLP_NN_Param_Optim_NoPooling cv_acc3 -v7.3
+    %save B1_MLP_NN_Param_Optim_NoPooling cv_acc3 -v7.3
 end
 
 

@@ -26,7 +26,7 @@ end
 decodes=categorical(decodes);
 cv_perf = sum(decodes==YTest)/length(decodes);
 for i=1:size(conf_matrix,2)
-    conf_matrix(i,:) = conf_matrix(i,:)./sum(conf_matrix(i,:));
+    conf_matrix(i,:) = conf_matrix(i,:)./sum(conf_matrix(i,:)); % bin level confusion matrix
 end
 
 end
