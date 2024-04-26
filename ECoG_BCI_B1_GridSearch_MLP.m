@@ -359,17 +359,24 @@ cv_acc3_trialLevel={};
 for iter=1:5
 
     % split into training and testing trials, 15% test, 15% val, 70% test
-    test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
-    test_idx=test_idx(:);
-    I = ones(length(condn_data_overall),1);
-    I(test_idx)=0;
-    train_val_idx = find(I~=0);
-    prop = (0.7/0.85);
-    tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
-    train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
-    I = ones(length(condn_data_overall),1);
-    I([train_idx;test_idx])=0;
-    val_idx = find(I~=0);val_idx=val_idx(:);
+    xx=1;xx1=1;xx2=1;yy=0;
+    while xx<7 || xx1<7 || xx2<7
+        test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+        test_idx=test_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I(test_idx)=0;
+        train_val_idx = find(I~=0);
+        prop = (0.72/0.85);
+        tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+        train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I([train_idx;test_idx])=0;
+        val_idx = find(I~=0);val_idx=val_idx(:);
+        xx = length(unique([condn_data_overall(train_idx).targetID]));
+        xx1 = length(unique([condn_data_overall(val_idx).targetID]));
+        xx2 = length(unique([condn_data_overall(test_idx).targetID]));
+        yy=yy+1;
+    end
 
     % training options for NN
     [options,XTrain,YTrain] = ...
@@ -478,21 +485,42 @@ end
 
 
 %% getting decoding accuracies for zero layer
-i3=85;
+i3=length(cv_acc3)+1;
 cv_acc3(i3).layers=[0];
-for iter=1:10
+cv_acc3_trialLevel(i3).Layers=[0];
+for iter=1:5
+    %     % split into training and testing trials, 15% test, 15% val, 70% test
+    %     test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+    %     test_idx=test_idx(:);
+    %     I = ones(length(condn_data_overall),1);
+    %     I(test_idx)=0;
+    %     train_val_idx = find(I~=0);
+    %     prop = (0.7/0.85);
+    %     tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+    %     train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+    %     I = ones(length(condn_data_overall),1);
+    %     I([train_idx;test_idx])=0;
+    %     val_idx = find(I~=0);val_idx=val_idx(:);
+
     % split into training and testing trials, 15% test, 15% val, 70% test
-    test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
-    test_idx=test_idx(:);
-    I = ones(length(condn_data_overall),1);
-    I(test_idx)=0;
-    train_val_idx = find(I~=0);
-    prop = (0.7/0.85);
-    tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
-    train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
-    I = ones(length(condn_data_overall),1);
-    I([train_idx;test_idx])=0;
-    val_idx = find(I~=0);val_idx=val_idx(:);
+    xx=1;xx1=1;xx2=1;yy=0;
+    while xx<7 || xx1<7 || xx2<7
+        test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+        test_idx=test_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I(test_idx)=0;
+        train_val_idx = find(I~=0);
+        prop = (0.72/0.85);
+        tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+        train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I([train_idx;test_idx])=0;
+        val_idx = find(I~=0);val_idx=val_idx(:);
+        xx = length(unique([condn_data_overall(train_idx).targetID]));
+        xx1 = length(unique([condn_data_overall(val_idx).targetID]));
+        xx2 = length(unique([condn_data_overall(test_idx).targetID]));
+        yy=yy+1;
+    end
 
     % training options for NN
     [options,XTrain,YTrain] = ...
@@ -502,17 +530,22 @@ for iter=1:10
     layers = get_layers0(96);
     net = trainNetwork(XTrain,YTrain,layers,options);
     cv_perf = test_network(net,condn_data_overall,test_idx);
+    [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+    cv_perf_trialLevel = mean(diag(conf_matrix));
     cv_acc3(i3).cv_perf = [ cv_acc3(i3).cv_perf cv_perf];
+    cv_acc3_trialLevel(i3).cv_perf_trialLevel =...
+        [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
 end
 
-save B1_MLP_NN_Param_Optim cv_acc3 -v7.3
+%save B1_MLP_NN_Param_Optim cv_acc3 -v7.3
+save B1_MLP_NN_Param_Optim_SingleSession_OL cv_acc3 cv_acc3_trialLevel -v7.3
 
 %% PLOTTING RESULTS
 
 % plotting
 acc=[];acc1=[];
 for i=1:length(cv_acc3)
-    acc(i) = mean(cv_acc3(i).cv_perf);
+    acc(i) = median(cv_acc3_trialLevel(i).cv_perf_trialLevel);
 end
 
 [aa bb]=max(acc)
@@ -523,13 +556,43 @@ figure;boxplot(acc(5:20))
 ylim([.0 .9])
 figure;boxplot(acc(21:end))
 ylim([.0 .9])
-
-tmp=NaN(64,3);
-tmp(1:4,1) = acc(1:4)';
-tmp(1:16,2) = acc(5:20)';
-tmp(1:end,3) = acc(21:end-1)';
-figure;boxplot(tmp)
+% 
+% tmp=NaN(64,3);
+% tmp(1:4,1) = acc(1:4)';
+% tmp(1:16,2) = acc(5:20)';
+% tmp(1:end,3) = acc(21:end-1)';
+% figure;boxplot(tmp)
 ylim([.5 .7])
+
+
+% MAIN PLOTTING REDUCDED CASE B1 SINGLE SESSION IMAGINED DATA 
+acc1=[];
+for i=1:3
+    acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+end
+acc2=[];
+for i=4:12
+    acc2=[acc2;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+end
+acc3=[];
+for i=13:39
+    acc3=[acc3;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+end
+acc0=cv_acc3_trialLevel(end).cv_perf_trialLevel';
+acc0(end+1:length(acc3))=NaN;
+acc1(end+1:length(acc3))=NaN;
+acc2(end+1:length(acc3))=NaN;
+acc=[acc0 acc1 acc2 acc3];
+figure;
+boxplot(acc,'notch','off')
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+ylabel('Bin Level Decoding Acc')
+xticks(1:4)
+xticklabels({'0 Layers','1 Layer','2 Layer','3 Layer'})
+box off
+title('Cross. Valid for MLP width in B1')
+
 
 % MAIN plotting
 % plotting across all iterations to compare all layers

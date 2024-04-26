@@ -240,7 +240,7 @@ plot(mean(acc_batch_days,1),'k')
 days=1:10;
 tmp=[];
 for i=1:length(days)
-    a=squeeze(acc_batch_days(:,:,i));
+    a=squeeze(acc_imagined_days(:,:,i));
     tmp = [tmp diag(a)];
 end
 y=mean(tmp,1)';
@@ -3017,7 +3017,20 @@ yticks([0:.1:1])
 ylim([.5 1])
 
 
-% Signed rank test
+% Signed rank test on b1
+[P,H,STATS] = signrank(mean(acc_batch_days(:,12:end),1),mean(acc_online_days(:,12:end),1))
+[P,H,STATS] = signrank(mean(acc_batch_days(:,12:end),1),mean(acc_imagined_days(:,12:end),1))
+[P,H,STATS] = signrank(mean(acc_imagined_days(:,12:end),1),mean(acc_online_days(:,12:end),1))
+
+% Signed rank test on b3
+[P,H,STATS] = signrank(mean(acc_batch_days(:,1:11),1),mean(acc_online_days(:,1:11),1))
+[P,H,STATS] = signrank(mean(acc_batch_days(:,1:11),1),mean(acc_imagined_days(:,1:11),1))
+[P,H,STATS] = signrank(mean(acc_imagined_days(:,1:11),1),mean(acc_online_days(:,1:11),1))
+
+
+
+
+% Signed rank test on all
 [P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_online_days,1));
 [P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));
 [P,H,STATS] = signrank(mean(acc_imagined_days,1),mean(acc_online_days,1));
@@ -3104,7 +3117,7 @@ idx2 = find(subj==2);
 mvmt1 = mvmt_type(idx1);
 mvmt2 = mvmt_type(idx2);
 
-parfor i=1:1000
+parfor i=1:2000
   
 
     disp(i)
@@ -3122,9 +3135,10 @@ parfor i=1:1000
     stat_boot(i) = glm_tmp.Coefficients.tStat(2);
 end
 figure;
-hist(stat_boot)
-vline(stat)
-sum(stat_boot>stat)/length(stat_boot)
+hist((stat_boot))
+vline((stat))
+sum(abs(stat_boot)>abs(stat))/length(stat_boot)
+sum((stat_boot)>(stat))/length(stat_boot)
 
 %%%%% mixed effect model to just see improvement in CL1 and CL2 individuall
 %%%%% relative to OL
@@ -3160,7 +3174,8 @@ end
 figure;
 hist(stat_boot)
 vline(stat)
-sum(stat_boot>stat)/length(stat_boot)
+%sum(stat_boot>stat)/length(stat_boot)
+sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
 
 %CL2
 glm = fitlme(data2,'decoding_impr ~ 1 + (1|subj)')
@@ -3182,23 +3197,10 @@ end
 figure;
 hist(stat_boot)
 vline(stat)
-sum(stat_boot>stat)/length(stat_boot)
+%sum(stat_boot>stat)/length(stat_boot)
+sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
 
 
-
-stat = glm.Coefficients.tStat(2);
-stat_boot=[];
-for i=1:1000
-    disp(i)
-    mvmt_type_tmp = mvmt_type(randperm(numel(mvmt_type)));
-    data_tmp = table(subj,mvmt_type_tmp,decoding_impr);
-    glm_tmp = fitlme(data_tmp,'decoding_impr ~ mvmt_type_tmp + (1|subj)');
-    stat_boot(i) = glm_tmp.Coefficients.tStat(2);
-end
-figure;
-hist(stat_boot)
-vline(stat)
-sum(stat_boot>stat)/length(stat_boot)
 
 %%%%% IMPORTANT %%%%%
 %%%%%%%% USING NON PARAMETRIC LINEAR MIXED EFFECT MODEL ON DECODING
@@ -3206,8 +3208,8 @@ sum(stat_boot>stat)/length(stat_boot)
 decoding_acc=[];
 subj=[];
 mvmt_type=[];
-tmp=mean(acc_online_days,1);
-tmp1=mean(acc_batch_days,1);
+tmp=mean(acc_imagined_days,1);
+tmp1=mean(acc_online_days,1);
 for i=1:length(tmp)
     if i<=11
         subj =[subj;1];
@@ -3238,7 +3240,7 @@ idx2 = find(subj==2);
 mvmt1 = mvmt_type(idx1);
 mvmt2 = mvmt_type(idx2);
 
-parfor i=1:1000
+parfor i=1:2000
   
 
     disp(i)
@@ -3258,7 +3260,8 @@ end
 
 figure;hist(stat_boot)
 vline(stat)
-sum(stat_boot>stat)/length(stat_boot)
+%sum(stat_boot>stat)/length(stat_boot)
+sum(abs(stat_boot)>abs(stat))/length(stat_boot)
 
 
 %%%%% plotting the decoding accuracies

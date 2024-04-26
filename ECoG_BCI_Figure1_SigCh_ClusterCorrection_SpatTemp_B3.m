@@ -10,11 +10,12 @@ if ~isunix
     addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
     addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
 else
+    cd('/home/reza/Repositories/ECoG_BCI_HighDim')
     addpath(genpath('/home/reza/Repositories/ECoG_BCI_HighDim'))
     addpath('/home/reza/Repositories/limo_tools')
     addpath('/home/reza/Repositories/limo_tools/limo_cluster_functions')
 end
-cd('/home/reza/Repositories/ECoG_BCI_HighDim')
+
 
 
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';

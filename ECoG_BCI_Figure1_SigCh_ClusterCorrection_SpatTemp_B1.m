@@ -685,7 +685,7 @@ for i=1:length(idx)
         LIMO.data.neighbouring_matrix=neighb;
         [mask,cluster_p,max_th] = ...
             limo_clustering((t_scores.^2),p_scores,...
-            (tboot.^2),pboot,LIMO,2,0.05,1);
+            (tboot.^2),pboot,LIMO,2,0.001,0);
         figure;subplot(3,1,1)
         tt=linspace(-3,5,size(t_scores,2));
         imagesc(tt,1:128,t_scores);
@@ -748,10 +748,15 @@ toc
 
 % PLOTTING A FEW EXEMPLAR ERPS with CI
 %load high_res_erp_hgLFO_imagined_data
-ch = [97 106 25 100 103 31];
-opt=statset('UseParallel',false);
+%ch = [97 106 25 100 103 31];
+ch=[54	39 18	1];
+opt=statset('UseParallel',true);
+figure;
 for i=1:length(ch)
-    figure;hold on
+
+    subplot(2,2,i)
+    hold on
+    
     chdata = squeeze((data(:,ch(i),:)));
 
     % bad trial removal
@@ -770,27 +775,34 @@ for i=1:length(ch)
     hold on
     plot(tt,(m),'b','LineWidth',1)
     axis tight
+    xlim([-2.5 4])
+    ylim([-1.5 0.5])
     vline([-2 0],'k')
     hline(0,'k')
-    xlim([-2.5 3])
+    
 
     ts = t_scores1(ch(i),:);
     ts(abs(ts)>0)=1;
+    if ts(end)==1
+        ts(end)=0;
+    end
     idx = [0 diff(ts)];
     idx = find(idx~=0);   
 
     
 
     for j=1:2:length(idx)
-        h1=hline(-0.5,'-g');
+        h1=hline(-1.4,'-g');
         set(h1,'LineWidth',3)
         set(h1,'Color',[0 .5 0 1])
         set(h1,'XData',[tt(idx(j)) tt(idx(j+1))])
     end
 
 
-    title(num2str(ch(i)))
+    %title(num2str(ch(i)))
     set(gcf,'Color','w')
+    xlabel('Time')
+    ylabel('Z-score')
 end
 
 
