@@ -240,7 +240,7 @@ set(gcf,'Color','w')
 box off
 
 % stats on the OL, CL1 and CL2 using signed rank test
-tmp = [b3];
+tmp = [b1];
 median(tmp)
 [P,H,STATS] = signrank(tmp(:,3),tmp(:,2),'method','approximate') % batch to imagined
 [P,H,STATS] = signrank(tmp(:,3),tmp(:,2),'method','approximate') % batch to online
@@ -786,6 +786,7 @@ b3=log(b3);
 % boxplots
 figure;hold on
 boxplot(([b1;b3]))
+%boxplot(([b1]))
 a = get(get(gca,'children'),'children');
 for i=1:length(a)
     box1 = a(i);
@@ -813,7 +814,7 @@ box off
 yticks([0:2:8])
 
 % stats on the OL, CL1 and CL2 using signed rank test
-tmp = [b3];
+tmp = [b1];
 median(tmp)
 [P,H,STATS] = signrank(tmp(:,2),tmp(:,1),'method','approximate') % batch to imagined
 [P,H,STATS] = signrank(tmp(:,3),tmp(:,2),'method','approximate') % batch to online

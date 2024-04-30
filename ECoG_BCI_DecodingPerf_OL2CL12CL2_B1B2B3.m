@@ -2980,13 +2980,13 @@ figure; hold on
 %    box1 = a(i);
 %    set(box1, 'Color', 'k');
 %end
-h=hline(median(m11),'k');
+h=hline(mean(m11),'k');
 h.LineWidth=3;
 h.XData = [0.75 1.25];
-h=hline(median(m22),'k');
+h=hline(mean(m22),'k');
 h.LineWidth=3;
 h.XData = [1.75 2.25];
-h=hline(median(m33),'k');
+h=hline(mean(m33),'k');
 h.LineWidth=3;
 h.XData = [2.75 3.25];
 aa = find(idx==1);
@@ -3022,18 +3022,31 @@ ylim([.5 1])
 [P,H,STATS] = signrank(mean(acc_batch_days(:,12:end),1),mean(acc_imagined_days(:,12:end),1))
 [P,H,STATS] = signrank(mean(acc_imagined_days(:,12:end),1),mean(acc_online_days(:,12:end),1))
 
+[p bootstrp_tvalues tvalue]=bootstrap_ttest(mean(acc_online_days(:,12:end),1),...
+    mean(acc_batch_days(:,12:end),1),1,2e4);p
+
+x1 = mean(acc_online_days(:,12:end),1);
+y1 = mean(acc_batch_days(:,12:end),1);
+
+[p,h,stats] = ttest(y1-x1)
+
+
 % Signed rank test on b3
 [P,H,STATS] = signrank(mean(acc_batch_days(:,1:11),1),mean(acc_online_days(:,1:11),1))
 [P,H,STATS] = signrank(mean(acc_batch_days(:,1:11),1),mean(acc_imagined_days(:,1:11),1))
 [P,H,STATS] = signrank(mean(acc_imagined_days(:,1:11),1),mean(acc_online_days(:,1:11),1))
 
+[p bootstrp_tvalues tvalue]=bootstrap_ttest(mean(acc_online_days(:,1:11),1),...
+    mean(acc_imagined_days(:,1:11),1),1,2e4);p
+
+
 
 
 
 % Signed rank test on all
-[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_online_days,1));
-[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));
-[P,H,STATS] = signrank(mean(acc_imagined_days,1),mean(acc_online_days,1));
+[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_online_days,1));P
+[P,H,STATS] = signrank(mean(acc_batch_days,1),mean(acc_imagined_days,1));P
+[P,H,STATS] = signrank(mean(acc_imagined_days,1),mean(acc_online_days,1));P
 
 num_trials_imagined = [b.num_trials_imag a.num_trials_imag];
 num_trials_online = [b.num_trials_online a.num_trials_online];

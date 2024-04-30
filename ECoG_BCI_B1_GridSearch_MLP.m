@@ -185,7 +185,7 @@ for i=2:length(condn_data)
     end
 end
 
-% different feeature combinations
+% different feature combinations
 feat_idx{1}=[1:96]; 
 feat_idx{2}=[3:3:96]; % only hG
 feat_idx{3}=[1:3:96]; % only delta
@@ -210,19 +210,27 @@ for i=1:length(feat_idx)
 
     cv_perf=[];
     for iter=1:15
+
         % split into training and testing trials, 15% test, 15% val, 70% test
-        prop = 0.15;
-        test_idx = randperm(length(condn_data_overall),round(prop*length(condn_data_overall)));
-        test_idx=test_idx(:);
-        I = ones(length(condn_data_overall),1);
-        I(test_idx)=0;
-        train_val_idx = find(I~=0);
-        prop1 = (0.7/(1-prop));
-        tmp_idx = randperm(length(train_val_idx),round(prop1*length(train_val_idx)));
-        train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
-        I = ones(length(condn_data_overall),1);
-        I([train_idx;test_idx])=0;
-        val_idx = find(I~=0);val_idx=val_idx(:);
+        xx=1;xx1=1;xx2=1;yy=0;
+        while xx<7 || xx1<7 || xx2<7
+            prop = 0.15;
+            test_idx = randperm(length(condn_data_overall),round(prop*length(condn_data_overall)));
+            test_idx=test_idx(:);
+            I = ones(length(condn_data_overall),1);
+            I(test_idx)=0;
+            train_val_idx = find(I~=0);
+            prop1 = (0.7/(1-prop));
+            tmp_idx = randperm(length(train_val_idx),round(prop1*length(train_val_idx)));
+            train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+            I = ones(length(condn_data_overall),1);
+            I([train_idx;test_idx])=0;
+            val_idx = find(I~=0);val_idx=val_idx(:);
+            xx = length(unique([condn_data_overall(train_idx).targetID]));
+            xx1 = length(unique([condn_data_overall(val_idx).targetID]));
+            xx2 = length(unique([condn_data_overall(test_idx).targetID]));
+            yy=yy+1;
+        end
 
         % training options for NN
         [options,XTrain,YTrain] = ...
@@ -269,12 +277,19 @@ end
 
 mean(tmp(:,idx))
 
-% running the stats pairwise, rank sum test
+% running the binomial tests for significance 
+% the num of trials is 261
 tmp=tmp(:,idx);
+pval=[];
 for i=1:size(tmp,2)
-    p = ranksum(tmp(:,4),tmp(:,5))
-
-
+    xx = tmp(:,i);
+    n = length(test_idx);    
+    p = mean(xx);
+    xx= 0:n;
+    bp = binopdf(xx,n,p);
+    ch = ceil((1/7)*n);
+    [aa,bb] = find(xx==ch);
+    pval(i) = sum(bp(1:bb));
 end
  
 

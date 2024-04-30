@@ -748,8 +748,8 @@ toc
 
 % PLOTTING A FEW EXEMPLAR ERPS with CI
 %load high_res_erp_hgLFO_imagined_data
-%ch = [97 106 25 100 103 31];
-ch=[54	39 18	1];
+ch = [31	25 103	106 ];
+%ch=[54	39 18	1];
 opt=statset('UseParallel',true);
 figure;
 for i=1:length(ch)
@@ -776,7 +776,7 @@ for i=1:length(ch)
     plot(tt,(m),'b','LineWidth',1)
     axis tight
     xlim([-2.5 4])
-    ylim([-1.5 0.5])
+    ylim([-1.0 4.5])
     vline([-2 0],'k')
     hline(0,'k')
     
@@ -792,7 +792,7 @@ for i=1:length(ch)
     
 
     for j=1:2:length(idx)
-        h1=hline(-1.4,'-g');
+        h1=hline(-0.75,'-g');
         set(h1,'LineWidth',3)
         set(h1,'Color',[0 .5 0 1])
         set(h1,'XData',[tt(idx(j)) tt(idx(j+1))])
@@ -833,7 +833,8 @@ addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
 addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
 
 
-load hg_LFO_Imagined_SpatTemp_New_New_ArtfCorr
+%load hg_LFO_Imagined_SpatTemp_New_New_ArtfCorr
+load delta_Imagined_SpatTemp_New_New_ArtfCorr
 
 ImaginedMvmt = {'Right Thumb','Right Index','Right Middle','Right Ring','Right Pinky',...
     'Rotate Right Wrist','Right Pinch Grasp','Right Tripod Grasp','Right Power Grasp',...

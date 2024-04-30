@@ -25,7 +25,7 @@ for ii=1:length(files)
         temp = cell2mat(features(kinax));
 
         % get delta, beta and hG removing bad channels
-        temp = temp([257:512 1025:1280 1537:1792],:);
+        temp = temp([257:512 1025:1280 1537:1792],:); % organized as delta, beta, hG
         bad_ch = [108 113 118];
         good_ch = ones(size(temp,1),1);
         for iii=1:length(bad_ch)

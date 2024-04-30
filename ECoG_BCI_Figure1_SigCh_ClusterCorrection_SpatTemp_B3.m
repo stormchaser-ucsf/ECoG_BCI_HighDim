@@ -9,6 +9,7 @@ if ~isunix
     addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
     addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
     addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+    cd 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3'
 else
     cd('/home/reza/Repositories/ECoG_BCI_HighDim')
     addpath(genpath('/home/reza/Repositories/ECoG_BCI_HighDim'))
