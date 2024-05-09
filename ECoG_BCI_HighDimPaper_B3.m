@@ -1506,7 +1506,7 @@ for i=1:length(files)
             %get hG through filter bank approach
             filtered_data=zeros(size(features,1),size(features,2),2);
             k=1;
-            for ii=9:16 %9:16 is hG, 4:5 is beta
+            for ii=4:5 %9:16 is hG, 4:5 is beta
                 filtered_data(:,:,k) =  abs(hilbert(filtfilt(...
                     Params.FilterBank(ii).b, ...
                     Params.FilterBank(ii).a, ...
@@ -1568,9 +1568,9 @@ for i=1:length(files)
     end
 end
 
-%save high_res_erp_beta_imagined_data -v7.3
+save high_res_erp_beta_imagined_data -v7.3
 %save high_res_erp_LMP_imagined_data -v7.3
-save B3_high_res_erp_imagined_data -v7.3
+%save B3_high_res_erp_imagined_data -v7.3
 
 % get the number of epochs used
 ep=[];
@@ -1789,8 +1789,161 @@ for i=1:length(idx)
     %     print(gcf,filename,'-dpng','-r500')
 end
 %save ERPs_sig_ch_beta -v7.3
-save ERPs_sig_ch_LMP -v7.3
+%save ERPs_sig_ch_LMP -v7.3
 %save ERPs_sig_ch_hg -v7.3
+
+%load('C:\Data from F drive\B3 data\B3_high_res_erp_imagined_data.mat')
+%load('B3_delta_high_res_erp_imagined_data')
+%load('B3_beta_high_res_erp_imagined_data')
+
+%%%%% MAIN MAIN ROI specific activity in the various regions
+load('ECOG_Grid_8596_000067_B3.mat')
+chMap=ecog_grid;
+hnad_elec=[70	66	194	198
+88	85	82	79
+248	252	255	128
+106	102	98	226
+104	100	228	232];
+% hand_elec=[159	160	30
+% 134	140	170
+% 49	45	41
+% 221	62	59
+% 205	208	211
+% 70	66	194
+% 88	85	82
+% 248	252	255];
+%hand_elec =[22	5	20 111	122	117 105	120	107]; %pmv
+%hand_elec=[99	101	121	127	105	120];%pmd
+% hand_elec = [49	64	58	59
+% 54	39	47	42
+% 18	1	8	15];% pmv
+% get the average activity for each imagined action with C.I.
+roi_mean=[];
+roi_dist_mean=[];
+task_state = TrialData.TaskState;
+%idx = [ find(task_state==3)];
+idx=3250:4500;
+pval=[];pval1=[];pval2=[];
+%idx=idx(5:15);
+for i=1:length(ImaginedMvmt)
+    disp(i)
+    data = ERP_Data{i};
+
+    % boot
+    tmp = data(1:1000,hand_elec,:);
+    %tmp = squeeze(mean(tmp,1));
+
+    % real
+    data = data(idx,hand_elec,:);
+    
+    data = squeeze(mean(data,3)); % trials
+    data = mean(data,1); %median of the power thru time at each channel
+    %data = squeeze(median(data,1)); % time
+    %data = squeeze(mean(data,1)); % channels
+    
+    data = data(:);
+   
+    roi_mean(i) = median(data);
+%     if i==19
+%         roi_mean(i)=0.9;
+%     end
+    roi_dist_mean(:,i) = sort(bootstrp(1000,@median,data));
+
+    % do some stats
+    pval(i) = 1-((sum((mean(data)) >= tmp(:)))/length(tmp(:)));
+    if mean(roi_dist_mean(:,i)) >0
+        pval1(i) = 1-(sum((roi_dist_mean(:,i))>0))/length(roi_dist_mean(:,i));
+    elseif mean(roi_dist_mean(:,i)) <=0
+        pval1(i) = 1-(sum((roi_dist_mean(:,i))<=0))/length(roi_dist_mean(:,i));
+    end
+    pval2(i) = signrank(data);
+end
+figure;bar(roi_mean)
+close
+
+y = roi_mean;
+y=y';
+errY(:,1) = roi_dist_mean(500,:)-roi_dist_mean(25,:);
+errY(:,2) = roi_dist_mean(975,:)-roi_dist_mean(500,:);
+
+figure;
+[hBar hErrorbar] = barwitherr(errY, y);
+hold on
+xticks(1:length(ImaginedMvmt))
+set(gcf,'Color','w')
+set(gca,'FontSize',16)
+set(gca,'LineWidth',1)
+xticklabels(ImaginedMvmt)
+hold on
+[pfdr,pmask]=fdr(pval2,0.05);
+idx = pval2<=pfdr;
+idx = find(idx==1);
+%vline(idx,'r');
+for i=1:length(idx)
+    %plot(idx(i),-0.25,'*r','MarkerSize',20);%hg
+    plot(idx(i),-0.55,'*r','MarkerSize',20);%beta
+end
+
+% MAIN MAIN when plotting, have to organize by rt. hand, lt. hand, rt. proximal, lt.
+% proximal, distal, orofacial and both middle 
+rt_hand_idx = 1:9;
+lt_hand_idx = 10:18;
+orofacial_idx = [20 31 32];
+rt_proximal_idx = [21 23 25];
+lt_proximal_idx = [22 24 26];
+distal_idx = [27 28 29 30];
+both_hands_idx = 19;
+overall_idx = [rt_hand_idx lt_hand_idx rt_proximal_idx lt_proximal_idx ...
+    distal_idx orofacial_idx both_hands_idx];
+overall_idx_cell = {rt_hand_idx lt_hand_idx rt_proximal_idx lt_proximal_idx ...
+    distal_idx orofacial_idx both_hands_idx};
+figure;
+[hBar hErrorbar] = barwitherr(errY(overall_idx,:), y(overall_idx));
+hBar.FaceColor = [0.95 0.95 0.95];
+hBar.LineWidth=1;
+hold on
+xticks(1:length(ImaginedMvmt))
+set(gcf,'Color','w')
+set(gca,'FontSize',16)
+set(gca,'LineWidth',1)
+xticklabels(ImaginedMvmt(overall_idx))
+hold on
+pval22 = pval2(overall_idx);
+[pfdr,pmask]=fdr(pval22,0.05);
+idx = pval22<=pfdr;
+idx = find(idx==1);
+%vline(idx,'r');
+for i=1:length(idx)
+    %plot(idx(i),-0.25,'*r','MarkerSize',20);%hg
+    plot(idx(i),-0.55,'*r','MarkerSize',20);%hg
+end
+
+% get the number of elements in each cell of movements
+num_mvmts=[];
+for i=1:length(overall_idx_cell)
+    xx = overall_idx_cell{i};
+    num_mvmts(i) = length(xx);
+end
+num_mvmts = [0 cumsum(num_mvmts)];
+% now color the mean
+%cmap=turbo(7);
+cmap=brewermap(7,'set1');
+for i=1:length(overall_idx_cell)
+    idx = overall_idx_cell{i};
+    tmpY = median(y(idx));
+    h=hline(tmpY,'-');
+    h.Color = cmap(i,:);
+    h.LineWidth=5;
+    h.XData = [num_mvmts(i)+1-0.35 num_mvmts(i+1)+0.35];
+end
+set(gca,'LineWidth',1)
+ylabel('Z-score')
+
+
+%%%%%%%%%%%%%%%%% END %%%%
+
+
+
 
 % plotting sig channels on by one
 for i=1:length(ImaginedMvmt)
@@ -1824,6 +1977,9 @@ end
 set(gcf,'Color','w')
 set(gca,'FontSize',20)
 view(-94,30)
+
+
+
 
 
 %%%% ROI SPECIFIC ERPS FOR SELECTION ACTIONS %%%%%%

@@ -558,113 +558,8 @@ save B1_MLP_NN_Param_Optim_SingleSession_OL cv_acc3 cv_acc3_trialLevel -v7.3
 %% PLOTTING RESULTS FOR MAIN DETERMING OF MLP PARAMS PNP
 
 
-% plotting
-acc=[];acc1=[];
-for i=1:length(cv_acc3)
-    acc(i) = median(cv_acc3(i).cv_perf);
-end
 
-[aa bb]=max(acc)
-
-figure;boxplot(acc(1:4))
-ylim([.0 .9])
-figure;boxplot(acc(5:20))
-ylim([.0 .9])
-figure;boxplot(acc(21:end))
-ylim([.0 .9])
-% 
-tmp=NaN(64,3);
-tmp(1:4,1) = acc(1:4)';
-tmp(1:16,2) = acc(5:20)';
-tmp(1:end,3) = acc(21:end-1)';
-figure;boxplot(tmp)
-ylim([.5 .7])
-
-
-% MAIN plotting
-% plotting across all iterations to compare all layers
-acc1=[];
-for i=1:4
-    acc1=[acc1;cv_acc3(i).cv_perf'];
-end
-acc2=[];
-for i=5:20
-    acc2=[acc2;cv_acc3(i).cv_perf'];
-end
-acc3=[];
-for i=21:84
-    acc3=[acc3;cv_acc3(i).cv_perf'];
-end
-acc0=cv_acc3(end).cv_perf';
-acc0(end+1:length(acc3))=NaN;
-acc1(end+1:length(acc3))=NaN;
-acc2(end+1:length(acc3))=NaN;
-acc=[acc0 acc1 acc2 acc3];
-figure;
-boxplot(acc,'notch','off')
-set(gcf,'Color','w')
-set(gca,'FontSize',12)
-ylabel('Bin Level Decoding Acc')
-xticks(1:4)
-xticklabels({'0 Layers','1 Layer','2 Layer','3 Layer'})
-box off
-title('Cross. Valid for MLP width in B1')
-
-% sign rank tests
-clear p
-[p(1),h,stats] = ranksum(acc0(~isnan(acc0)),acc1(~isnan(acc1)))
-[p(2),h,stats] = ranksum(acc0(~isnan(acc0)),acc2(~isnan(acc2)))
-[p(3),h,stats] = ranksum(acc0(~isnan(acc0)),acc3(~isnan(acc3)))
-[p(4),h,stats] = ranksum(acc1(~isnan(acc1)),acc2(~isnan(acc2)))
-[p(5),h,stats] = ranksum(acc1(~isnan(acc1)),acc3(~isnan(acc3)))
-[p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)))
-[pfdr,pval]=fdr(p,0.01);
-
-% non parametric tests of the median
-a=acc(:,2);a=a(~isnan(a));
-b=acc(:,3);b=b(~isnan(b));
-stat = mean(a)-mean(b);
-c=[a ;b];
-c=c-mean(c);
-boot=[];
-l=length(a);
-for i=1:1000
-    c1=c(randperm(numel(c)));
-    a1 = c1(1:l);
-    b1 = c1(l+1:end);
-    boot(i) = mean(a1)-mean(b1);
-end
-figure;
-hist(abs(boot))
-vline(abs(stat))
-pval = sum(abs(boot)>abs(stat))/length(boot);
-title(num2str(pval))
-
-
-% plotting across all iterations
-
-
-
-acc_128=[];
-for i=1:5
-    layers = get_layers1(128,759);
-    net = trainNetwork(XTrain,YTrain,layers,options);
-    cv_perf = test_network(net,condn_data_overall,test_idx);
-    acc_128(i)  = cv_perf;
-end
-
-
-acc_150=[];
-for i=1:5
-    layers = get_layers1(150,759);
-    net = trainNetwork(XTrain,YTrain,layers,options);
-    cv_perf = test_network(net,condn_data_overall,test_idx);
-    acc_150(i)  = cv_perf;
-end
-
-
-
-%% PLOTTING RESULTS FOR single session trial level stuff
+%% PLOTTING RESULTS FOR 
 % plotting
 acc=[];acc1=[];
 for i=1:length(cv_acc3)
@@ -754,7 +649,7 @@ clear p
 [p(4),h,stats] = ranksum(acc1(~isnan(acc1)),acc2(~isnan(acc2)))
 [p(5),h,stats] = ranksum(acc1(~isnan(acc1)),acc3(~isnan(acc3)))
 [p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)))
-[pfdr,pval]=fdr(p,0.05);pval
+[pfdr,pval]=fdr(p,0.01);
 
 % non parametric tests of the median
 a=acc(:,2);a=a(~isnan(a));

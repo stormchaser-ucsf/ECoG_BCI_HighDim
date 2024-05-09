@@ -775,12 +775,19 @@ b1=[30.857	6.23092	4.2398
     47.2904	5.89819	4.20248
     46.8797	6.5413	4.60668
     ];
-b1=log(b1);
+%b1=log(b1);
+b1 = b1./max(b1(:));
+%b1=b1/2;
+%b1 = b1./norm(b1(:));
+%b1=log(b1);
 
 % B3
 load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\neural_var_b3_latent.mat')
 b3=tmp;
-b3=log(b3);
+%b3 = b3./norm(b3(:));
+%b3=log(b3);
+b3 = b3./max(b3(:));
+%b3 = b3/3;
 
 %%%%%% Comparing OL, CL1 and CL2
 % boxplots
@@ -811,14 +818,15 @@ xticklabels({'OL','CL1','CL2'})
 %ylim([0 80])
 set(gcf,'Color','w')
 box off
-yticks([0:2:8])
+%yticks([0:2:8])
+yticks([0:.2:1])
 
 % stats on the OL, CL1 and CL2 using signed rank test
 tmp = [b1];
 median(tmp)
 [P,H,STATS] = signrank(tmp(:,2),tmp(:,1),'method','approximate') % batch to imagined
 [P,H,STATS] = signrank(tmp(:,3),tmp(:,2),'method','approximate') % batch to online
-[P,H,STATS] = signrank(tmp(:,2),tmp(:,1),'method','approximate') % online to imagined
+[P,H,STATS] = signrank(tmp(:,3),tmp(:,1),'method','approximate') % online to imagined
 
 % stats using non parametric mixed effect models
 tmp = [b3;b1];
@@ -842,7 +850,7 @@ idx1 = find(subj==1);
 idx2 = find(subj==2);
 mvmt1 = mvmt_type(idx1);
 mvmt2 = mvmt_type(idx2);
-parfor i=1:2000
+parfor i=1:1000
     disp(i)
     mvmt_type_tmp = mvmt_type;
     mvmt_type1_tmp = mvmt1(randperm(numel(mvmt1)));
@@ -994,5 +1002,82 @@ xlabel('Days')
 ylabel('Mean Mahalanobis dist.')
 yticks([0:.25:1])
 ylim([0 1])
+
+%% (MAIN) Percent neural variance reductions at the channel level 
+% B1, B3, all three freq bands
+% CL1 vs OL, CL2 vs OL, CL1 vs. CL2
+
+clc;clear
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+load delta_variance_reductions_channelLevel
+tmp = delta_variance_reductions_channelLevel;
+b3 = tmp(1:11,:);
+b1 = tmp(12:end,:);
+
+% plotting boxplots
+figure;hold on
+boxplot(([b1;b3]))
+%boxplot(([b1]))
+a = get(get(gca,'children'),'children');
+for i=1:length(a)
+    box1 = a(i);
+    set(box1, 'Color', 'k');
+end
+x1= [1+ 0.1*randn(length(b1),1) 2+ 0.1*randn(length(b1),1) 3+ 0.1*randn(length(b1),1)];
+h=scatter(x1,b1,'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'r';
+    h(i).MarkerFaceAlpha = 0.5;
+end
+x1= [1+ 0.1*randn(length(b3),1) 2+ 0.1*randn(length(b3),1) 3+ 0.1*randn(length(b3),1)];
+h=scatter(x1,b3,'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'b';
+    h(i).MarkerFaceAlpha = 0.5;
+end
+xlim([0.5 3.5])
+xticks(1:3)
+xticklabels({'OL to CL1','OL to CL2','CL1 to CL2'})
+%yticks([0:10:80])
+%ylim([0 80])
+set(gcf,'Color','w')
+box off
+ylim([-70 15])
+yticks(-70:20:10)
+hline(0,'--k')
+
+subj=[];
+decoding_impr=[];
+subj=[ones(11,1);2*ones(10,1)];
+decoding_impr = [tmp(:,3)];
+data1 = table(subj,decoding_impr);
+
+glm = fitlme(data1,'decoding_impr ~ 1 + (1|subj)')
+stat = glm.Coefficients.tStat(1);
+stat_boot=[];
+xx = table2array(data1);
+xx(:,2) = xx(:,2)-mean(xx(:,2));
+parfor i=1:1000
+    disp(i)
+    idx = randi(length(xx),1,length(xx));
+    xx1 = xx(idx,:);
+    subj_tmp = xx1(:,1);    
+    decoding_tmp = xx1(:,2);
+    data1_tmp = table(subj_tmp,decoding_tmp);    
+    glm_tmp = fitlme(data1_tmp,'decoding_tmp ~ 1 + (1|subj_tmp)');
+    stat_boot(i) = glm_tmp.Coefficients.tStat(1);
+end
+figure;
+hist(stat_boot)
+vline(stat)
+%sum(stat_boot>stat)/length(stat_boot)
+sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
+
+
+% sign rank tests
+[P,H,STATS] = signrank(tmp(1:11,3))  %b3
+[P,H,STATS] = signrank(tmp(12:end,3)) %b1
+
+
 
 

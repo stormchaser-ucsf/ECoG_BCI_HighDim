@@ -124,7 +124,9 @@ for i=1:length(session_data)
     num_trials_online = [num_trials_online length(files)];
 
     % get the classification accuracy
-    [acc_online,~,bino_pdf] = accuracy_online_data(files);
+    %[acc_online,~,bino_pdf] = accuracy_online_data(files);
+    [acc_online,~,bino_pdf] = accuracy_online_data_5bins(files);
+    
     if plot_true
         figure;imagesc(acc_online*100)
         colormap(brewermap(128,'Blues'))
@@ -171,7 +173,8 @@ for i=1:length(session_data)
     num_trials_batch = [num_trials_batch length(files)];
 
     % get the classification accuracy
-    [acc_batch,~,bino_pdf] = accuracy_online_data(files);
+    %[acc_batch,~,bino_pdf] = accuracy_online_data(files);
+    [acc_batch,~,bino_pdf] = accuracy_online_data_5bins(files);
     if plot_true
         figure;imagesc(acc_batch*100)
         colormap(brewermap(128,'Blues'))
@@ -1782,7 +1785,8 @@ for i=1:11% length(session_data) % 11 is first set of collected data
 
 
     % get the classification accuracy
-    [acc_online,~,bino_pdf] = accuracy_online_data(files);
+    %[acc_online,~,bino_pdf] = accuracy_online_data(files);
+    [acc_online,~,bino_pdf] = accuracy_online_data_5bins(files);    
     if plot_true
         figure;imagesc(acc_online*100)
         colormap(brewermap(128,'Blues'))
@@ -1831,7 +1835,8 @@ for i=1:11% length(session_data) % 11 is first set of collected data
     num_trials_batch = [num_trials_batch length(files)];
 
     % get the classification accuracy
-    [acc_batch,acc_batch_bin,bino_pdf] = accuracy_online_data(files);
+    %[acc_batch,acc_batch_bin,bino_pdf] = accuracy_online_data(files);
+    [acc_batch,acc_batch_bin,bino_pdf] = accuracy_online_data_5bins(files);
     if plot_true
         figure;imagesc(acc_batch*100)
         colormap(brewermap(128,'Blues'))
@@ -2980,27 +2985,27 @@ figure; hold on
 %    box1 = a(i);
 %    set(box1, 'Color', 'k');
 %end
-h=hline(mean(m11),'k');
+h=hline(median(m11),'k');
 h.LineWidth=3;
 h.XData = [0.75 1.25];
-h=hline(mean(m22),'k');
+h=hline(median(m22),'k');
 h.LineWidth=3;
 h.XData = [1.75 2.25];
-h=hline(mean(m33),'k');
+h=hline(median(m33),'k');
 h.LineWidth=3;
 h.XData = [2.75 3.25];
 aa = find(idx==1);
 x=(1:3) + 0.1*randn(length(aa),3);
 h=scatter(x,[m11(aa)' m22(aa)' m33(aa)'],'filled');
 for i=1:3
-    h(i).MarkerFaceColor = 'r';
+    h(i).MarkerFaceColor = 'b';
     h(i).MarkerFaceAlpha = 0.3;
 end
 aa = find(idx==2);
 x=(1:3) + 0.1*randn(length(aa),3);
 h=scatter(x,[m11(aa)' m22(aa)' m33(aa)'],'filled');
 for i=1:3
-    h(i).MarkerFaceColor = 'b';
+    h(i).MarkerFaceColor = 'r';
     h(i).MarkerFaceAlpha = 0.3;
 end
 ylim([0 1])
@@ -3173,7 +3178,7 @@ stat = glm.Coefficients.tStat(1);
 stat_boot=[];
 xx = table2array(data1);
 xx(:,3) = xx(:,3)-mean(xx(:,3));
-parfor i=1:1000
+for i=1:1000
     disp(i)
     idx = randi(length(xx),1,length(xx));
     xx1 = xx(idx,:);

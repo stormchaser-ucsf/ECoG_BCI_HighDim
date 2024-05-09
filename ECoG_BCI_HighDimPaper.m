@@ -1507,6 +1507,7 @@ plot(c)
 
 
 %% ERPs of imagined actions higher sampling rate (MAIN)
+%% ALSO HAS THE AVERAGE HAND KNOB ACTIVITY FOR THE REPERTOIRE 
 % using hG and LMP, beta etc.
 
 clc;clear
