@@ -21,3 +21,4 @@ figure;hist(stat_boot)
 vline(stat_val,'r')
 
 end
+

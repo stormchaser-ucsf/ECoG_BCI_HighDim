@@ -55,35 +55,93 @@ for i=2:length(condn_data_day)
     end
 end
 
-% paritioning the dataset
-num_classes = length(unique([condn_data_overall.targetID]));
-test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
-test_idx=test_idx(:);
-I = ones(length(condn_data_overall),1);
-I(test_idx)=0;
-train_val_idx = find(I~=0);
-prop = (0.7/0.85);
-tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
-train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
-I = ones(length(condn_data_overall),1);
-I([train_idx;test_idx])=0;
-val_idx = find(I~=0);val_idx=val_idx(:);
+% looping over 10 times
+conf_matrix=[];num_test_trials=[];
+for iter=1:10
 
-% training options for NN
-[options,XTrain,YTrain] = ...
-    get_options(condn_data_overall,val_idx,train_idx);
- 
-% design the neural net
-aa=condn_data_overall(1).neural;
-s=size(aa,1);
-layers = get_layers1(64,s,num_classes);
+    % paritioning the dataset
+    num_classes = length(unique([condn_data_overall.targetID]));
+    test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+    test_idx=test_idx(:);
+    I = ones(length(condn_data_overall),1);
+    I(test_idx)=0;
+    train_val_idx = find(I~=0);
+    prop = (0.7/0.85);
+    tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+    train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+    I = ones(length(condn_data_overall),1);
+    I([train_idx;test_idx])=0;
+    val_idx = find(I~=0);val_idx=val_idx(:);
 
-% train the network
-net = trainNetwork(XTrain,YTrain,layers,options);
+    % training options for NN
+    [options,XTrain,YTrain] = ...
+        get_options(condn_data_overall,val_idx,train_idx);
 
-% test performance on held out trials
-[cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx,num_classes);
-conf_matrix
+    % design the neural net
+    aa=condn_data_overall(1).neural;
+    s=size(aa,1);
+    %layers = get_layers1(64,s,num_classes);
+    layers = get_layers2(64,64,s,num_classes);
+
+    % train the network
+    net = trainNetwork(XTrain,YTrain,layers,options);
+
+    % test performance on held out bins
+    % [cv_perf,conf_matrix] = test_network(net,condn_data_overall,test_idx,num_classes);
+    % conf_matrix
+
+    % test performance on held out trials
+    conf_matrix_trialLevel = ...
+        test_network_trialLevel(net,condn_data_overall,test_idx,num_classes);
+
+    conf_matrix(iter,:,:) = conf_matrix_trialLevel;
+    num_test_trials(iter) = length(test_idx);
+end
+
+
+
+clear condn_data_overall
+save day_of_recording_analyses_B1 -v7.3
+
+tmp=squeeze(nanmean(conf_matrix,1));
+figure;imagesc(tmp*100)
+colormap(brewermap(128,'Blues'))
+clim([0 100])
+set(gcf,'color','w')
+% add text
+for j=1:size(tmp,1)
+    for k=1:size(tmp,2)
+        if j==k
+            text(j-0.35,k,num2str(round(100*tmp(k,j),1)),'Color','w')
+        else
+            text(j-0.35,k,num2str(round(100*tmp(k,j),1)),'Color','k')
+        end
+    end
+end
+box on
+xticks(1:10)
+yticks(1:10)
+xticklabels(1:10)
+yticklabels(1:10)
+xlabel('Predicted Days')
+ylabel('True Days')
+title(['Accuracy of ' num2str(100*mean(diag(tmp))) '%'])
+
+% bino pdf for pvalue
+n = median(num_test_trials);
+p = mean(diag(tmp));
+succ = round(n*p);
+%succ = mean(diag(tmp));
+%p = succ/n;
+xx = 0:n;
+bp = binopdf(xx,n,p);
+figure;plot(xx,bp)
+ch = ceil((1/10)*n);
+vline(ch)
+[aa,bb] = find(xx==ch);
+title(num2str(sum(bp(1:bb))))
+
+pval = binopdf(succ,n,1/10);
 
 %% LOOKING AT THE IMPORTANCE OF DIFFERENT FEATURES (MAIN)
 % code here is to look at trial level decoding accuracies with respect to 
