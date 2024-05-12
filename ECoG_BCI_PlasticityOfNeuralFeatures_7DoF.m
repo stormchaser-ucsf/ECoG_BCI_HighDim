@@ -6952,8 +6952,8 @@ for i=1:length(files)
         %%% angle to target
         %ideal_angle = atan2(ideal_vector(2)/ideal_vector(1));
         %angles_err = atan2(tmp_vel(2,:)./tmp_vel(1,:));
-        ideal_angle = atan2(ideal_vector(1),ideal_vector(2));
-        angles_err = atan2(tmp_vel(1,:),tmp_vel(2,:));
+        ideal_angle = atan2(ideal_vector(2),ideal_vector(1));
+        angles_err = atan2(tmp_vel(2,:),tmp_vel(1,:));
         angles_err_rel = angles_err - ideal_angle;
         err_vel =[err_vel angles_err_rel];
     end
@@ -6961,12 +6961,12 @@ end
 
 % histogram of the errors in decoded velocities with the ideal velocity
 figure;rose(err_vel)
-figure;hist(err_vel*180/pi,20)
+figure;hist(err_vel*180/pi,30)
 vline(45)
 
 % circular statistics test
 addpath(genpath('C:\Users\nikic\Documents\MATLAB\CircStat2012a'))
-mu = circ_mean(err_vel') % get the mean
+[mu ,ul,ll]= circ_mean(err_vel') % get the mean
 [pval, z] = circ_rtest(err_vel); % is it uniformly distributed
 [h mu ul ll]  = circ_mtest(err_vel', 0) % does it have a specific mean
 [ll mu ul]*180/pi
@@ -7904,6 +7904,27 @@ ylabel('Accuracy')
 box off
 
 
+% ttc fist half
+xx=cell2mat(ttc1(1:8));
+xxb = sort(bootstrp(1000,@median,xx));
+[xxb(25) median(xx) xxb(975)]
+
+
+% time to task completion 
+days = [2,14,19,21,34,35,40,210,0];
+xx=cell2mat(ttc2(1:6));
+xxb = sort(bootstrp(1000,@median,xx));
+[xxb(25) median(xx) xxb(975)]
+
+xx=cell2mat(ttc2(7:8))
+xxb = sort(bootstrp(1000,@median,xx));
+[xxb(25) median(xx) xxb(975)]
+
+xx=cell2mat(ttc2(9))
+xxb = sort(bootstrp(1000,@median,xx));
+[xxb(25) median(xx) xxb(975)]
+
+
 
 %% STATS OF THE REAL ROBOT TASKS (MAIN)
 
@@ -8011,7 +8032,7 @@ end
 xlim([0 10])
 xticks(1:9)
 xticklabels(PnP_days_wall_task)
-ylim([0 150])
+ylim([0 160])
 yticks([0:20:160])
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
@@ -8021,7 +8042,7 @@ ylabel('Time to target')
 % plot the boxplot of time to target
 figure;
 boxplot(cell2mat(ttc))
-ylim([0 150])
+ylim([0 160])
 yticks([0:20:160])
 set(gcf,'Color','w')
 xlim([0.85 1.15])

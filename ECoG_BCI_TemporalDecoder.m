@@ -1,4 +1,455 @@
-% getting the temporal data for a RNN/LSTM based decoder
+%%
+
+%% how much time it took to train a lstm decoder 
+
+clc;clear
+
+root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath('C:\Users\nikic\Documents\MATLAB')
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+
+% for only 6 DoF original:
+%foldernames = {'20210526','20210528','20210602','20210609_pm','20210611'};
+
+% foldernames = {'20210613','20210616','20210623','20210625','20210630','20210702',...
+%     '20210707','20210716','20210728','20210804','20210806','20210813','20210818',...
+%     '20210825','20210827','20210901','20210903','20210910','20210917','20210924','20210929',...
+%     '20211001''20211006','20211008','20211013','20211015','20211022','20211027','20211029','20211103',...
+%     '20211105','20211117','20211119','20220126','20220128','20220202','20220204','20220209','20220211',...
+%     '20220218','20220223','20220225','20220302','20220309','20220311',...
+%     '20220316','20220323','20220325','20220520','20220722','20220727','20220729',...
+%     '20220803','20220810','20220812','20220817'}; 
+
+% error correction inserted a common 20211001 and 20211006
+foldernames = {'20210613','20210616','20210623','20210625','20210630','20210702',...
+    '20210707','20210716','20210728','20210804','20210806','20210813','20210818',...
+    '20210825','20210827','20210901','20210903','20210910','20210917','20210924','20210929',...
+    '20211001','20211006','20211008','20211013','20211015','20211022','20211027','20211029','20211103',...
+    '20211105','20211117','20211119','20220126','20220128','20220202','20220204','20220209','20220211',...
+    '20220218','20220223','20220225','20220302','20220309','20220311',...
+    '20220316','20220323','20220325','20220520','20220722','20220727','20220729',...
+    '20220803','20220810','20220812','20220817'}; 
+foldernames=foldernames';
+cd(root_path)
+
+
+%foldernames=foldernames(1:33)
+
+imag_files={};
+online_files={};
+k=1;jj=1;
+for i=1:length(foldernames)
+    disp([i/length(foldernames)]);
+    folderpath = fullfile(root_path, foldernames{i},'Robot3DArrow');
+    D=dir(folderpath);
+    if i==19 % this is 20210917
+        idx = [1 2 5:8 9:10];
+        D = D(idx);
+    elseif i==26
+        idx=[1:2 4:length(D)];
+        D=D(idx);
+    elseif i==30
+        idx= [1:2 8:9];
+        D=D(idx);
+    elseif i==34
+        idx= [1:2 3:5 7:16];
+        D=D(idx);
+    elseif i==56
+        D=D([1 2 4:end]);    
+
+    end
+    imag_files_temp=[];
+    online_files_temp=[];
+    for j=3:length(D)
+        filepath=fullfile(folderpath,D(j).name,'Imagined');
+        if exist(filepath)
+            imag_files_temp = [imag_files_temp;findfiles('mat',filepath)'];
+        end
+        filepath1=fullfile(folderpath,D(j).name,'BCI_Fixed');
+        if exist(filepath1)
+            online_files_temp = [online_files_temp;findfiles('mat',filepath1)'];
+        end
+    end
+    if ~isempty(imag_files_temp)
+        imag_files{k} = imag_files_temp;k=k+1;
+    end
+    if ~isempty(online_files_temp)
+        online_files{jj} = online_files_temp;jj=jj+1;
+    end
+    %     imag_files{i} = imag_files_temp;
+    %     online_files{i} = online_files_temp;
+end
+
+% GETTING DATA FROM IMAGINED CONTROL IN THE ARROW TASK
+% get state 2 data, randomly selected between 300 and 400ms after target on
+% for state 3 data, start daq randomly between onset and 200ms, with next
+% bin randomly between 400 and 500ms.
+D1i={};
+D2i={};
+D3i={};
+D4i={};
+D5i={};
+D6i={};
+D7i={};
+files_not_loaded=[];
+len_data=[];
+for i=1:length(imag_files)
+    files = imag_files{i};
+    disp(i/length(imag_files))
+    for j=1:length(files)
+        try
+            load(files{j})
+            file_loaded = true;
+        catch
+            file_loaded=false;
+            disp(['Could not load ' files{j}]);
+            files_not_loaded=[files_not_loaded;files(j)];
+        end
+        if file_loaded
+            idx0 = find(TrialData.TaskState==2) ;
+            idx = find(TrialData.TaskState==3) ;
+            idx=[idx0 idx]; % want both as data is segmented 300ms after state 2 start
+            raw_data = cell2mat(TrialData.BroadbandData(idx)');
+            idx1 = find(TrialData.TaskState==4) ;
+            raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
+            id = TrialData.TargetID;
+            s = size(raw_data,1);
+            data_seg={};
+            if s<800 % for really quick decisions just pad data from state 4
+                len = 800-s;
+                tmp = raw_data4(1:len,:);
+                raw_data = [raw_data;tmp];
+                data_seg = raw_data;
+                len_data = [len_data;length(data_seg)];
+            elseif s>800 && s<1000 % if not so quick, prune to data to 600ms
+                raw_data = raw_data(1:800,:);
+                data_seg = raw_data;
+                len_data = [len_data;length(data_seg)];
+            elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
+                %bins =1:400:s; % originally only for state 3
+                bins = 300:500:s;
+                jitter = round(100*rand(size(bins)));% add 1 here to avoid zero index errors if bins start at 0          
+                bins=bins+jitter;
+                raw_data = [raw_data;raw_data4];
+                for k=1:length(bins)-1
+                    tmp = raw_data(bins(k)+[0:999],:);
+                    data_seg = cat(2,data_seg,tmp);                    
+                end
+                xx = bins(k)+[0:999];
+                len_data = [len_data;xx(end)];
+            end
+            
+            
+
+%             feat_stats = TrialData.FeatureStats;
+%             feat_stats.Mean = feat_stats.Mean(769:end);
+%             feat_stats.Var = feat_stats.Var(769:end);
+%             clear feat_stats1
+%             feat_stats1(1:length(data_seg)) = feat_stats;
+% 
+%             if id==1
+%                 D1i = cat(2,D1i,data_seg);
+%                 %D1f = cat(2,D1f,feat_stats1);
+%             elseif id==2
+%                 D2i = cat(2,D2i,data_seg);
+%                 %D2f = cat(2,D2f,feat_stats1);
+%             elseif id==3
+%                 D3i = cat(2,D3i,data_seg);
+%                 %D3f = cat(2,D3f,feat_stats1);
+%             elseif id==4
+%                 D4i = cat(2,D4i,data_seg);
+%                 %D4f = cat(2,D4f,feat_stats1);
+%             elseif id==5
+%                 D5i = cat(2,D5i,data_seg);
+%                 %D5f = cat(2,D5f,feat_stats1);
+%             elseif id==6
+%                 D6i = cat(2,D6i,data_seg);
+%                 %D6f = cat(2,D6f,feat_stats1);
+%             elseif id==7
+%                 D7i = cat(2,D7i,data_seg);
+%                 %D7f = cat(2,D7f,feat_stats1);
+%             end
+        end
+    end
+end
+
+
+
+% GETTING DATA FROM ONLINE BCI CONTROL IN THE ARROW TASK
+% essentially getting 600ms epochs
+D1={};
+D2={};
+D3={};
+D4={};
+D5={};
+D6={};
+D7={};
+D1f={};
+D2f={};
+D3f={};
+D4f={};
+D5f={};
+D6f={};
+D7f={};
+sizes=[];
+for i=1:length(online_files)
+    files = online_files{i};
+    disp(i/length(online_files))
+    for j=1:length(files)
+        try
+            load(files{j})
+            file_loaded = true;
+        catch
+            file_loaded=false;
+            disp(['Could not load ' files{j}]);
+            files_not_loaded=[files_not_loaded;files(j)];
+        end
+        if file_loaded
+            idx0 = find(TrialData.TaskState==2) ;
+            idx = find(TrialData.TaskState==3) ;
+            idx=[idx0 idx]; % want both as data is segmented 300ms after state 2 start
+            raw_data = cell2mat(TrialData.BroadbandData(idx)');
+            raw_data2 = cell2mat(TrialData.BroadbandData(idx0)');
+            idx1 = find(TrialData.TaskState==4) ;
+            raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
+            id = TrialData.TargetID;
+            s = size(raw_data,1);
+            data_seg={};
+            sizes=[sizes s];
+            if s<850 % for really quick decisions just pad data from state 2
+                len = 850-s;
+                %tmp = raw_data4(1:len,:);
+                %raw_data = [raw_data;tmp];                
+                tmp=raw_data2(end-(1000-s-1):end,:);
+                raw_data = [tmp;raw_data];
+                data_seg = raw_data;
+
+            %elseif s>800 && s<1000 % if not so quick, prune to data to 600ms
+            %    raw_data = raw_data(1:1000,:);
+            %    data_seg = raw_data;
+            %elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
+            else
+                % old for state 3 alone
+                %                 bins =1:400:s;
+                %                 raw_data = [raw_data;raw_data4];
+                %                 for k=1:length(bins)-1
+                %                     try
+                %                         tmp = raw_data(bins(k)+[0:799],:);
+                %                     catch
+                %                         tmp=[];
+                %                     end
+                %                     data_seg = cat(2,data_seg,tmp);
+                %                 end
+
+                % new for state 2 and 3
+                bins = 300:500:s;
+                jitter = round(100*rand(size(bins)));% add 1 here to avoid zero index errors if bins start at 0
+                bins=bins+jitter;
+                raw_data = [raw_data;raw_data4];
+                for k=1:length(bins)-1
+                    try
+                        tmp = raw_data(bins(k)+[0:999],:);
+                    catch
+                        tmp=[];
+                    end
+                    data_seg = cat(2,data_seg,tmp);                    
+                end
+                xx = bins(k)+[0:999];
+                len_data = [len_data;xx(end)];
+            end
+
+%             feat_stats = TrialData.FeatureStats;
+%             feat_stats.Mean = feat_stats.Mean(769:end);
+%             feat_stats.Var = feat_stats.Var(769:end);
+%             clear feat_stats1
+%             feat_stats1(1:length(data_seg)) = feat_stats;
+% 
+%             if id==1
+%                 D1 = cat(2,D1,data_seg);
+%                 %D1f = cat(2,D1f,feat_stats1);
+%             elseif id==2
+%                 D2 = cat(2,D2,data_seg);
+%                 %D2f = cat(2,D2f,feat_stats1);
+%             elseif id==3
+%                 D3 = cat(2,D3,data_seg);
+%                 %D3f = cat(2,D3f,feat_stats1);
+%             elseif id==4
+%                 D4 = cat(2,D4,data_seg);
+%                 %D4f = cat(2,D4f,feat_stats1);
+%             elseif id==5
+%                 D5 = cat(2,D5,data_seg);
+%                 %D5f = cat(2,D5f,feat_stats1);
+%             elseif id==6
+%                 D6 = cat(2,D6,data_seg);
+%                 %D6f = cat(2,D6f,feat_stats1);
+%             elseif id==7
+%                 D7 = cat(2,D7,data_seg);
+%                 %D7f = cat(2,D7f,feat_stats1);
+%             end
+         end
+    end
+
+end
+
+xx=sum(len_data)/1e3; % seconds
+tt = xx/3600; % hours
+time_3D_Arrow=tt
+time_idx_3DArrow = length(len_data)
+
+
+%%%% getting robot batch data 
+root_folder='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+folder_days = {'20210716','20210728','20210804','20210806', '20220202','20220211',...
+    '20220225','20220304','20220309','20220311','20220316','20220323','20220325',...
+    '20220330','20220420','20220422','20220429','20220504','20220506','20220513',...
+    '20220518','20220520','20220715','20220722','20220727','20220729',...
+    '20220216','20220803','20220819','20220831','20220902',...
+    '20220907','20220909','20220916'};
+
+% 20220216 has 9D robotbatch seems important
+
+files=[];
+python_files=[];
+for i=1:length(folder_days)
+    folder_path = fullfile(root_folder,folder_days{i},'RealRobotBatch');
+    files = [files;findfiles('',folder_path,1)'];
+
+    %     python_folder_path = dir(folder_path);
+    %     python_folders={};
+    %     for j=3:length(python_folder_path)
+    %         python_folders=cat(2,python_folders,python_folder_path(j).name);
+    %     end
+    %
+    %     for j=1:length(python_folders)
+    %         folder_path = fullfile(root_folder,folder_days{i},'Python',folder_days{i});
+    %     end
+end
+
+files1=[];
+for i=1:length(files)
+    if length(regexp(files{i},'Data'))>0
+        files1=[files1;files(i)];
+    end
+end
+files=files1;
+
+
+% load the robot data for the LSTM format
+D1={};
+D2={};
+D3={};
+D4={};
+D5={};
+D6={};
+D7={};
+robot_batch_trials_lstm=[];
+files_not_loaded=[];
+for i=1:length(files)
+    disp(i/length(files)*100)
+
+    try
+        load(files{i})
+        file_loaded = true;
+        warning('off')
+    catch
+        file_loaded=false;
+        disp(['Could not load ' files{i}]);
+        files_not_loaded=[files_not_loaded;files(i)];
+    end
+    if file_loaded
+
+        idx00 = find(TrialData.TaskState==1) ;
+        idx0 = find(TrialData.TaskState==2) ;
+        idx = find(TrialData.TaskState==3) ;
+        idx=[idx00 idx0 idx];
+        raw_data = cell2mat(TrialData.BroadbandData(idx)');
+        idx1 = find(TrialData.TaskState==4) ;
+        raw_data4 = cell2mat(TrialData.BroadbandData(idx1)');
+        id = TrialData.TargetID;
+        s = size(raw_data,1);
+        %         if s>7800
+        %             s=7800;
+        %         end
+        data_seg={};
+        if s<800 % for really quick decisions just pad data from state 4
+            len = 800-s;
+            tmp = raw_data4(1:len,:);
+            raw_data = [raw_data;tmp];
+            data_seg = raw_data;
+        elseif s>800 && s<1000 % if not so quick, prune to data to 600ms
+            raw_data = raw_data(1:800,:);
+            data_seg = raw_data;
+        elseif s>1000% for all other data length, have to parse the data in overlapping chuncks of 600ms, 50% overlap
+            %bins =1:400:s; % originally only for state 3
+            bins = 1:500:s;
+            jitter = round(100*rand(size(bins)));
+            bins=bins+jitter;
+            raw_data = [raw_data;raw_data4];
+            for k=1:length(bins)-1
+                tmp = raw_data(bins(k)+[0:999],:);
+                data_seg = cat(2,data_seg,tmp);
+            end
+            xx = bins(k)+[0:999];
+            len_data = [len_data;xx(end)];
+        end
+
+%         feat_stats = TrialData.FeatureStats;
+%         feat_stats.Mean = feat_stats.Mean(769:end);
+%         feat_stats.Var = feat_stats.Var(769:end);
+%         clear feat_stats1
+%         feat_stats1(1:length(data_seg)) = feat_stats;
+% 
+%         if id==1
+%             D1 = cat(2,D1,data_seg);
+%             %D1f = cat(2,D1f,feat_stats1);
+%         elseif id==2
+%             D2 = cat(2,D2,data_seg);
+%             %D2f = cat(2,D2f,feat_stats1);
+%         elseif id==3
+%             D3 = cat(2,D3,data_seg);
+%             %D3f = cat(2,D3f,feat_stats1);
+%         elseif id==4
+%             D4 = cat(2,D4,data_seg);
+%             %D4f = cat(2,D4f,feat_stats1);
+%         elseif id==5
+%             D5 = cat(2,D5,data_seg);
+%             %D5f = cat(2,D5f,feat_stats1);
+%         elseif id==6
+%             D6 = cat(2,D6,data_seg);
+%             %D6f = cat(2,D6f,feat_stats1);
+%         elseif id==7
+%             D7 = cat(2,D7,data_seg);
+%             %D7f = cat(2,D7f,feat_stats1);
+%         end
+%         robot_batch_trials_lstm(i).TargetID = id;
+%         robot_batch_trials_lstm(i).RawData = data_seg;
+% 
+%         folder_name=files{i}(61:68);
+%         for j=1:length(folder_days)
+%             if strcmp(folder_days{j},folder_name)
+%                 robot_batch_trials_lstm(i).Day = j;
+%                 break
+%             end
+%         end
+    end
+end
+
+
+xx=sum(len_data)/1e3; % seconds
+tt = xx/3600; % hours
+rem(xx,3600)
+
+time_total=tt
+
+time_robot = sum(len_data(time_idx_3DArrow+1:end))/1e3/3600;
+
+% total time justing PnP and learning experiments in 3D arrow  is 5.5357
+% hours. total time with the robot batch is 5.5139 hours. Total time is
+% 11.0496 hours
+
+
+
+%% getting the temporal data for a RNN/LSTM based decoder
 
 
 clc;clear
