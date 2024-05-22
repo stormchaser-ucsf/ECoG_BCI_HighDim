@@ -3082,14 +3082,14 @@ hh.XData = [0.75 1.25];
 hh=hline(mean(CL2),'k');
 hh.LineWidth=3;
 hh.XData = [1.75 2.25];
-aa = find(idx==1);
+aa = find(idx==1); % this is B3
 x=(1:2) + 0.1*randn(length(aa),2);
 h=scatter(x,[CL1(aa)' CL2(aa)'],'filled');
 for i=1:2
     h(i).MarkerFaceColor = 'r';
     h(i).MarkerFaceAlpha = 0.3;
 end
-aa = find(idx==2);
+aa = find(idx==2); % this is B1
 x=(1:2) + 0.1*randn(length(aa),2);
 hh=scatter(x,[CL1(aa)' CL2(aa)'],'filled');
 for i=1:3
@@ -3135,7 +3135,7 @@ idx2 = find(subj==2);
 mvmt1 = mvmt_type(idx1);
 mvmt2 = mvmt_type(idx2);
 
-parfor i=1:2000
+parfor i=1:1000
   
 
     disp(i)
@@ -3178,7 +3178,7 @@ stat = glm.Coefficients.tStat(1);
 stat_boot=[];
 xx = table2array(data1);
 xx(:,3) = xx(:,3)-mean(xx(:,3));
-for i=1:1000
+parfor i=1:1000
     disp(i)
     idx = randi(length(xx),1,length(xx));
     xx1 = xx(idx,:);

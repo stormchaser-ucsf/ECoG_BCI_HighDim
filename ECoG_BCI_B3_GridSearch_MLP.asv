@@ -335,7 +335,7 @@ end
  
 
 
-%% MAIN
+%%
 % code to grid search to best get MLP parameters
 % trying here for layer width and number of units
 
@@ -350,8 +350,8 @@ addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 load session_data_B3
 addpath 'C:\Users\nikic\Documents\MATLAB'
 condn_data={};
-pooling=0;
-for i=1:11%length(session_data)
+pooling=1;
+for i=1:2%length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
@@ -555,8 +555,7 @@ addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 addpath 'C:\Users\nikic\Documents\MATLAB'
-%load B3_MLP_NN_Param_Optim_V2
-load B3_MLP_NN_Param_Optim
+load B3_MLP_NN_Param_Optim_V2
 % plotting just mean
 acc=[];acc1=[];
 for i=1:length(cv_acc3)
@@ -601,7 +600,7 @@ acc1(end+1:length(acc3))=NaN;
 acc2(end+1:length(acc3))=NaN;
 acc=[acc0 acc1 acc2 acc3];
 figure;
-boxplot(acc,'notch','off')
+boxplot(acc,'notch','on')
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
 ylabel('Bin Level Decoding Acc')
@@ -609,17 +608,6 @@ xticks(1:4)
 xticklabels({'0 Layers','1 Layer','2 Layer','3 Layer'})
 box off
 title('Cross. Valid for MLP width in B3')
-
-
-% sign rank tests
-clear p
-[p(1),h,stats] = ranksum(acc0(~isnan(acc0)),acc1(~isnan(acc1)))
-[p(2),h,stats] = ranksum(acc0(~isnan(acc0)),acc2(~isnan(acc2)))
-[p(3),h,stats] = ranksum(acc0(~isnan(acc0)),acc3(~isnan(acc3)))
-[p(4),h,stats] = ranksum(acc1(~isnan(acc1)),acc2(~isnan(acc2)))
-[p(5),h,stats] = ranksum(acc1(~isnan(acc1)),acc3(~isnan(acc3)))
-[p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)))
-[pfdr,pval]=fdr(p,0.05);pval
 
 % testing comparison of units in single layer
 acc_128=[];
@@ -680,7 +668,6 @@ for iter=1:10
     end
 end
 
-num_units = [32 64 90:15:250];
 acc=[];acc1=[];
 for i=1:length(cv_singleLayer)
     tmp = cv_singleLayer(i).cv_perf;

@@ -1057,6 +1057,8 @@ box off
 set(gca,'LineWidth',1)
 
 
+[P,H,STATS] = ranksum(recon_error,recon_error1)
+
 [h p tb st]=ttest2(recon_error,recon_error1)
 
 

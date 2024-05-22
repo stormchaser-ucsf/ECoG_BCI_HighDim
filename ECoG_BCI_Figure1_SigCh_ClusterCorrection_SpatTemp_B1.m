@@ -685,7 +685,7 @@ for i=1:length(idx)
         LIMO.data.neighbouring_matrix=neighb;
         [mask,cluster_p,max_th] = ...
             limo_clustering((t_scores.^2),p_scores,...
-            (tboot.^2),pboot,LIMO,2,0.001,0);
+            (tboot.^2),pboot,LIMO,2,0.01,0);
         figure;subplot(3,1,1)
         tt=linspace(-3,5,size(t_scores,2));
         imagesc(tt,1:128,t_scores);
@@ -719,8 +719,13 @@ imaging_B1;close all
 plot_elec_wts(sig_ch*6,cortex,elecmatrix,chMap)
    
 figure;
-imagesc(tt,1:128,abs(t_scores1));
+imagesc(tt,1:128,(t_scores1));
 set(gcf,'Color','w')
+xlabel('Time in sec')
+ylabel('Channel')
+vline([-2 0],'--w')
+xticks([-3:5])
+
 xlim([-3 3])
 
 % plotting sig channels with size determined by t-scores
@@ -748,8 +753,9 @@ toc
 
 % PLOTTING A FEW EXEMPLAR ERPS with CI
 %load high_res_erp_hgLFO_imagined_data
-ch = [31	25 103	106 ];
-%ch=[54	39 18	1];
+%ch = [31	25 103	106 ]; % delta 
+%ch=[54	39 18	1]; % beta
+ch = [50	54 28	18];
 opt=statset('UseParallel',true);
 figure;
 for i=1:length(ch)
@@ -776,7 +782,8 @@ for i=1:length(ch)
     plot(tt,(m),'b','LineWidth',1)
     axis tight
     xlim([-2.5 4])
-    ylim([-1.0 4.5])
+    %ylim([-1.0 5])
+    ylim([-1.5 1])
     vline([-2 0],'k')
     hline(0,'k')
     
@@ -792,7 +799,8 @@ for i=1:length(ch)
     
 
     for j=1:2:length(idx)
-        h1=hline(-0.75,'-g');
+        %h1=hline(-0.75,'-g');
+        h1=hline(-1.4,'-g');
         set(h1,'LineWidth',3)
         set(h1,'Color',[0 .5 0 1])
         set(h1,'XData',[tt(idx(j)) tt(idx(j+1))])
@@ -1441,12 +1449,19 @@ imagesc(neighb)
 
 
 % load the hG LFO ERP Data
-load high_res_erp_hgLFO_imagined_data
+%load high_res_erp_hgLFO_imagined_data
+
+load high_res_delta_erp_imagined_data
+
+ERP_Data_bkup=ERP_Data;
 
 
 
 data_overall=[];
-idx = [19 2 3]; % both middle, rt index, rt middle
+%idx = [19 2 3]; % both middle, rt index, rt middle for hg
+idx = [1 4 9]; % both middle, rt thumb, rt middle for hg
+
+ERP_Data=  ERP_Data_bkup;
 
 % downsample the data to 50Hz for the specific movements 
 for i=1:length(idx)
@@ -1461,7 +1476,7 @@ for i=1:length(idx)
     ERP_Data{idx(i)} = tmp_data;
 end
 
-ch=106; % face is 101, hand is 103 for thumb, index and middle
+ch=25; % face is 101, hand is 103 for thumb, index and middle
 figure;hold on
 set(gcf,'Color','w')
 %cmap={'r','g','b','y','m'};
@@ -1506,84 +1521,33 @@ xlim([-1 3])
 %dependent variable -> erp
 %independent variable -> movement type
 %fitrm
-
-Fvalues=[];pval=[];
-parfor i=1:size(data_overall,2)
-    disp(i)
-    a = (squeeze(data_overall(1:3,i,:)))';
-    %tmp_bad = zscore(a);
-    %artifact_check = logical(abs(tmp_bad)>3);
-    %a(artifact_check)=NaN;   
-    a=a(:);
-    erps=a;
-    mvmt = num2str([ones(size(a,1)/3,1);2*ones(size(a,1)/3,1);3*ones(size(a,1)/3,1)]);
-    subj = table([1],'VariableNames',{'Subject'});
-    data = table(mvmt,erps);
-    rm=fitrm(data,'erps~mvmt');
-    ranovatbl = anova(rm);
-    Fvalues(i) = ranovatbl{2,6};
-    pval(i) = ranovatbl{2,7};
-end
-
-% get the boot values
-Fvalues_boot=[];p_boot=[];
-parfor i=1:size(data_overall,2)
-    disp(i)
-    a = (squeeze(data_overall(1:3,i,:)))';
-    %tmp_bad = zscore(a);
-    %artifact_check = logical(abs(tmp_bad)>3);
-    %a(artifact_check)=NaN;
-
-    % center the data
-    a = a-nanmean(a);
-
-    % now sample with replacement for each column to create new data
-    % matrix over 1000 iterations
-    Fvalues_tmp=[];ptmp=[];
-    for iter=1:750      
-        a_tmp=[];
-        for j=1:size(a,2)
-            a1 = randi([1,size(a,1)],size(a,1),1);
-            a_tmp(:,j) = a(a1,j);
-        end
-        a_tmp=a_tmp(:);
-        erps=a_tmp;
-        mvmt = num2str([ones(size(erps,1)/3,1);...
-            2*ones(size(erps,1)/3,1);3*ones(size(erps,1)/3,1)]);
-        data = table(mvmt,erps);
-        rm=fitrm(data,'erps~mvmt');
-        ranovatbl = anova(rm);
-        Fvalues_tmp(iter) = ranovatbl{2,6};
-        ptmp(iter) =  ranovatbl{2,7};
-    end
-    Fvalues_boot(i,:) = Fvalues_tmp;
-    p_boot(i,:) = ptmp;
-end
-
 % 
-% %%% using just simple regular anova instead of repeated measures
 % Fvalues=[];pval=[];
 % parfor i=1:size(data_overall,2)
 %     disp(i)
 %     a = (squeeze(data_overall(1:3,i,:)))';
-%     tmp_bad = zscore(a);
-%     artifact_check = logical(abs(tmp_bad)>3);
-%     a(artifact_check)=NaN;   
-%     [P,ANOVATAB,STATS]  = anova1(a,[],'off');   
-%     Fvalues(i) = ANOVATAB{2,5};
-%     pval(i) = ANOVATAB{2,6};
+%     %tmp_bad = zscore(a);
+%     %artifact_check = logical(abs(tmp_bad)>3);
+%     %a(artifact_check)=NaN;   
+%     a=a(:);
+%     erps=a;
+%     mvmt = num2str([ones(size(a,1)/3,1);2*ones(size(a,1)/3,1);3*ones(size(a,1)/3,1)]);
+%     subj = table([1],'VariableNames',{'Subject'});
+%     data = table(mvmt,erps);
+%     rm=fitrm(data,'erps~mvmt');
+%     ranovatbl = anova(rm);
+%     Fvalues(i) = ranovatbl{2,6};
+%     pval(i) = ranovatbl{2,7};
 % end
-% %figure;plot(Fvalues)
-% %figure;plot(pval);hline(0.05)
 % 
-% % get the boot values using simple anova1
+% % get the boot values
 % Fvalues_boot=[];p_boot=[];
 % parfor i=1:size(data_overall,2)
 %     disp(i)
 %     a = (squeeze(data_overall(1:3,i,:)))';
-%     tmp_bad = zscore(a);
-%     artifact_check = logical(abs(tmp_bad)>3);
-%     a(artifact_check)=NaN;
+%     %tmp_bad = zscore(a);
+%     %artifact_check = logical(abs(tmp_bad)>3);
+%     %a(artifact_check)=NaN;
 % 
 %     % center the data
 %     a = a-nanmean(a);
@@ -1597,14 +1561,65 @@ end
 %             a1 = randi([1,size(a,1)],size(a,1),1);
 %             a_tmp(:,j) = a(a1,j);
 %         end
-% 
-%         [P,ANOVATAB,STATS]  = anova1(a_tmp,[],'off');
-%         Fvalues_tmp(iter) = ANOVATAB{2,5};
-%         ptmp(iter)  = ANOVATAB{2,6};
+%         a_tmp=a_tmp(:);
+%         erps=a_tmp;
+%         mvmt = num2str([ones(size(erps,1)/3,1);...
+%             2*ones(size(erps,1)/3,1);3*ones(size(erps,1)/3,1)]);
+%         data = table(mvmt,erps);
+%         rm=fitrm(data,'erps~mvmt');
+%         ranovatbl = anova(rm);
+%         Fvalues_tmp(iter) = ranovatbl{2,6};
+%         ptmp(iter) =  ranovatbl{2,7};
 %     end
 %     Fvalues_boot(i,:) = Fvalues_tmp;
 %     p_boot(i,:) = ptmp;
 % end
+
+
+%%% using just simple regular anova instead of repeated measures
+Fvalues=[];pval=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:end,i,:)))';
+    tmp_bad = zscore(a);
+    artifact_check = logical(abs(tmp_bad)>3);
+    a(artifact_check)=NaN;   
+    [P,ANOVATAB,STATS]  = anova1(a,[],'off');   
+    Fvalues(i) = ANOVATAB{2,5};
+    pval(i) = ANOVATAB{2,6};
+end
+%figure;plot(Fvalues)
+%figure;plot(pval);hline(0.05)
+
+% get the boot values using simple anova1
+Fvalues_boot=[];p_boot=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:end,i,:)))';
+    tmp_bad = zscore(a);
+    artifact_check = logical(abs(tmp_bad)>3);
+    a(artifact_check)=NaN;
+
+    % center the data
+    a = a-nanmean(a);
+
+    % now sample with replacement for each column to create new data
+    % matrix over 1000 iterations
+    Fvalues_tmp=[];ptmp=[];
+    for iter=1:750      
+        a_tmp=[];
+        for j=1:size(a,2)
+            a1 = randi([1,size(a,1)],size(a,1),1);
+            a_tmp(:,j) = a(a1,j);
+        end
+
+        [P,ANOVATAB,STATS]  = anova1(a_tmp,[],'off');
+        Fvalues_tmp(iter) = ANOVATAB{2,5};
+        ptmp(iter)  = ANOVATAB{2,6};
+    end
+    Fvalues_boot(i,:) = Fvalues_tmp;
+    p_boot(i,:) = ptmp;
+end
 
 
 % perform limo clustering, 1 in first dimension , and iterations in last

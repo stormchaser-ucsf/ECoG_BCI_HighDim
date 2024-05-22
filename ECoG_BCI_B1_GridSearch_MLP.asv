@@ -357,7 +357,6 @@ end
 % trying here for layer width and number of units
 
 % get the data in trial format
-tic
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
@@ -560,8 +559,8 @@ for iter=1:5
     end    
 end
 
-save B1_MLP_NN_Param_Optim_NoPooling_New_pooling cv_acc3 cv_acc3_trialLevel -v7.3
-toc
+%save B1_MLP_NN_Param_Optim_NoPooling_New cv_acc3 cv_acc3_trialLevel -v7.3
+
 %% getting decoding accuracies for zero layer
 i3=length(cv_acc3)+1;
 cv_acc3(i3).layers=[0];

@@ -623,6 +623,269 @@ toc
 
 save B3_delta_Imagined_SpatTemp_New_New_ArtfCorr sig_ch_all -v7.3
 
+
+%% (MAIN) PLOTTING DIFFERENCES BETWEEN MOVEMENTS AT THE SINGLE CHANNEL LEVEL
+% with temporal clustering of ANOVA F-values 
+
+
+clc;clear
+addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
+addpath('C:\Users\nikic\Documents\MATLAB')
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+
+
+addpath('C:\Users\nikic\Documents\MATLAB\limo_v1.4')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools')
+addpath('C:\Users\nikic\Documents\GitHub\limo_tools\limo_cluster_functions')
+
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+load('ECOG_Grid_8596_000063_B3.mat')
+chMap=ecog_grid;
+grid_layout=chMap;
+
+% rename all the channels after accounting for 108,113,118
+for i=109:112
+    [x, y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-1;
+end
+
+for i=114:117
+    [x ,y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-2;
+end
+
+for i=119:256
+    [x ,y]=find(grid_layout ==i);
+    grid_layout(x,y)=grid_layout(x,y)-3;
+end
+
+neighb=zeros(size(grid_layout));
+for i=1:numel(grid_layout)
+    [x y]=find(grid_layout == i);
+    Lx=[x-1 x+1];
+    Ly=[y-1 y+1];
+    Lx=Lx(logical((Lx<=size(grid_layout,1)) .* (Lx>0)));
+    Ly=Ly(logical((Ly<=size(grid_layout,2)) .* (Ly>0)));
+    temp=grid_layout(Lx,Ly);
+    ch1=[grid_layout(x,Ly)';grid_layout(Lx,y);];
+    neighb(i,ch1)=1;
+end
+figure;
+imagesc(neighb)
+
+
+% load the hG LFO ERP Data
+%load high_res_erp_hgLFO_imagined_data
+
+load B3_delta_high_res_erp_imagined_data
+
+ERP_Data_bkup=ERP_Data;
+
+
+
+data_overall=[];
+%idx = [19 2 3]; % both middle, rt index, rt middle for hg
+idx = [1 4 9]; % both middle, rt thumb, rt middle for hg
+
+ERP_Data=  ERP_Data_bkup;
+
+% downsample the data to 50Hz for the specific movements 
+for i=1:length(idx)
+    data = ERP_Data{idx(i)};    
+    % downsample 
+    tmp_data=[];
+    for j=1:size(data,3)
+        tmp =  squeeze(data(:,:,j));
+        tmp = resample(tmp,50,1e3);
+        tmp_data(:,:,j) = tmp;
+    end
+    ERP_Data{idx(i)} = tmp_data;
+end
+
+ch=25; % face is 101, hand is 103 for thumb, index and middle
+figure;hold on
+set(gcf,'Color','w')
+%cmap={'r','g','b','y','m'};
+cmap={'m','b','k'};
+opt=statset('UseParallel',true);
+for i=1:length(idx)
+    data = ERP_Data{idx(i)};    
+    data=squeeze(data(:,ch,:));
+
+    % bad trial removal
+    %tmp_bad=zscore(data')';
+    %artifact_check = logical(abs(tmp_bad)>3.0);
+    %data(artifact_check)=NaN;
+    %[h,p,ci,stats] = ttest(chdata');
+
+    data=data';
+    %smooth data
+    parfor j=1:size(data,1)
+        data(j,:) = smooth(data(j,:),10);
+    end
+
+    data_overall(i,:,:)=data';
+
+    m=nanmean(data,1);
+    mb = sort(bootstrp(1000,@nanmean,data,'Options',opt));
+    tt=linspace(-3,5,size(data,2));
+    [fillhandle,msg]=jbfill(tt,mb(25,:),mb(975,:)...
+        ,cmap{i},cmap{i},1,.2);
+    hold on
+    plot(tt,m,'Color',cmap{i},'LineWidth',1)
+end
+h=vline([0]);
+h.LineWidth=1.5;
+h.Color='r';
+h=vline([5]);
+h.LineWidth=1.5;
+h.Color='g';
+hline(0,'k')
+xlim([-1 3])
+
+% run the ANOVA test at each time-point and do temporal clustering
+%dependent variable -> erp
+%independent variable -> movement type
+%fitrm
+% 
+% Fvalues=[];pval=[];
+% parfor i=1:size(data_overall,2)
+%     disp(i)
+%     a = (squeeze(data_overall(1:3,i,:)))';
+%     %tmp_bad = zscore(a);
+%     %artifact_check = logical(abs(tmp_bad)>3);
+%     %a(artifact_check)=NaN;   
+%     a=a(:);
+%     erps=a;
+%     mvmt = num2str([ones(size(a,1)/3,1);2*ones(size(a,1)/3,1);3*ones(size(a,1)/3,1)]);
+%     subj = table([1],'VariableNames',{'Subject'});
+%     data = table(mvmt,erps);
+%     rm=fitrm(data,'erps~mvmt');
+%     ranovatbl = anova(rm);
+%     Fvalues(i) = ranovatbl{2,6};
+%     pval(i) = ranovatbl{2,7};
+% end
+% 
+% % get the boot values
+% Fvalues_boot=[];p_boot=[];
+% parfor i=1:size(data_overall,2)
+%     disp(i)
+%     a = (squeeze(data_overall(1:3,i,:)))';
+%     %tmp_bad = zscore(a);
+%     %artifact_check = logical(abs(tmp_bad)>3);
+%     %a(artifact_check)=NaN;
+% 
+%     % center the data
+%     a = a-nanmean(a);
+% 
+%     % now sample with replacement for each column to create new data
+%     % matrix over 1000 iterations
+%     Fvalues_tmp=[];ptmp=[];
+%     for iter=1:750      
+%         a_tmp=[];
+%         for j=1:size(a,2)
+%             a1 = randi([1,size(a,1)],size(a,1),1);
+%             a_tmp(:,j) = a(a1,j);
+%         end
+%         a_tmp=a_tmp(:);
+%         erps=a_tmp;
+%         mvmt = num2str([ones(size(erps,1)/3,1);...
+%             2*ones(size(erps,1)/3,1);3*ones(size(erps,1)/3,1)]);
+%         data = table(mvmt,erps);
+%         rm=fitrm(data,'erps~mvmt');
+%         ranovatbl = anova(rm);
+%         Fvalues_tmp(iter) = ranovatbl{2,6};
+%         ptmp(iter) =  ranovatbl{2,7};
+%     end
+%     Fvalues_boot(i,:) = Fvalues_tmp;
+%     p_boot(i,:) = ptmp;
+% end
+
+
+%%% using just simple regular anova instead of repeated measures
+Fvalues=[];pval=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:end,i,:)))';
+    tmp_bad = zscore(a);
+    artifact_check = logical(abs(tmp_bad)>3);
+    a(artifact_check)=NaN;   
+    [P,ANOVATAB,STATS]  = anova1(a,[],'off');   
+    Fvalues(i) = ANOVATAB{2,5};
+    pval(i) = ANOVATAB{2,6};
+end
+%figure;plot(Fvalues)
+%figure;plot(pval);hline(0.05)
+
+% get the boot values using simple anova1
+Fvalues_boot=[];p_boot=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:end,i,:)))';
+    tmp_bad = zscore(a);
+    artifact_check = logical(abs(tmp_bad)>3);
+    a(artifact_check)=NaN;
+
+    % center the data
+    a = a-nanmean(a);
+
+    % now sample with replacement for each column to create new data
+    % matrix over 1000 iterations
+    Fvalues_tmp=[];ptmp=[];
+    for iter=1:750      
+        a_tmp=[];
+        for j=1:size(a,2)
+            a1 = randi([1,size(a,1)],size(a,1),1);
+            a_tmp(:,j) = a(a1,j);
+        end
+
+        [P,ANOVATAB,STATS]  = anova1(a_tmp,[],'off');
+        Fvalues_tmp(iter) = ANOVATAB{2,5};
+        ptmp(iter)  = ANOVATAB{2,6};
+    end
+    Fvalues_boot(i,:) = Fvalues_tmp;
+    p_boot(i,:) = ptmp;
+end
+
+
+% perform limo clustering, 1 in first dimension , and iterations in last
+% dimension
+Fvalues_boot = reshape(Fvalues_boot,[1 size(Fvalues_boot)]);
+p_boot = reshape(p_boot,[ 1 size(p_boot)]);
+
+ LIMO.data.chanlocs=[];
+        LIMO.data.neighbouring_matrix=neighb;
+[mask,cluster_p,max_th] = ...
+    limo_clustering(Fvalues,pval,Fvalues_boot,p_boot,...
+    LIMO,3,0.05,0);
+mask(mask>0)=1;
+%figure;plot(pval);
+%hold on; plot(mask/2)
+%plot(tt,mask,'r','LineWidth',2)
+ts=mask;
+idx1 = [0 diff(ts)];
+idx1 = find(idx1~=0);
+if rem(length(idx1),2)==1
+    idx1= [idx1 length(ts)];
+end
+
+
+for j=1:2:length(idx1)
+    h1=hline(-0.5,'-g');
+    set(h1,'LineWidth',3)
+    set(h1,'Color',[0 .5 0 1])
+    set(h1,'XData',[tt(idx1(j)) tt(idx1(j+1))])
+end
+xlim([-1 3])
+
+
+% just plotting channel 106
+imaging_B1;
+sig_ch=zeros(128,1);
+sig_ch(111)=8;
+plot_elec_wts(sig_ch,cortex,elecmatrix,chMap)
+
+
 %% PLOTTING SIG CHANNELS ON  BRAIN
 
 

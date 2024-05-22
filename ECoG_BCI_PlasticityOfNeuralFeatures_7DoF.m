@@ -989,7 +989,8 @@ end
 
 close all
 
-save mahab_distances_Full_B1 -v7.3
+
+
 
 % compare and contrast the reconstruction with the original on an average
 % basis
@@ -9157,6 +9158,47 @@ b=norm(y*y','fro');
 c=norm(x*y','fro');
 d=c/(a*b)
 
+
+%% testing randomizing phase stuff
+
+% creating a dummy signal with two freqencuies in it 
+a=sin(2*pi*2/1e3*(1:2000)) + sin(3.5*pi*2/1e3*(1:2000));
+%a=a+0.15*randn(size(a));
+figure;plot(a)
+title('Signal')
+
+% taking the fft
+ap = fft(a);
+a1 = abs(ap);
+a2 =  angle(ap);
+
+boot_corr=[];
+% scramble the phase 1000 times
+for iter=1:1000
+    a3 = a1 .* exp(1i*a2(randperm(numel(a2))));
+    arecon = ifft(a3);
+    arecon = real(arecon); % its complex as the imaginary  numbers are close to machine precision zero. check it for yourself
+    boot_corr(iter,:) = xcorr((arecon));
+end
+
+boot_corr=sort(boot_corr,1);
+
+figure;plot(xcorr(a));
+hold on
+%plot(mean(boot_corr,1),'r')
+plot(boot_corr(25,:),'--r')
+plot(boot_corr(975,:),'--r')
+
+legend('Actual','Phase shuffled')
+% looks like the peaks are outside the 95% bootstrapped confidence
+% intervals
+
+
+% x=fft(xx);
+% figure;plot(log10(abs(x(1:2000))))
+% x1=fft(boot_corr(975,:));
+% hold on;plot(log10(abs(x1(1:2000))))
+% 
 
 
 

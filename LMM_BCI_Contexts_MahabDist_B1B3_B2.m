@@ -69,12 +69,12 @@ x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
 plot(1:num_days,tmp(:,1),'.b','MarkerSize',20)
 y = tmp(:,1);
 [B,BINT,R,RINT,STATS1] = regress(y,x);
-lm = fitlm(x(:,2),y)
+lm = fitlm(x(:,2),y);
 yhat = x*B;
 plot(1:num_days,yhat,'b','LineWidth',1)
 % online
 plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
-plot(1:num_days,tmp(:,2),'.','Color','k','MarkerSize',20)
+%plot(1:num_days,tmp(:,2),'.','Color','k','MarkerSize',20)
 y = tmp(:,2);
 [B,BINT,R,RINT,STATS2] = regress(y,x);
 yhat = x*B;
@@ -93,11 +93,31 @@ bhat = glm.Coefficients(:,2).Estimate;
 yhat = x*bhat;
 plot(1:num_days,yhat,'m','LineWidth',2)
 
-bhat(1) = bhat(1)+ 7.2399;
+% plot the random effects
+xx=glm.randomEffects;
+if length(xx)==3
+    col = [.65 .65 .65;
+        1 0 0;
+        0 0 1];
+else
+    col = [.65 .65 .65;
+        1 0 0];
+end
+
+for i=1:length(xx)
+    bhat1 = bhat;
+    bhat1(1) = bhat1(1) + xx(i);
+    yhat = x*bhat1;
+    plot(1:num_days,yhat,'Color',[col(i,:) .35],'LineWidth',1);
+end
+
+
+xx=glm.randomEffects;
+bhat(1) = bhat(1)+ xx(1) ;
 yhat = x*bhat;
 plot(1:num_days,yhat,'Color',[1 0 0 .35],'LineWidth',1)
 
-bhat(1) = bhat(1)- 7.2399 - 7.2399;
+bhat(1) = bhat(1)- 6.3309  - 6.3309 ;
 yhat = x*bhat;
 plot(1:num_days,yhat,'Color',[.65 .65 .65 .35],'LineWidth',1)
 
@@ -105,6 +125,8 @@ xlabel('Days')
 ylabel('Mean Mahalanobis Distance')
 ylim([0 75])
 yticks([0:15:75])
+
+
 
 %%%%% plotting B3:
 
@@ -133,7 +155,7 @@ yhat = x*B;
 plot(1:num_days,yhat,'b','LineWidth',1)
 % online
 plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
-plot(1:num_days,tmp(:,2),'.','Color','k','MarkerSize',20)
+%plot(1:num_days,tmp(:,2),'.','Color','k','MarkerSize',20)
 y = tmp(:,2);
 [B,BINT,R,RINT,STATS2] = regress(y,x);
 yhat = x*B;
@@ -152,6 +174,42 @@ xticks([1:num_days])
 bhat = glm.Coefficients(:,2).Estimate;
 yhat = x*bhat;
 plot(1:num_days,yhat,'m','LineWidth',2)
+
+% plot the random effects
+xx=glm.randomEffects;
+if length(xx)==3
+    col = [.65 .65 .65;
+        1 0 0;
+        0 0 1];
+else
+    col = [.65 .65 .65;
+        1 0 0];
+end
+
+for i=1:length(xx)
+    bhat1 = bhat;
+    bhat1(1) = bhat1(1) + xx(i);
+    yhat = x*bhat1;
+    plot(1:num_days,yhat,'Color',[col(i,:) .35],'LineWidth',1);
+end
+
+
+% plot the random effects with random slope and intercept
+xx=glm.randomEffects;
+col = [.65 .65 .65;
+    1 0 0;
+    0 0 1];
+k=1;
+for i=1:2:length(xx)
+    bhat1 = bhat;
+    bhat1 = bhat1 + xx(i:i+1);    
+    yhat = x*bhat1;
+    plot(1:num_days,yhat,'Color',[col(k,:) .35],'LineWidth',1);
+    k=k+1;
+end
+
+
+
 
 bhat(1) = bhat(1)+ 7.349;
 yhat = x*bhat;
@@ -1049,7 +1107,7 @@ hline(0,'--k')
 subj=[];
 decoding_impr=[];
 subj=[ones(11,1);2*ones(10,1)];
-decoding_impr = [tmp(:,3)];
+decoding_impr = [tmp(:,3)]; % change this as required 
 data1 = table(subj,decoding_impr);
 
 glm = fitlme(data1,'decoding_impr ~ 1 + (1|subj)')
@@ -1077,6 +1135,133 @@ sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
 % sign rank tests
 [P,H,STATS] = signrank(tmp(1:11,3))  %b3
 [P,H,STATS] = signrank(tmp(12:end,3)) %b1
+
+
+%% MAHAB DISTANCES ON FULL
+
+
+% B1
+clear;
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
+load mahab_distances_Full_B1 
+
+% B3 
+clear
+cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3')
+load mahab_dist_full_B3
+
+% using a linear mixed effect model and plotting the trend over days
+tmp = [mean(mahab_full_imagined,1)' mean(mahab_full_online,1)' ...
+    mean(mahab_full_batch,1)' ];
+b1=tmp;
+
+day_name = [(1:size(b1,1))';(1:size(b1,1))'];
+mahab_dist = [b1(:,2);b1(:,3)];
+subj = ones(size(mahab_dist));
+mvmt_type = [ones(size(b1,1),1);2*ones(size(b1,1),1)];
+data = table(subj,day_name,mahab_dist,mvmt_type);
+
+% fit
+glm = fitlme(data,'mahab_dist ~  1 + day_name + (1|mvmt_type)   ')
+stat = glm.Coefficients.Estimate;
+tstat1 = glm.Coefficients.tStat(2);
+
+% run stats on the GLM
+data_tmp=data;
+stat_boot=[];
+idx = day_name(1:11);
+parfor iter=1:1000    
+    disp(iter)
+    idx1 = idx(randperm(numel(idx)))
+    idx2 = idx(randperm(numel(idx)))
+    day_name_tmp = [idx1;idx2];
+    %mvmt_type_tmp = mvmt_type(randperm(numel(mvmt_type)));
+    mvmt_type_tmp =  mvmt_type;
+    data_tmp = table(subj,day_name_tmp,mahab_dist,mvmt_type_tmp);
+    glm_tmp = fitlme(data_tmp,'mahab_dist ~  1+ day_name_tmp + (1|mvmt_type_tmp)');
+    stat_boot(iter) = glm_tmp.Coefficients.tStat(2);
+end
+figure;hist(stat_boot);
+vline(tstat1);
+sum(abs(stat_boot)>=abs(tstat1))/length(stat_boot)
+
+
+% regression lines
+tmp=b1;
+figure;
+num_days=size(tmp,1);
+xlim([0 num_days+1])
+hold on
+x= [ ones(size(tmp(:,1),1),1) (1:length(tmp(:,1)))'];
+% imag
+plot(1:num_days,tmp(:,1),'.b','MarkerSize',20)
+y = tmp(:,1);
+[B,BINT,R,RINT,STATS1] = regress(y,x);
+lm = fitlm(x(:,2),y)
+yhat = x*B;
+plot(1:num_days,yhat,'b','LineWidth',1)
+% online
+plot(1:num_days,tmp(:,2),'.k','MarkerSize',20)
+%plot(1:num_days,tmp(:,2),'.','Color','k','MarkerSize',20)
+y = tmp(:,2);
+[B,BINT,R,RINT,STATS2] = regress(y,x);
+yhat = x*B;
+%plot(1:num_days,yhat,'Color',[.65 .65 .65 .85],'LineWidth',1)
+% batch
+plot(1:num_days,tmp(:,3),'.r','MarkerSize',20)
+y = tmp(:,3);
+[B,BINT,R,RINT,STATS3] = regress(y,x);
+yhat = x*B;
+%plot(1:num_days,yhat,'Color',[1 0 0 .35],'LineWidth',1)
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+xticks([1:num_days])
+
+xlabel('Days')
+ylabel('Mean Mahalanobis Distance')
+
+
+
+bhat = glm.Coefficients(:,2).Estimate;
+yhat = x*bhat;
+plot(1:num_days,yhat,'m','LineWidth',2)
+
+% plot the random effects
+xx=glm.randomEffects;
+if length(xx)==3
+    col = [.65 .65 .65;
+        1 0 0;
+        0 0 1];
+else
+    col = [.65 .65 .65;
+        1 0 0];
+end
+
+for i=1:length(xx)
+    bhat1 = bhat;
+    bhat1(1) = bhat1(1) + xx(i);
+    yhat = x*bhat1;
+    plot(1:num_days,yhat,'Color',[col(i,:) .35],'LineWidth',1);
+end
+
+
+
+% 
+xx=glm.randomEffects;
+bhat = glm.Coefficients(:,2).Estimate;
+yhat = x*bhat;
+plot(1:num_days,yhat,'m','LineWidth',2)
+% 
+bhat(1) = bhat(1)+ 135.67 ;
+yhat = x*bhat;
+plot(1:num_days,yhat,'Color',[1 0 0 .35],'LineWidth',1)
+% 
+bhat(1) = bhat(1)- 2*135.67 ;
+yhat = x*bhat;
+plot(1:num_days,yhat,'Color',[.65 .65 .65 .35],'LineWidth',1)
+
+
+
 
 
 

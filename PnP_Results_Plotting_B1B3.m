@@ -9,6 +9,7 @@ clc;clear
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 addpath 'C:\Users\nikic\Documents\MATLAB'
+cd 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker'
 
 
 %foldernames = {'20220601'};
@@ -579,6 +580,7 @@ clc;clear
 root_path='F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3';
 addpath 'C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim\helpers'
 addpath 'C:\Users\nikic\Documents\MATLAB'
+cd 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3'
 
 % take a call to whether include 20231120 -> it didnt have norm 1 durng
 % online control 
@@ -692,6 +694,8 @@ for i=1:length(foldernames)
     %time2target_days = [time2target_days ;time2target(:)];
     %acc_days = [acc_days ;acc(:)];
 end
+
+%save PnP_results_main_B3 -v7.3
 
 %plot results as a scatter plot
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95');
@@ -819,6 +823,7 @@ xlabel('PnP Days')
 xticklabels(days(good_days))
 xlim([0.5 length(acc_med)+0.5])
 box off
+lm
 
 % acc stats
 acc_mean = mean(acch);

@@ -1,4 +1,4 @@
-%% SESSION DATA 9DOF
+%% SESSION DATA 9DOF B1
 
 clc;clear
 session_data=[];
@@ -25,6 +25,41 @@ session_data(2).AM_PM = {'am','am','am','am',...
     'pm','pm','pm','pm',...
     'pm','pm','pm','pm',...
     'pm'};
+
+session_data(3).Day = '20240508';
+session_data(3).folders = {'105811','110241','110654','111120',...
+    '111548','112558','113322','114259'};
+session_data(3).folder_type={'I','I','I','I','I','I',...
+    'I','I'};
+session_data(3).AM_PM = {'am','am','am','am',...
+    'am','am','am','am'};
+
+
+session_data(4).Day = '20240515';
+session_data(4).folders = {'104923','105602','110014','110605',...
+    '111345','111752','112658','113114','113420',...
+    '114553','114855','115152','120009','120321'};
+session_data(4).folder_type={'I','I','I','I','I','I',...
+    'O','O','O',...
+    'B','B','B',...
+    'B1','B1'};
+session_data(4).AM_PM = {'am','am','am','am',...
+    'am','am',...
+    'am','am','am',...
+    'am','am','am',...
+    'am','am'};
+
+session_data(5).Day = '20240517';
+session_data(5).folders = {'134613','135239','135807','140509',...
+    '140924','141334','141736',...
+    '142811','143132','143438',...
+    '143958','144315','144625'};
+session_data(5).folder_type={'I','I','I','I','I','I','I',...
+    'O','O','O',...
+    'B','B','B'};
+session_data(5).AM_PM = {'am','am','am','am','am','am','am',...
+    'am','am','am',...
+    'am','am','am'};
 
 save session_data_9DOF session_data
 
@@ -64,7 +99,7 @@ session_data(k).AM_PM = {'am','am','am','am','am',...
 save session_data_9DOF_B3 session_data
 
 
-%% (MAIN) looking at decoding performance from imagined -> online -> batch
+%% (MAIN B1) looking at decoding performance from imagined -> online -> batch
 % across days
 
 clc;clear;
@@ -80,10 +115,12 @@ acc_batch_days=[];
 iterations=10;
 plot_true=true;
 acc_batch_days_overall=[];
-for i=1:length(session_data)
+binomial_res_chance={};
+for i=1:2%length(session_data)
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
+    %folders_batch = strcmp(session_data(i).folder_type,'B1');
 
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
@@ -102,33 +139,61 @@ for i=1:length(session_data)
     files=[];
     for ii=1:length(folders)
         folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
-        %cd(folderpath)
-        files = [files;findfiles('',folderpath)'];
+        if exist(folderpath)
+            %cd(folderpath)
+            files = [files;findfiles('',folderpath)'];
+        end
     end
 
     %load the data
-    condn_data = load_data_for_MLP_TrialLevel(files);
+    if i>2
+        load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\ECOG_Grid_8596_000067_B3.mat')
+        condn_data = load_data_for_MLP_TrialLevel_B3(files,ecog_grid,0,0);
+    else
+        condn_data = load_data_for_MLP_TrialLevel(files,0,1);
+    end
     % save the data
-    filename = ['condn_data_9DOF_ImaginedTrials_Day' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %filename = ['condn_data_9DOF_ImaginedTrials_Day' num2str(i)];
+    %save(filename, 'condn_data', '-v7.3')
 
     % get cross-val classification accuracy
-    [acc_imagined,train_permutations] = accuracy_imagined_data_9DOF(condn_data, iterations);
+    [acc_imagined,train_permutations,acc_bin,bino_pdf,bino_pdf_chance]...
+        = accuracy_imagined_data_9DOF(condn_data, iterations);
     acc_imagined=squeeze(nanmean(acc_imagined,1));
     if plot_true
-        figure;imagesc(acc_imagined)
-        colormap bone
-        clim([0 1])
+        figure;imagesc(acc_imagined*100)
+        colormap(brewermap(128,'Blues'))
+        clim([0 100])
         set(gcf,'color','w')
-        title(['Accuracy of ' num2str(100*mean(diag(acc_imagined)))])
+        % add text
+        for j=1:size(acc_imagined,1)
+            for k=1:size(acc_imagined,2)
+                if j==k
+                    text(j-0.35,k,num2str(round(100*acc_imagined(k,j),1)),'Color','w')
+                else
+                    text(j-0.35,k,num2str(round(100*acc_imagined(k,j),1)),'Color','k')
+                end
+            end
+        end
+        box on
         xticks(1:9)
         yticks(1:9)
-        xticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
-            'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
-        yticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
-            'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
+        xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle','Rt Wrist','Lt Wrist'})
+        yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle','Rt Wrist','Lt Wrist'})
+        title(['Cross-val trial level OL Acc of ' num2str(100*mean(diag(acc_imagined)))])
     end
     acc_imagined_days(:,i) = diag(acc_imagined);
+
+    % store binomial chance results
+    n = round(median([bino_pdf_chance(1:end).n]));
+    succ = round(median([bino_pdf_chance(1:end).succ]));
+    p=succ/n;
+    xx= 0:n;
+    bp = binopdf(xx,n,p);
+    ch = ceil((1/7)*n);
+    [aa,bb] = find(xx==ch);
+    pval = sum(bp(1:bb));
+    binomial_res_chance(i).Imagined = [pval];
 
 
     %%%%%% get classification accuracy for online data
@@ -142,21 +207,41 @@ for i=1:length(session_data)
     end
 
     % get the classification accuracy
-    acc_online = accuracy_online_data_9DOF(files);
+    [acc_online,acc_online_bins,bino_pdf] = accuracy_online_data_9DOF(files);
     if plot_true
-        figure;imagesc(acc_online)
-        colormap bone
-        clim([0 1])
+        figure;imagesc(acc_online*100)
+        colormap(brewermap(128,'Blues'))
+        clim([0 100])
         set(gcf,'color','w')
-        title(['Accuracy of ' num2str(100*mean(diag(acc_online)))])
+        % add text
+        for j=1:size(acc_online,1)
+            for k=1:size(acc_online,2)
+                if j==k
+                    text(j-0.35,k,num2str(round(100*acc_online(k,j),1)),'Color','w')
+                else
+                    text(j-0.35,k,num2str(round(100*acc_online(k,j),1)),'Color','k')
+                end
+            end
+        end
+        box on
         xticks(1:9)
         yticks(1:9)
-        xticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
-            'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
-        yticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
-            'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
+        xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle','Rt Wrist','Lt Wrist'})
+        yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle','Rt Wrist','Lt Wrist'})
+        title(['CL1 Acc of ' num2str(100*mean(diag(acc_online)))])
     end
     acc_online_days(:,i) = diag(acc_online);
+
+    n = bino_pdf.n;
+    succ = bino_pdf.succ;
+    p=succ/n;
+    xx= 0:n;
+    bp = binopdf(xx,n,p);
+    ch = ceil((1/7)*n);
+    [aa,bb] = find(xx==ch);
+    pval = sum(bp(1:bb));
+    binomial_res_chance(i).online = [pval];
+    
 
 
     %%%%%% classification accuracy for batch data
@@ -170,22 +255,42 @@ for i=1:length(session_data)
     end
 
     % get the classification accuracy
-    acc_batch = accuracy_online_data_9DOF(files);
+    [acc_batch,~,bino_pdf] = accuracy_online_data_9DOF(files);
     if plot_true
-        figure;imagesc(acc_batch)
-        colormap bone
-        clim([0 1])
+        figure;imagesc(acc_batch*100)
+        colormap(brewermap(128,'Blues'))
+        clim([0 100])
         set(gcf,'color','w')
-        title(['Accuracy of ' num2str(100*mean(diag(acc_batch)))])
+        % add text
+        for j=1:size(acc_batch,1)
+            for k=1:size(acc_batch,2)
+                if j==k
+                    text(j-0.35,k,num2str(round(100*acc_batch(k,j),1)),'Color','w')
+                else
+                    text(j-0.35,k,num2str(round(100*acc_batch(k,j),1)),'Color','k')
+                end
+            end
+        end
+        box on
         xticks(1:9)
         yticks(1:9)
-        xticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
-            'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
-        yticklabels({'Rt. Thumb','Left Leg','Lt. Thumb','Head','Tongue','Lips',...
-            'Both Middle','Rot. Rt. Wrist','Rot. Lt. Wrist'})
+        xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle','Rt Wrist','Lt Wrist'})
+        yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle','Rt Wrist','Lt Wrist'})
+        title(['CL2 Acc of ' num2str(100*mean(diag(acc_batch)))])
     end
+    acc_batch_days_total(:,:,i)=acc_batch;
     acc_batch_days(:,i) = diag(acc_batch);
     acc_batch_days_overall(:,:,i)=acc_batch;
+
+    n = bino_pdf.n;
+    succ = bino_pdf.succ;
+    p=succ/n;
+    xx= 0:n;
+    bp = binopdf(xx,n,p);
+    ch = ceil((1/7)*n);
+    [aa,bb] = find(xx==ch);
+    pval = sum(bp(1:bb));
+    binomial_res_chance(i).batch = [pval];
 end
 
 save 9DOF_2days_accuracy_results_New -v7.3
@@ -997,7 +1102,7 @@ if plot_true
 end
 acc_batch_days(:,i) = diag(acc_batch);
 acc_batch_days_overall(:,:,i)=acc_batch;
-end
+
 
 
 
