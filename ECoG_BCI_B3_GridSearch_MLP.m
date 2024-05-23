@@ -406,42 +406,62 @@ for i=2:length(condn_data)
     end
 end
 
-
+condn_data_overall1={};kk=1;
+for ii=1:length(condn_data_overall)   
+    if ~isempty(condn_data_overall(ii).neural)
+        condn_data_overall1(kk).neural = condn_data_overall(i).neural;
+        condn_data_overall1(kk).targetID = condn_data_overall(i).targetID;
+        condn_data_overall1(kk).trial_type = condn_data_overall(i).trial_type;
+        kk=kk+1;
+    end
+end
+condn_data_overall = condn_data_overall1;
 
 %cv_acc_overall={};
 %cv_acc2_overall={};
 %cv_acc3_overall={};
+tic
 cv_acc3={};
-for iter=1:5
+cv_acc3_trialLevel={};
+for iter=4:5
 
     % split into training and testing trials, 15% test, 15% val, 70% test
-    test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
-    test_idx=test_idx(:);
-    I = ones(length(condn_data_overall),1);
-    I(test_idx)=0;
-    train_val_idx = find(I~=0);
-    prop = (0.7/0.85);
-    tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
-    train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
-    I = ones(length(condn_data_overall),1);
-    I([train_idx;test_idx])=0;
-    val_idx = find(I~=0);val_idx=val_idx(:);
+    xx=1;xx1=1;xx2=1;yy=0;
+    while xx<7 || xx1<7 || xx2<7
+        test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+        test_idx=test_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I(test_idx)=0;
+        train_val_idx = find(I~=0);
+        prop = (0.72/0.85);
+        tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+        train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I([train_idx;test_idx])=0;
+        val_idx = find(I~=0);val_idx=val_idx(:);
+        xx = length(unique([condn_data_overall(train_idx).targetID]));
+        xx1 = length(unique([condn_data_overall(val_idx).targetID]));
+        xx2 = length(unique([condn_data_overall(test_idx).targetID]));
+        yy=yy+1;
+    end
 
     % training options for NN
     [options,XTrain,YTrain] = ...
         get_options(condn_data_overall,val_idx,train_idx);
 
     % grid search
+    %num_units = [32,64,96,128];
     num_units = [64,96,150,256];
     num_layers = [1,2,3];
     %cv_acc={};
     %cv_acc2={};
     i3=1;
 
-    for i=1:length(num_layers)
+    for i=1:length(num_layers)      
         if i==1
             % loop over number of units
             for j=1:length(num_units)
+                disp(['Iteration ' num2str(iter) ' Arch idx ' num2str(i3)])
                 % net = patternnet([num_units(j)]) ;
                 % net.performParam.regularization=0.2;
                 % net = train(net,N,T','useParallel','yes');
@@ -451,12 +471,18 @@ for iter=1:5
                 layers = get_layers1(num_units(j),s);
                 net = trainNetwork(XTrain,YTrain,layers,options);
                 cv_perf = test_network(net,condn_data_overall,test_idx);
+                [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+                cv_perf_trialLevel = nanmean(diag(conf_matrix));
                 if iter==1
                     cv_acc3(i3).cv_perf = cv_perf;
                     cv_acc3(i3).layers=[num_units(j),0,0];
+                    cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+                    cv_acc3_trialLevel(i3).layers=[num_units(j),0,0];                    
                     i3=i3+1;
                 else
                     cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+                    cv_acc3_trialLevel(i3).cv_perf_trialLevel = ...
+                        [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];                    
                     %cv_acc3(i3).layers=[num_units(j),0,0];
                     i3=i3+1;
                 end
@@ -468,19 +494,28 @@ for iter=1:5
             % loop over number of units
             for j=1:length(num_units)
                 for k=1:length(num_units)
+                    disp(['Iteration ' num2str(iter) ' Arch idx ' num2str(i3)])
                     %net = patternnet([num_units(j) num_units(k)]) ;
                     %net.performParam.regularization=0.2;
                     %net = train(net,N,T','useParallel','yes');
                     %cv_acc2{j,k} = cv_perf;
-                    layers = get_layers2(num_units(j),num_units(k),759);
+                    aa=condn_data_overall(1).neural;
+                    s=size(aa,1);
+                    layers = get_layers2(num_units(j),num_units(k),s);
                     net = trainNetwork(XTrain,YTrain,layers,options);
                     cv_perf = test_network(net,condn_data_overall,test_idx);
+                    [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+                    cv_perf_trialLevel = mean(diag(conf_matrix));
                     if iter==1
                         cv_acc3(i3).cv_perf = cv_perf;
                         cv_acc3(i3).layers=[num_units(j),num_units(k),0];
+                        cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+                        cv_acc3_trialLevel(i3).layers=[num_units(j),num_units(k),0];
                         i3=i3+1;
                     else
                         cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+                        cv_acc3_trialLevel(i3).cv_perf_trialLevel = ...
+                            [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
                         %cv_acc3(i3).layers=[num_units(j),num_units(k),0];
                         i3=i3+1;
                     end
@@ -493,18 +528,27 @@ for iter=1:5
             for j=1:length(num_units)
                 for k=1:length(num_units)
                     for l=1:length(num_units)
+                        disp(['Iteration ' num2str(iter) ' Arch idx ' num2str(i3)])
                         %net = patternnet([num_units(j) num_units(k) num_units(l)]) ;
                         %net.performParam.regularization=0.2;
                         %net = train(net,N,T','useParallel','yes');
-                        layers = get_layers(num_units(j),num_units(k),num_units(l),759);
+                        aa=condn_data_overall(1).neural;
+                        s=size(aa,1);
+                        layers = get_layers(num_units(j),num_units(k),num_units(l),s);
                         net = trainNetwork(XTrain,YTrain,layers,options);
                         cv_perf = test_network(net,condn_data_overall,test_idx);
+                        [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+                        cv_perf_trialLevel = mean(diag(conf_matrix));
                         if iter==1
                             cv_acc3(i3).cv_perf = cv_perf;
                             cv_acc3(i3).layers=[num_units(j),num_units(k),num_units(l)];
+                            cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+                            cv_acc3_trialLevel(i3).layers=[num_units(j),num_units(k),num_units(l)];
                             i3=i3+1;
                         else
                             cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+                            cv_acc3_trialLevel(i3).cv_perf_trialLevel =...
+                                [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
                             i3=i3+1;
                         end
 
@@ -512,9 +556,120 @@ for iter=1:5
                 end
             end
         end
-    end
-    save B3_MLP_NN_Param_Optim_V2 cv_acc3 -v7.3
+        save B3_MLP_NN_Param_Optim_V3 cv_acc3 cv_acc3_trialLevel -v7.3
+    end    
 end
+save B3_MLP_NN_Param_Optim_V3 cv_acc3 cv_acc3_trialLevel -v7.3
+toc
+
+% 
+% %cv_acc_overall={};
+% %cv_acc2_overall={};
+% %cv_acc3_overall={};
+% cv_acc3={};
+% for iter=1:5
+% 
+%     % split into training and testing trials, 15% test, 15% val, 70% test
+%     test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+%     test_idx=test_idx(:);
+%     I = ones(length(condn_data_overall),1);
+%     I(test_idx)=0;
+%     train_val_idx = find(I~=0);
+%     prop = (0.7/0.85);
+%     tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+%     train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+%     I = ones(length(condn_data_overall),1);
+%     I([train_idx;test_idx])=0;
+%     val_idx = find(I~=0);val_idx=val_idx(:);
+% 
+%     % training options for NN
+%     [options,XTrain,YTrain] = ...
+%         get_options(condn_data_overall,val_idx,train_idx);
+% 
+%     % grid search
+%     num_units = [64,96,150,256];
+%     num_layers = [1,2,3];
+%     %cv_acc={};
+%     %cv_acc2={};
+%     i3=1;
+% 
+%     for i=1:length(num_layers)
+%         if i==1
+%             % loop over number of units
+%             for j=1:length(num_units)
+%                 % net = patternnet([num_units(j)]) ;
+%                 % net.performParam.regularization=0.2;
+%                 % net = train(net,N,T','useParallel','yes');
+%                 % cv_acc{j} = cv_perf;
+%                 aa=condn_data_overall(1).neural;
+%                 s=size(aa,1);
+%                 layers = get_layers1(num_units(j),s);
+%                 net = trainNetwork(XTrain,YTrain,layers,options);
+%                 cv_perf = test_network(net,condn_data_overall,test_idx);
+%                 if iter==1
+%                     cv_acc3(i3).cv_perf = cv_perf;
+%                     cv_acc3(i3).layers=[num_units(j),0,0];
+%                     i3=i3+1;
+%                 else
+%                     cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+%                     %cv_acc3(i3).layers=[num_units(j),0,0];
+%                     i3=i3+1;
+%                 end
+% 
+%             end
+% 
+% 
+%         elseif i==2
+%             % loop over number of units
+%             for j=1:length(num_units)
+%                 for k=1:length(num_units)
+%                     %net = patternnet([num_units(j) num_units(k)]) ;
+%                     %net.performParam.regularization=0.2;
+%                     %net = train(net,N,T','useParallel','yes');
+%                     %cv_acc2{j,k} = cv_perf;
+%                     layers = get_layers2(num_units(j),num_units(k),759);
+%                     net = trainNetwork(XTrain,YTrain,layers,options);
+%                     cv_perf = test_network(net,condn_data_overall,test_idx);
+%                     if iter==1
+%                         cv_acc3(i3).cv_perf = cv_perf;
+%                         cv_acc3(i3).layers=[num_units(j),num_units(k),0];
+%                         i3=i3+1;
+%                     else
+%                         cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+%                         %cv_acc3(i3).layers=[num_units(j),num_units(k),0];
+%                         i3=i3+1;
+%                     end
+% 
+%                 end
+%             end
+% 
+%         elseif i==3
+%             % loop over number of units
+%             for j=1:length(num_units)
+%                 for k=1:length(num_units)
+%                     for l=1:length(num_units)
+%                         %net = patternnet([num_units(j) num_units(k) num_units(l)]) ;
+%                         %net.performParam.regularization=0.2;
+%                         %net = train(net,N,T','useParallel','yes');
+%                         layers = get_layers(num_units(j),num_units(k),num_units(l),759);
+%                         net = trainNetwork(XTrain,YTrain,layers,options);
+%                         cv_perf = test_network(net,condn_data_overall,test_idx);
+%                         if iter==1
+%                             cv_acc3(i3).cv_perf = cv_perf;
+%                             cv_acc3(i3).layers=[num_units(j),num_units(k),num_units(l)];
+%                             i3=i3+1;
+%                         else
+%                             cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+%                             i3=i3+1;
+%                         end
+% 
+%                     end
+%                 end
+%             end
+%         end
+%     end
+%     save B3_MLP_NN_Param_Optim_V2 cv_acc3 -v7.3
+% end
 
 
 %% getting decoding accuracies for zero layer
