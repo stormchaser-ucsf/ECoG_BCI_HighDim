@@ -425,12 +425,23 @@ for i=2:length(condn_data)
     end
 end
 
-%cv_acc_overall={};
-%cv_acc2_overall={};
-%cv_acc3_overall={};
+
+condn_data_overall1={};kk=1;
+for ii=1:length(condn_data_overall)
+    if ~isempty(condn_data_overall(ii).neural)
+        condn_data_overall1(kk).neural = condn_data_overall(ii).neural;
+        condn_data_overall1(kk).targetID = condn_data_overall(ii).targetID;
+        condn_data_overall1(kk).trial_type = condn_data_overall(ii).trial_type;
+        kk=kk+1;
+    end
+end
+condn_data_overall = condn_data_overall1;
+
+
+tic
 cv_acc3={};
 cv_acc3_trialLevel={};
-for iter=1:5
+for iter=5
 
     % split into training and testing trials, 15% test, 15% val, 70% test
     xx=1;xx1=1;xx2=1;yy=0;
@@ -458,20 +469,24 @@ for iter=1:5
 
     % grid search
     num_units = [32,64,96,128];
+    %num_units = [64,96,150,256];
     num_layers = [1,2,3];
     %cv_acc={};
     %cv_acc2={};
     i3=1;
 
-    for i=1:length(num_layers)
+    for i=1:length(num_layers)      
         if i==1
             % loop over number of units
             for j=1:length(num_units)
+                disp(['Iteration ' num2str(iter) ' Arch idx ' num2str(i3)])
                 % net = patternnet([num_units(j)]) ;
                 % net.performParam.regularization=0.2;
                 % net = train(net,N,T','useParallel','yes');
                 % cv_acc{j} = cv_perf;
-                layers = get_layers1(num_units(j),96);
+                aa=condn_data_overall(1).neural;
+                s=size(aa,1);
+                layers = get_layers1(num_units(j),s);
                 net = trainNetwork(XTrain,YTrain,layers,options);
                 cv_perf = test_network(net,condn_data_overall,test_idx);
                 [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
@@ -497,6 +512,7 @@ for iter=1:5
             % loop over number of units
             for j=1:length(num_units)
                 for k=1:length(num_units)
+                    disp(['Iteration ' num2str(iter) ' Arch idx ' num2str(i3)])
                     %net = patternnet([num_units(j) num_units(k)]) ;
                     %net.performParam.regularization=0.2;
                     %net = train(net,N,T','useParallel','yes');
@@ -530,6 +546,7 @@ for iter=1:5
             for j=1:length(num_units)
                 for k=1:length(num_units)
                     for l=1:length(num_units)
+                        disp(['Iteration ' num2str(iter) ' Arch idx ' num2str(i3)])
                         %net = patternnet([num_units(j) num_units(k) num_units(l)]) ;
                         %net.performParam.regularization=0.2;
                         %net = train(net,N,T','useParallel','yes');
@@ -557,28 +574,154 @@ for iter=1:5
                 end
             end
         end
+        save B1_MLP_NN_Param_Optim_V3 cv_acc3 cv_acc3_trialLevel -v7.3
     end    
 end
-
-save B1_MLP_NN_Param_Optim_NoPooling_New_pooling cv_acc3 cv_acc3_trialLevel -v7.3
+save B1_MLP_NN_Param_Optim_V3 cv_acc3 cv_acc3_trialLevel -v7.3
 toc
+
+%cv_acc_overall={};
+%cv_acc2_overall={};
+%cv_acc3_overall={};
+% cv_acc3={};
+% cv_acc3_trialLevel={};
+% for iter=1:5
+% 
+%     % split into training and testing trials, 15% test, 15% val, 70% test
+%     xx=1;xx1=1;xx2=1;yy=0;
+%     while xx<7 || xx1<7 || xx2<7
+%         test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+%         test_idx=test_idx(:);
+%         I = ones(length(condn_data_overall),1);
+%         I(test_idx)=0;
+%         train_val_idx = find(I~=0);
+%         prop = (0.72/0.85);
+%         tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+%         train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+%         I = ones(length(condn_data_overall),1);
+%         I([train_idx;test_idx])=0;
+%         val_idx = find(I~=0);val_idx=val_idx(:);
+%         xx = length(unique([condn_data_overall(train_idx).targetID]));
+%         xx1 = length(unique([condn_data_overall(val_idx).targetID]));
+%         xx2 = length(unique([condn_data_overall(test_idx).targetID]));
+%         yy=yy+1;
+%     end
+% 
+%     % training options for NN
+%     [options,XTrain,YTrain] = ...
+%         get_options(condn_data_overall,val_idx,train_idx);
+% 
+%     % grid search
+%     num_units = [32,64,96,128];
+%     num_layers = [1,2,3];
+%     %cv_acc={};
+%     %cv_acc2={};
+%     i3=1;
+% 
+%     for i=1:length(num_layers)
+%         if i==1
+%             % loop over number of units
+%             for j=1:length(num_units)
+%                 % net = patternnet([num_units(j)]) ;
+%                 % net.performParam.regularization=0.2;
+%                 % net = train(net,N,T','useParallel','yes');
+%                 % cv_acc{j} = cv_perf;
+%                 layers = get_layers1(num_units(j),96);
+%                 net = trainNetwork(XTrain,YTrain,layers,options);
+%                 cv_perf = test_network(net,condn_data_overall,test_idx);
+%                 [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+%                 cv_perf_trialLevel = nanmean(diag(conf_matrix));
+%                 if iter==1
+%                     cv_acc3(i3).cv_perf = cv_perf;
+%                     cv_acc3(i3).layers=[num_units(j),0,0];
+%                     cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+%                     cv_acc3_trialLevel(i3).layers=[num_units(j),0,0];                    
+%                     i3=i3+1;
+%                 else
+%                     cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+%                     cv_acc3_trialLevel(i3).cv_perf_trialLevel = ...
+%                         [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];                    
+%                     %cv_acc3(i3).layers=[num_units(j),0,0];
+%                     i3=i3+1;
+%                 end
+% 
+%             end
+% 
+% 
+%         elseif i==2
+%             % loop over number of units
+%             for j=1:length(num_units)
+%                 for k=1:length(num_units)
+%                     %net = patternnet([num_units(j) num_units(k)]) ;
+%                     %net.performParam.regularization=0.2;
+%                     %net = train(net,N,T','useParallel','yes');
+%                     %cv_acc2{j,k} = cv_perf;
+%                     aa=condn_data_overall(1).neural;
+%                     s=size(aa,1);
+%                     layers = get_layers2(num_units(j),num_units(k),s);
+%                     net = trainNetwork(XTrain,YTrain,layers,options);
+%                     cv_perf = test_network(net,condn_data_overall,test_idx);
+%                     [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+%                     cv_perf_trialLevel = mean(diag(conf_matrix));
+%                     if iter==1
+%                         cv_acc3(i3).cv_perf = cv_perf;
+%                         cv_acc3(i3).layers=[num_units(j),num_units(k),0];
+%                         cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+%                         cv_acc3_trialLevel(i3).layers=[num_units(j),num_units(k),0];
+%                         i3=i3+1;
+%                     else
+%                         cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+%                         cv_acc3_trialLevel(i3).cv_perf_trialLevel = ...
+%                             [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
+%                         %cv_acc3(i3).layers=[num_units(j),num_units(k),0];
+%                         i3=i3+1;
+%                     end
+% 
+%                 end
+%             end
+% 
+%         elseif i==3
+%             % loop over number of units
+%             for j=1:length(num_units)
+%                 for k=1:length(num_units)
+%                     for l=1:length(num_units)
+%                         %net = patternnet([num_units(j) num_units(k) num_units(l)]) ;
+%                         %net.performParam.regularization=0.2;
+%                         %net = train(net,N,T','useParallel','yes');
+%                         aa=condn_data_overall(1).neural;
+%                         s=size(aa,1);
+%                         layers = get_layers(num_units(j),num_units(k),num_units(l),s);
+%                         net = trainNetwork(XTrain,YTrain,layers,options);
+%                         cv_perf = test_network(net,condn_data_overall,test_idx);
+%                         [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+%                         cv_perf_trialLevel = mean(diag(conf_matrix));
+%                         if iter==1
+%                             cv_acc3(i3).cv_perf = cv_perf;
+%                             cv_acc3(i3).layers=[num_units(j),num_units(k),num_units(l)];
+%                             cv_acc3_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+%                             cv_acc3_trialLevel(i3).layers=[num_units(j),num_units(k),num_units(l)];
+%                             i3=i3+1;
+%                         else
+%                             cv_acc3(i3).cv_perf = [cv_acc3(i3).cv_perf cv_perf];
+%                             cv_acc3_trialLevel(i3).cv_perf_trialLevel =...
+%                                 [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
+%                             i3=i3+1;
+%                         end
+% 
+%                     end
+%                 end
+%             end
+%         end
+%     end    
+% end
+
+%save B1_MLP_NN_Param_Optim_NoPooling_New_pooling cv_acc3 cv_acc3_trialLevel -v7.3
+%toc
 %% getting decoding accuracies for zero layer
 i3=length(cv_acc3)+1;
 cv_acc3(i3).layers=[0];
 cv_acc3_trialLevel(i3).Layers=[0];
-for iter=1:5
-    %     % split into training and testing trials, 15% test, 15% val, 70% test
-    %     test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
-    %     test_idx=test_idx(:);
-    %     I = ones(length(condn_data_overall),1);
-    %     I(test_idx)=0;
-    %     train_val_idx = find(I~=0);
-    %     prop = (0.7/0.85);
-    %     tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
-    %     train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
-    %     I = ones(length(condn_data_overall),1);
-    %     I([train_idx;test_idx])=0;
-    %     val_idx = find(I~=0);val_idx=val_idx(:);
+for iter=1:10
 
     % split into training and testing trials, 15% test, 15% val, 70% test
     xx=1;xx1=1;xx2=1;yy=0;
@@ -605,7 +748,9 @@ for iter=1:5
         get_options(condn_data_overall,val_idx,train_idx);
 
     %train NN and get CV
-    layers = get_layers0(96);
+    aa=condn_data_overall(1).neural;
+    s=size(aa,1);
+    layers = get_layers0(s);
     net = trainNetwork(XTrain,YTrain,layers,options);
     cv_perf = test_network(net,condn_data_overall,test_idx);
     [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
@@ -615,20 +760,24 @@ for iter=1:5
         [cv_acc3_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
 end
 
+save B1_MLP_NN_Param_Optim_V3_Final cv_acc3 cv_acc3_trialLevel -v7.3
+
 %save B1_MLP_NN_Param_Optim cv_acc3 -v7.3
-save B1_MLP_NN_Param_Optim_SingleSession_OL cv_acc3 cv_acc3_trialLevel -v7.3
+%save B1_MLP_NN_Param_Optim_SingleSession_OL cv_acc3 cv_acc3_trialLevel -v7.3
+%save B1_MLP_NN_Param_Optim_SingleSession_OL cv_acc3 cv_acc3_trialLevel -v7.3
 
 %% PLOTTING RESULTS FOR MAIN DETERMING OF MLP PARAMS PNP
 
 
 clc;clear
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
-load B1_MLP_NN_Param_Optim
+%load B1_MLP_NN_Param_Optim
+load B1_MLP_NN_Param_Optim_V3
 % plotting
 acc=[];acc1=[];
 for i=1:length(cv_acc3)
     %acc(i) = median(cv_acc3(i).cv_perf);
-    acc(i) = max(cv_acc3(i).cv_perf);
+    acc(i) = max(cv_acc3_trialLevel(i).cv_perf_trialLevel);
 end
 
 [aa bb]=max(acc)
@@ -650,6 +799,19 @@ end
 
 % MAIN plotting
 % plotting across all iterations to compare all layers
+% acc1=[];
+% for i=1:4
+%     acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+% end
+% acc2=[];
+% for i=5:20
+%     acc2=[acc2;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+% end
+% acc3=[];
+% for i=21:84
+%     acc3=[acc3;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+% end
+% acc0=cv_acc3_trialLevel(end).cv_perf_trialLevel';
 acc1=[];
 for i=1:4
     acc1=[acc1;cv_acc3(i).cv_perf'];
@@ -690,7 +852,7 @@ clear p
 [p(4),h,stats] = ranksum(acc1(~isnan(acc1)),acc2(~isnan(acc2)));
 [p(5),h,stats] = ranksum(acc1(~isnan(acc1)),acc3(~isnan(acc3)));
 [p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)));
-[pfdr,pval]=fdr(p,0.01);pval
+[pfdr,pval]=fdr(p,0.01,'NonParametric');pval
 
 % non parametric tests of the median
 a=acc(:,2);a=a(~isnan(a));
@@ -734,6 +896,68 @@ for i=1:5
     acc_150(i)  = cv_perf;
 end
 
+
+
+%%%% PLOTTING FOR open loop for single session
+% acc1=[];
+% for i=1:3
+%     acc1=[acc1;cv_acc3(i).cv_perf'];
+% end
+% acc2=[];
+% for i=4:12
+%     acc2=[acc2;cv_acc3(i).cv_perf'];
+% end
+% acc3=[];
+% for i=13:39
+%     acc3=[acc3;cv_acc3(i).cv_perf'];
+% end
+% acc0=cv_acc3(end).cv_perf';
+acc1=[];
+for i=1:3
+    acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+end
+acc2=[];
+for i=4:12
+    acc2=[acc2;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+end
+acc3=[];
+for i=13:39
+    acc3=[acc3;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+end
+i=i+1;
+acc0=cv_acc3_trialLevel(i).cv_perf_trialLevel';
+acc0(end+1:length(acc3))=NaN;
+acc1(end+1:length(acc3))=NaN;
+acc2(end+1:length(acc3))=NaN;
+acc=[acc0 acc1 acc2 acc3];
+figure;
+boxplot(acc,'notch','off')
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+%ylabel('Bin Level Decoding Acc')
+ylabel('Cross. Valid Accuracy')
+xticks(1:4)
+xticklabels({'0 Layers','1 Layer','2 Layer','3 Layer'})
+box off
+%title('Cross. Valid for MLP width in B1')
+%title('Cross. Valid Accuracy')
+title('Accuracy from OL Data, First Session')
+ylim([0 1])
+hline(1/7,'r')
+% hold on
+% plot(1,nanmean(acc0),'.k','MarkerSize',40)
+% plot(2,nanmean(acc1),'.k','MarkerSize',40)
+% plot(3,nanmean(acc2),'.k','MarkerSize',40)
+% plot(4,nanmean(acc3),'.k','MarkerSize',40)
+
+clear p
+[p(1),h,stats] = ranksum(acc0(~isnan(acc0)),acc1(~isnan(acc1)));
+[p(2),h,stats] = ranksum(acc0(~isnan(acc0)),acc2(~isnan(acc2)));
+[p(3),h,stats] = ranksum(acc0(~isnan(acc0)),acc3(~isnan(acc3)));
+[p(4),h,stats] = ranksum(acc1(~isnan(acc1)),acc2(~isnan(acc2)));
+[p(5),h,stats] = ranksum(acc1(~isnan(acc1)),acc3(~isnan(acc3)));
+[p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)));
+[pfdr,pval]=fdr(p,0.05);pval
 
 
 %% PLOTTING RESULTS FOR single session trial level stuff

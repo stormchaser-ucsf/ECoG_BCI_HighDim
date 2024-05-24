@@ -409,9 +409,9 @@ end
 condn_data_overall1={};kk=1;
 for ii=1:length(condn_data_overall)   
     if ~isempty(condn_data_overall(ii).neural)
-        condn_data_overall1(kk).neural = condn_data_overall(i).neural;
-        condn_data_overall1(kk).targetID = condn_data_overall(i).targetID;
-        condn_data_overall1(kk).trial_type = condn_data_overall(i).trial_type;
+        condn_data_overall1(kk).neural = condn_data_overall(ii).neural;
+        condn_data_overall1(kk).targetID = condn_data_overall(ii).targetID;
+        condn_data_overall1(kk).trial_type = condn_data_overall(ii).trial_type;
         kk=kk+1;
     end
 end
