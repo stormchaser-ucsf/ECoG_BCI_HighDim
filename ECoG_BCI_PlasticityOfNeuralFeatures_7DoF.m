@@ -6819,9 +6819,11 @@ ylim([-250,250])
 zlim([-250,250])
 recon_error = [];% wrt to how well straight line trajecotry is reconstructed
 trial_error = [];% just the plain error with respect to target location
+k=1;
 for i=1:length(files)
     load(files{i})
     if TrialData.TargetID == TrialData.SelectedTargetID
+        k=k+1;
         kin = TrialData.CursorState;
         task_state = TrialData.TaskState;
         kinidx = find(task_state==3);
@@ -7763,6 +7765,17 @@ dist_total = cell2mat(dist);
 min_d = min(dist_total);
 max_d = max(dist_total);
 
+% get the number of trials
+num_trials=[];
+for i=1:length(ttc1)
+    xx=ttc1{i};
+    yy=success1_rate(i);
+    num_trials(i) = length(xx)/yy;
+end
+
+mb = sort(bootstrp(1000,@median,num_trials));
+[mb(25) median(num_trials) mb(975)]
+
 % plotting the accuracy of the wall task split by two sections, with linear
 % fit
 %%%%% plotting first half
@@ -8167,6 +8180,18 @@ median(a2)
 %%%% STATS for the top down rotate task 
 clc;clear;
 load('topDown_rotate_v2.mat');
+
+% get number of trials per day
+num_trials=[];
+for i=1:length(ttc)
+    xx=ttc{i};
+    yy=successRate(i);
+    num_trials(i) = length(xx)/yy;
+end
+
+mb = sort(bootstrp(1000,@median,num_trials));
+[mb(25) median(num_trials) mb(975)]
+
 PnP_days_rotate_task = [77,81,102,203];
 % plot the success rate
 acc=successRate;
@@ -8329,7 +8354,7 @@ for iter=1:10
     condn_data={};
     for i=1:length(tid)
         idx = find([filedata(1:end).TargetID]==tid(i));
-        train_idx1 = randperm(length(idx),round(0.9*length(idx)));
+        train_idx1 = randperm(length(idx),round(0.75*length(idx)));
         I = ones(length(idx),1);
         I(train_idx1)=0;
         test_idx1 =  find(I==1);
@@ -8340,10 +8365,10 @@ for iter=1:10
         tmp_data=[];
         for j=1:length(train_idx1)
             %a = filedata(train_idx1(j)).TargetID;
-            disp(filedata(train_idx1(j)).TargetID)
+            disp(filedata(train_idx1(j)).TargetID);
             a = filedata(train_idx1(j)).lstm_output;
             if size(a,2)>20
-                a = a(:,5:15);
+                a = a(:,3:15);
             end
             tmp_data = [tmp_data a];
         end
@@ -8378,10 +8403,10 @@ for iter=1:10
 
     % code to train a neural network
     clear net
-    net = patternnet([64 64 ]) ;
+    net = patternnet([120 ]) ;
     net.performParam.regularization=0.2;
-    %net.divideParam.trainRatio=0.85;
-    %net.divideParam.valRatio=0.15;
+    net.divideParam.trainRatio=0.85;
+    net.divideParam.valRatio=0.15;
     %net.divideParam.testRatio=0;
     net = train(net,N,T');
 

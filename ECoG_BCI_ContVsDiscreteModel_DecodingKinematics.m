@@ -892,7 +892,7 @@ for i=1:length(session_data)
     %
     % save the data
     filename = ['Biomimetic_CenterOut_condn_data_Imagined_Day_First2pt5s_new' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %save(filename, 'condn_data', '-v7.3')
     %
     % get the mahab distance in the full dataset
     Dimagined = mahal2_full(condn_data);
@@ -917,7 +917,7 @@ for i=1:length(session_data)
 
     % save the data
     filename = ['Biomimetic_CenterOut_condn_data_Online_Day_First2pt5s_new' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %save(filename, 'condn_data', '-v7.3')
 
     % get the mahab distance in the full dataset
     Donline = mahal2_full(condn_data);
@@ -948,7 +948,7 @@ for i=1:length(session_data)
 
     %save the data
     filename = ['Biomimetic_CenterOut_condn_data_Batch_Day_First2pt5s_new' num2str(i)];
-    save(filename, 'condn_data', '-v7.3')
+    %save(filename, 'condn_data', '-v7.3')
 
 
     % get the mahab distance in the full dataset
@@ -993,7 +993,7 @@ for i=1:6
     idx = find([kin_data(:).TargetID]==i);
     errors = [kin_data(idx).error ];
     [aa bb] = sort(errors);
-    bb = idx(bb(1:3)); % number of trajectories to plot
+    bb = idx(bb(1:4)); % number of trajectories to plot
     col = cmap(i,:);
 
     for j=1:length(bb)
