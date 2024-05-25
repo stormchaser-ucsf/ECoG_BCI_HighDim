@@ -772,7 +772,7 @@ save B1_MLP_NN_Param_Optim_V3_Final cv_acc3 cv_acc3_trialLevel -v7.3
 clc;clear
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %load B1_MLP_NN_Param_Optim
-load B1_MLP_NN_Param_Optim_V3
+load B1_MLP_NN_Param_Optim_V3_Final
 % plotting
 acc=[];acc1=[];
 for i=1:length(cv_acc3)
@@ -799,32 +799,32 @@ end
 
 % MAIN plotting
 % plotting across all iterations to compare all layers
-% acc1=[];
-% for i=1:4
-%     acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
-% end
-% acc2=[];
-% for i=5:20
-%     acc2=[acc2;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
-% end
-% acc3=[];
-% for i=21:84
-%     acc3=[acc3;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
-% end
-% acc0=cv_acc3_trialLevel(end).cv_perf_trialLevel';
 acc1=[];
 for i=1:4
-    acc1=[acc1;cv_acc3(i).cv_perf'];
+    acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
 end
 acc2=[];
 for i=5:20
-    acc2=[acc2;cv_acc3(i).cv_perf'];
+    acc2=[acc2;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
 end
 acc3=[];
 for i=21:84
-    acc3=[acc3;cv_acc3(i).cv_perf'];
+    acc3=[acc3;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
 end
-acc0=cv_acc3(end).cv_perf';
+acc0=cv_acc3_trialLevel(end).cv_perf_trialLevel';
+% acc1=[];
+% for i=1:4
+%     acc1=[acc1;cv_acc3(i).cv_perf'];
+% end
+% acc2=[];
+% for i=5:20
+%     acc2=[acc2;cv_acc3(i).cv_perf'];
+% end
+% acc3=[];
+% for i=21:84
+%     acc3=[acc3;cv_acc3(i).cv_perf'];
+% end
+% acc0=cv_acc3(end).cv_perf';
 acc0(end+1:length(acc3))=NaN;
 acc1(end+1:length(acc3))=NaN;
 acc2(end+1:length(acc3))=NaN;
