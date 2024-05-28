@@ -7855,6 +7855,7 @@ xlabel('Days PnP')
 ylabel('Success Rate')
 legend({'R2G','Logistic Fit'})
 set(gca,'FontSize',12)
+xlim([0 40])
 
 % second part
 subplot(2,1,2);hold on
@@ -7874,21 +7875,22 @@ ylabel('Success Rate')
 xlabel('Days PnP')
 legend({'Full Task','Logistic Fit'})
 set(gca,'FontSize',12)
+xlim([0 40])
 
 % get half life
 y = success2_rate(1:8);
 x = PnP_days_wall_task(1:8);
 figure;hold on
 plot(x,y,'or','MarkerSize',15);
-y=y(2:end-2);x=x(2:end-2);
+%y=y(2:end-2);x=x(2:end-2);
 [b,p] = logistic_reg(x,y);
-t=1:220;
+t=0:750;
 x=t;
 xhat=[ones(length(x),1) x'];
 yhat = 1./(1 + exp(-(xhat*b)));
 plot(t,yhat,'--r')
 xticks([0:5:50])
-xticks([0:40:750])
+xticks([0:50:750])
 yticks([0:.2:1])
 ylim([0 1])
 xlim([0 750])

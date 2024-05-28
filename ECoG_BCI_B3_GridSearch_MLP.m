@@ -734,70 +734,114 @@ cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 addpath 'C:\Users\nikic\Documents\MATLAB'
 %load B3_MLP_NN_Param_Optim_V2
-load B3_MLP_NN_Param_Optim
+%load B3_MLP_NN_Param_Optim
+load B3_MLP_NN_Param_Optim_V3
 % plotting just mean
-acc=[];acc1=[];
-for i=1:length(cv_acc3)
-    acc(i) = max(cv_acc3(i).cv_perf);
+% acc=[];acc1=[];
+% for i=1:length(cv_acc3)
+%     acc(i) = max(cv_acc3(i).cv_perf);
+% end
+% 
+% [aa bb]=max(acc)
+% 
+% figure;boxplot(acc(1:4))
+% ylim([.8 .9])
+% figure;boxplot(acc(5:20))
+% ylim([.8 .9])
+% figure;boxplot(acc(21:end))
+% ylim([.8 .9])
+% 
+% tmp=NaN(64,3);
+% tmp(1:4,1) = acc(1:4)';
+% tmp(1:16,2) = acc(5:20)';
+% tmp(1:end,3) = acc(21:end)';
+% figure;boxplot(tmp)
+
+
+
+% MAIN plotting
+%plotting across all iterations to compare all layers
+trial_level=1;
+if trial_level
+
+    acc1=[];
+    for i=1:4
+        acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+    end
+    acc2=[];
+    for i=5:20
+        acc2=[acc2;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+    end
+    acc3=[];
+    for i=21:84
+        acc3=[acc3;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
+    end
+    acc0=cv_acc3_trialLevel(end).cv_perf_trialLevel';
+else
+    acc1=[];
+    for i=1:4
+        acc1=[acc1;cv_acc3(i).cv_perf'];
+    end
+    acc2=[];
+    for i=5:20
+        acc2=[acc2;cv_acc3(i).cv_perf'];
+    end
+    acc3=[];
+    for i=21:84
+        acc3=[acc3;cv_acc3(i).cv_perf'];
+    end
+    acc0=cv_acc3(end).cv_perf';
 end
-
-[aa bb]=max(acc)
-
-figure;boxplot(acc(1:4))
-ylim([.8 .9])
-figure;boxplot(acc(5:20))
-ylim([.8 .9])
-figure;boxplot(acc(21:end))
-ylim([.8 .9])
-
-tmp=NaN(64,3);
-tmp(1:4,1) = acc(1:4)';
-tmp(1:16,2) = acc(5:20)';
-tmp(1:end,3) = acc(21:end)';
-figure;boxplot(tmp)
-
-% plotting across all iterations to compare all layers
-acc1=[];
-for i=1:4
-    acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
-end
-
-acc2=[];
-for i=5:20
-    acc2=[acc2;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
-end
-
-acc3=[];
-for i=21:84
-    acc3=[acc3;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
-end
-
-acc0=cv_acc3_trialLevel(end).cv_perf_trialLevel';
 
 acc0(end+1:length(acc3))=NaN;
 acc1(end+1:length(acc3))=NaN;
 acc2(end+1:length(acc3))=NaN;
 acc=[acc0 acc1 acc2 acc3];
 figure;
-boxplot(acc,'notch','off')
+boxplot(100*acc,'notch','off')
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
-ylabel('Bin Level Decoding Acc')
+%ylabel('Bin Level Decoding Acc')
+ylabel('Decoding Accuracy')
 xticks(1:4)
 xticklabels({'0 Layers','1 Layer','2 Layer','3 Layer'})
 box off
-title('Cross. Valid for MLP width in B3')
-
+title('Cross Validation for MLP depth in B3')
+hold on
+plot(1,100*nanmean(acc0),'.k','MarkerSize',40)
+plot(2,100*nanmean(acc1),'.k','MarkerSize',40)
+plot(3,100*nanmean(acc2),'.k','MarkerSize',40)
+plot(4,100*nanmean(acc3),'.k','MarkerSize',40)
 
 % sign rank tests
 clear p
-[p(1),h,stats] = ranksum(acc0(~isnan(acc0)),acc1(~isnan(acc1)))
-[p(2),h,stats] = ranksum(acc0(~isnan(acc0)),acc2(~isnan(acc2)))
-[p(3),h,stats] = ranksum(acc0(~isnan(acc0)),acc3(~isnan(acc3)))
-[p(4),h,stats] = ranksum(acc1(~isnan(acc1)),acc2(~isnan(acc2)))
-[p(5),h,stats] = ranksum(acc1(~isnan(acc1)),acc3(~isnan(acc3)))
-[p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)))
-[pfdr,pval]=fdr(p,0.05);pval
+[p(1),h,stats] = ranksum(acc0(~isnan(acc0)),acc1(~isnan(acc1)));
+[p(2),h,stats] = ranksum(acc0(~isnan(acc0)),acc2(~isnan(acc2)));
+[p(3),h,stats] = ranksum(acc0(~isnan(acc0)),acc3(~isnan(acc3)));
+[p(4),h,stats] = ranksum(acc1(~isnan(acc1)),acc2(~isnan(acc2)));
+[p(5),h,stats] = ranksum(acc1(~isnan(acc1)),acc3(~isnan(acc3)));
+[p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)));
+[pfdr,pval]=fdr(p,0.01,'NonParametric');pval
+
+% non parametric tests of the median
+a=acc(:,2);a=a(~isnan(a));
+b=acc(:,3);b=b(~isnan(b));
+stat = mean(a)-mean(b);
+c=[a ;b];
+c=c-mean(c);
+boot=[];
+l=length(a);
+for i=1:1000
+    c1=c(randperm(numel(c)));
+    a1 = c1(1:l);
+    b1 = c1(l+1:end);
+    boot(i) = mean(a1)-mean(b1);
+end
+figure;
+hist(abs(boot))
+vline(abs(stat))
+pval = sum(abs(boot)>abs(stat))/length(boot);
+title(num2str(pval))
 
 % testing comparison of units in single layer
 acc_128=[];
@@ -880,21 +924,23 @@ toc
 num_units = [32 64 90:15:250];
 acc=[];acc1=[];
 for i=1:length(cv_singleLayer)
-    tmp = cv_singleLayer_trialLevel(i).cv_perf_trialLevel;
+    %tmp = cv_singleLayer_trialLevel(i).cv_perf_trialLevel;
+    tmp = cv_singleLayer(i).cv_perf;
     acc(:,i) = tmp';
-    acc1(i) = mean(tmp);
+    acc1(i) = median(tmp);
 end
-figure;boxplot(acc)
+figure;boxplot(100*acc)
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
-ylabel('Bin Level Decoding Acc')
+ylabel('Decoding Accuracy')
 xticks(1:size(acc,2))
 xticklabels((num_units))
 box off
-title('Cross. Valid for num units in 1 Layer MLP')
+title('Cross Validation for 1-Layer MLP width in B3')
 xlabel('Number of units')
 hold on
-plot(mean(acc,1),'--k','LineWidth',1)
+plot(100*median(acc,1),'--k','LineWidth',1)
+yticks(0:1:100)
 
 
 [aa bb]=max(acc1)

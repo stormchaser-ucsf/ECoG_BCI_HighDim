@@ -712,7 +712,7 @@ for i=1:length(files)
             e = f*(sum((target(idx)' - kin(idx,j)).^2));
             tmp_error = [tmp_error;e];
         end
-        recon_error =[recon_error; sqrt(sum(tmp_error(1:14)))];
+        recon_error =[recon_error; sqrt(sum(tmp_error(1:14)))/14];
         trial_error = [trial_error sqrt(sum(sum((kin(:,1:10) - target').^2)))];
         %end
     end
@@ -726,7 +726,8 @@ zlabel('Z-axis')
 set(gca,'LineWidth',1.0)
 grid on
 
-save recon_error_IBID recon_error -v7.3
+%save recon_error_IBID recon_error -v7.3 % not normalized by length
+save recon_error_IBID_norm recon_error -v7.3
 
 
 % plotting the center out trajectory with velocity profile for coasting
@@ -793,7 +794,7 @@ plot2svg('coasting_example.svg');
 
 
 %% (MAIN: KF) ANALYSIS 2: USING IMAGINED END POINT CONTROL OF THE ROBOT HAND (MAIN)
-% SMOOTH BATCH KALMAN FILTER (MAIN)
+% SMOOTH BATCH KALMAN FILTER (MAIN) CENTER OUT 
 
 % STEP 1: Take the first 2sec of online data and the first 3s of Imagined
 % data for the iAE analyses
@@ -1036,18 +1037,20 @@ for i=1:6
                 e = f*(sum((target(idx)' - kin(idx,j)).^2));
                 tmp_error = [tmp_error;e];
             end
-            recon_error =[recon_error; sqrt(sum(tmp_error))];
+            recon_error =[recon_error; sqrt(sum(tmp_error))/length(tmp_error)];
         end
     end
     %waitforbuttonpress
 end
 grid on
 
-recon_error1 = load('recon_error_IBID.mat');
+recon_error1 = load('recon_error_IBID_norm.mat');
 recon_error1 = recon_error1.recon_error;
 
+
 recon_error(end+1:length(recon_error1)) = NaN;
-figure;boxplot(([recon_error recon_error1]/14),'whisker',2.5)
+recon_error_KF = recon_error./1;
+figure;boxplot(([recon_error_KF recon_error1]),'whisker',2.5)
 set(gcf,'Color','w')
 set(gca,'FontSize',14)
 xticks(1:2)
@@ -1057,7 +1060,7 @@ box off
 set(gca,'LineWidth',1)
 
 
-[P,H,STATS] = ranksum(recon_error,recon_error1)
+[P,H,STATS] = ranksum(recon_error_KF,recon_error1)
 
 [h p tb st]=ttest2(recon_error,recon_error1)
 

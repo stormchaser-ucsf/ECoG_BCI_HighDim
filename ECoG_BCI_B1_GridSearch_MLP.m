@@ -1,5 +1,5 @@
 %% LOOKING AT REPRESENTATIONAL DRIFT
-% is there a difference between any two days recordings
+%% IS there a difference between any two days recordings
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
@@ -798,7 +798,7 @@ end
 
 
 % MAIN plotting
-% plotting across all iterations to compare all layers
+%plotting across all iterations to compare all layers
 acc1=[];
 for i=1:4
     acc1=[acc1;cv_acc3_trialLevel(i).cv_perf_trialLevel'];
@@ -830,19 +830,20 @@ acc1(end+1:length(acc3))=NaN;
 acc2(end+1:length(acc3))=NaN;
 acc=[acc0 acc1 acc2 acc3];
 figure;
-boxplot(acc,'notch','off')
+boxplot(100*acc,'notch','off')
 set(gcf,'Color','w')
 set(gca,'FontSize',12)
-ylabel('Bin Level Decoding Acc')
+%ylabel('Bin Level Decoding Acc')
+ylabel('Decoding Accuracy')
 xticks(1:4)
 xticklabels({'0 Layers','1 Layer','2 Layer','3 Layer'})
 box off
-title('Cross. Valid for MLP width in B1')
+title('Cross Validation for MLP depth in B1')
 hold on
-plot(1,nanmean(acc0),'.k','MarkerSize',40)
-plot(2,nanmean(acc1),'.k','MarkerSize',40)
-plot(3,nanmean(acc2),'.k','MarkerSize',40)
-plot(4,nanmean(acc3),'.k','MarkerSize',40)
+plot(1,100*nanmean(acc0),'.k','MarkerSize',40)
+plot(2,100*nanmean(acc1),'.k','MarkerSize',40)
+plot(3,100*nanmean(acc2),'.k','MarkerSize',40)
+plot(4,100*nanmean(acc3),'.k','MarkerSize',40)
 
 % sign rank tests
 clear p
@@ -959,6 +960,118 @@ clear p
 [p(6),h,stats] = ranksum(acc2(~isnan(acc2)),acc3(~isnan(acc3)));
 [pfdr,pval]=fdr(p,0.05);pval
 
+
+
+%% GOING AFTER NM UNITS IN SINGLE LAYER AFTER IDENTIFYING DEPTH
+
+clc;clear
+
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+cd(root_path)
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+load session_data
+addpath 'C:\Users\nikic\Documents\MATLAB'
+load B1_MLP_NN_Param_Optim_V3_Final
+load condn_data_overall_b1
+condn_data_overall = condn_data_overall_B1;
+
+num_units = [32 48 60:15:210];
+cv_singleLayer={};
+cv_singleLayer_trialLevel={};
+for iter=1:10
+
+    % split into training and testing trials, 15% test, 15% val, 70% test
+    xx=1;xx1=1;xx2=1;yy=0;
+    while xx<7 || xx1<7 || xx2<7
+        test_idx = randperm(length(condn_data_overall),round(0.15*length(condn_data_overall)));
+        test_idx=test_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I(test_idx)=0;
+        train_val_idx = find(I~=0);
+        prop = (0.72/0.85);
+        tmp_idx = randperm(length(train_val_idx),round(prop*length(train_val_idx)));
+        train_idx = train_val_idx(tmp_idx);train_idx=train_idx(:);
+        I = ones(length(condn_data_overall),1);
+        I([train_idx;test_idx])=0;
+        val_idx = find(I~=0);val_idx=val_idx(:);
+        xx = length(unique([condn_data_overall(train_idx).targetID]));
+        xx1 = length(unique([condn_data_overall(val_idx).targetID]));
+        xx2 = length(unique([condn_data_overall(test_idx).targetID]));
+        yy=yy+1;
+    end
+   
+
+    % training options for NN
+    [options,XTrain,YTrain] = ...
+        get_options(condn_data_overall,val_idx,train_idx);
+    i3=1;
+
+    for j=1:length(num_units)
+        aa=condn_data_overall(1).neural;
+        s=size(aa,1);
+        layers = get_layers1(num_units(j),s);
+        disp(['Iteration: ' num2str(iter) ' & No. Units: ' num2str(num_units(j))])
+        net = trainNetwork(XTrain,YTrain,layers,options);
+        cv_perf = test_network(net,condn_data_overall,test_idx);
+        [conf_matrix] = test_network_trialLevel(net,condn_data_overall,test_idx);
+        cv_perf_trialLevel = mean(diag(conf_matrix));
+        if iter==1
+            cv_singleLayer(i3).cv_perf = cv_perf;
+            cv_singleLayer(i3).layers=[num_units(j),0,0];
+            cv_singleLayer_trialLevel(i3).cv_perf_trialLevel = cv_perf_trialLevel;
+            cv_singleLayer_trialLevel(i3).layers=[num_units(j),0,0];
+            i3=i3+1;
+        else
+            cv_singleLayer(i3).cv_perf = [cv_singleLayer(i3).cv_perf cv_perf];            
+            cv_singleLayer_trialLevel(i3).cv_perf_trialLevel =...
+                [cv_singleLayer_trialLevel(i3).cv_perf_trialLevel cv_perf_trialLevel];
+            %cv_acc3(i3).layers=[num_units(j),0,0];
+            i3=i3+1;
+        end
+    end
+end
+save B1_MLP_NN_Param_Optim_V3_singleLayer cv_singleLayer cv_singleLayer_trialLevel
+toc
+
+num_units = [32 48 60:15:210];
+acc=[];acc1=[];
+for i=1:length(cv_singleLayer)
+    tmp = cv_singleLayer_trialLevel(i).cv_perf_trialLevel;
+    acc(:,i) = tmp';
+    acc1(i) = median(tmp);
+end
+figure;boxplot(100*acc)
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+ylabel('Decoding Accuracy')
+xticks(1:size(acc,2))
+xticklabels((num_units))
+box off
+title('Cross Validation for 1-Layer MLP width in B1')
+xlabel('Number of units')
+hold on
+plot(100*median(acc,1),'--k','LineWidth',1)
+yticks(0:2:100)
+
+
+[aa bb]=max(acc1)
+
+figure;bar(acc1)
+xticks(1:size(acc,2))
+xticklabels((num_units))
+ylim([0.83 0.87])
+
+accb=(bootstrp(1000,@mean,acc));
+figure;boxplot(accb)
+set(gcf,'Color','w')
+set(gca,'FontSize',12)
+ylabel('Bin Level Decoding Acc')
+xticks(1:size(acc,2))
+xticklabels((num_units))
+box off
+title('Cross. Valid for num units in 1 Layer MLP')
+xlabel('Number of units')
 
 %% PLOTTING RESULTS FOR single session trial level stuff
 % plotting

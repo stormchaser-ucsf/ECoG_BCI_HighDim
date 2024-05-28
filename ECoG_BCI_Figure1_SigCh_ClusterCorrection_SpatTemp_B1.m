@@ -1518,62 +1518,62 @@ hline(0,'k')
 xlim([-1 3])
 
 % run the ANOVA test at each time-point and do temporal clustering
-%dependent variable -> erp
-%independent variable -> movement type
-%fitrm
-% 
-% Fvalues=[];pval=[];
-% parfor i=1:size(data_overall,2)
-%     disp(i)
-%     a = (squeeze(data_overall(1:3,i,:)))';
-%     %tmp_bad = zscore(a);
-%     %artifact_check = logical(abs(tmp_bad)>3);
-%     %a(artifact_check)=NaN;   
-%     a=a(:);
-%     erps=a;
-%     mvmt = num2str([ones(size(a,1)/3,1);2*ones(size(a,1)/3,1);3*ones(size(a,1)/3,1)]);
-%     subj = table([1],'VariableNames',{'Subject'});
-%     data = table(mvmt,erps);
-%     rm=fitrm(data,'erps~mvmt');
-%     ranovatbl = anova(rm);
-%     Fvalues(i) = ranovatbl{2,6};
-%     pval(i) = ranovatbl{2,7};
-% end
-% 
-% % get the boot values
-% Fvalues_boot=[];p_boot=[];
-% parfor i=1:size(data_overall,2)
-%     disp(i)
-%     a = (squeeze(data_overall(1:3,i,:)))';
-%     %tmp_bad = zscore(a);
-%     %artifact_check = logical(abs(tmp_bad)>3);
-%     %a(artifact_check)=NaN;
-% 
-%     % center the data
-%     a = a-nanmean(a);
-% 
-%     % now sample with replacement for each column to create new data
-%     % matrix over 1000 iterations
-%     Fvalues_tmp=[];ptmp=[];
-%     for iter=1:750      
-%         a_tmp=[];
-%         for j=1:size(a,2)
-%             a1 = randi([1,size(a,1)],size(a,1),1);
-%             a_tmp(:,j) = a(a1,j);
-%         end
-%         a_tmp=a_tmp(:);
-%         erps=a_tmp;
-%         mvmt = num2str([ones(size(erps,1)/3,1);...
-%             2*ones(size(erps,1)/3,1);3*ones(size(erps,1)/3,1)]);
-%         data = table(mvmt,erps);
-%         rm=fitrm(data,'erps~mvmt');
-%         ranovatbl = anova(rm);
-%         Fvalues_tmp(iter) = ranovatbl{2,6};
-%         ptmp(iter) =  ranovatbl{2,7};
-%     end
-%     Fvalues_boot(i,:) = Fvalues_tmp;
-%     p_boot(i,:) = ptmp;
-% end
+% dependent variable -> erp
+% independent variable -> movement type
+% fitrm
+
+Fvalues=[];pval=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:3,i,:)))';
+    %tmp_bad = zscore(a);
+    %artifact_check = logical(abs(tmp_bad)>3);
+    %a(artifact_check)=NaN;   
+    a=a(:);
+    erps=a;
+    mvmt = num2str([ones(size(a,1)/3,1);2*ones(size(a,1)/3,1);3*ones(size(a,1)/3,1)]);
+    subj = table([1],'VariableNames',{'Subject'});
+    data = table(mvmt,erps);
+    rm=fitrm(data,'erps~mvmt');
+    ranovatbl = anova(rm);
+    Fvalues(i) = ranovatbl{2,6};
+    pval(i) = ranovatbl{2,7};
+end
+
+% get the boot values
+Fvalues_boot=[];p_boot=[];
+parfor i=1:size(data_overall,2)
+    disp(i)
+    a = (squeeze(data_overall(1:3,i,:)))';
+    %tmp_bad = zscore(a);
+    %artifact_check = logical(abs(tmp_bad)>3);
+    %a(artifact_check)=NaN;
+
+    % center the data
+    a = a-nanmean(a);
+
+    % now sample with replacement for each column to create new data
+    % matrix over 1000 iterations
+    Fvalues_tmp=[];ptmp=[];
+    for iter=1:750      
+        a_tmp=[];
+        for j=1:size(a,2)
+            a1 = randi([1,size(a,1)],size(a,1),1);
+            a_tmp(:,j) = a(a1,j);
+        end
+        a_tmp=a_tmp(:);
+        erps=a_tmp;
+        mvmt = num2str([ones(size(erps,1)/3,1);...
+            2*ones(size(erps,1)/3,1);3*ones(size(erps,1)/3,1)]);
+        data = table(mvmt,erps);
+        rm=fitrm(data,'erps~mvmt');
+        ranovatbl = anova(rm);
+        Fvalues_tmp(iter) = ranovatbl{2,6};
+        ptmp(iter) =  ranovatbl{2,7};
+    end
+    Fvalues_boot(i,:) = Fvalues_tmp;
+    p_boot(i,:) = ptmp;
+end
 
 
 %%% using just simple regular anova instead of repeated measures

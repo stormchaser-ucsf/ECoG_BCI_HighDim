@@ -16,34 +16,37 @@ b1 = a.tmp;
 b3 = b.tmp;
 
 
-% % run LMM non parametric test, within subject but combining CL contexts
-% day_name = [(1:size(b1,1))';(1:size(b1,1))'];
-% mahab_dist = [b1(:,2);b1(:,3)];
-% subj = ones(size(mahab_dist));
-% mvmt_type = [ones(size(b1,1),1);2*ones(size(b1,1),1)];
-% data = table(subj,day_name,mahab_dist,mvmt_type);
-%
-% % fit
-% glm = fitlme(data,'mahab_dist ~  day_name + (1|mvmt_type) ')
-% stat = glm.Coefficients.Estimate
-%
-% % permutation testing
-% pval=[];stat_boot=[];
-% for i=1:500
-%     disp(i)
-%     a = day_name(1:length(b1));
-%     b = day_name(length(b1)+1:end);
-%     a=a(randperm(numel(a)));
-%     b=b(randperm(numel(b)));
-%     day_name_tmp = [a;b];
-%     data_tmp = table(subj,day_name_tmp,mahab_dist,mvmt_type);
-%     glm_tmp = fitlme(data_tmp,'mahab_dist ~ 1 + day_name_tmp + (1|mvmt_type) ');
-%     stat_boot = [stat_boot glm_tmp.Coefficients.tStat];
-% end
-% figure;
-% hist(stat_boot(2,:));
-% vline(stat(2))
-% sum(stat(2)<=stat_boot(2,:))/500
+% run LMM non parametric test, within subject but combining CL contexts
+day_name = [(1:size(b1,1))';(1:size(b1,1))'];
+mahab_dist = [b1(:,2);b1(:,3)];
+subj = ones(size(mahab_dist));
+mvmt_type = [ones(size(b1,1),1);2*ones(size(b1,1),1)];
+data = table(subj,day_name,mahab_dist,mvmt_type);
+
+% fit
+glm = fitlme(data,'mahab_dist ~  day_name + (1|mvmt_type) ')
+stat = glm.Coefficients.tStat
+
+% permutation testing
+pval=[];stat_boot=[];
+parfor i=1:10000
+    disp(i)
+    a = day_name(1:length(b1));
+    b = day_name(length(b1)+1:end);
+    a=a(randperm(numel(a)));
+    b=b(randperm(numel(b)));
+    day_name_tmp = [a;b];
+    %mahab_dist_tmp = mahab_dist(randperm(numel(mahab_dist)));
+    data_tmp = table(subj,day_name_tmp,mahab_dist,mvmt_type);
+    glm_tmp = fitlme(data_tmp,'mahab_dist ~  day_name_tmp + (1|mvmt_type) ');
+    stat_boot = [stat_boot glm_tmp.Coefficients.tStat];
+end
+figure;
+hist(stat_boot(2,:));
+vline(stat(2))
+sum(abs(stat(2))<=abs(stat_boot(2,:)))/length(stat_boot(2,:))
+title('slope')
+
 
 
 %%%%% plotting , B1
@@ -459,7 +462,7 @@ cv_loss_r2_stat = cv_loss_r2;
 
 % doing it against a null distribution, 500 times
 cv_loss_boot=[];cv_loss_r2_boot=[];
-parfor iter =1:500
+parfor iter =1:50
     disp(iter)
     cv_loss=[];cv_loss_r2=[];
     I = ones(length(decoding_acc),1);
@@ -1169,11 +1172,11 @@ tstat1 = glm.Coefficients.tStat(2);
 % run stats on the GLM
 data_tmp=data;
 stat_boot=[];
-idx = day_name(1:11);
+idx = day_name(1:10);
 parfor iter=1:1000    
     disp(iter)
-    idx1 = idx(randperm(numel(idx)))
-    idx2 = idx(randperm(numel(idx)))
+    idx1 = idx(randperm(numel(idx)));
+    idx2 = idx(randperm(numel(idx)));
     day_name_tmp = [idx1;idx2];
     %mvmt_type_tmp = mvmt_type(randperm(numel(mvmt_type)));
     mvmt_type_tmp =  mvmt_type;

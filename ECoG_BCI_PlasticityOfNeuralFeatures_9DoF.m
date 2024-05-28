@@ -61,6 +61,14 @@ session_data(5).AM_PM = {'am','am','am','am','am','am','am',...
     'am','am','am',...
     'am','am','am'};
 
+% HAND 
+session_data(6).Day = '20240524';
+session_data(6).folders = {'110250','110829','111740','112416','113043','113422'...
+    '122151'};
+session_data(6).folder_type={'I','I','I','I','I','I',...
+    'B'};
+session_data(6).AM_PM = {'am','am','am','am','am','am','am'};
+
 save session_data_9DOF session_data
 
 %% SESSION DATA 9DOF B3
@@ -138,7 +146,8 @@ for i=1:2%length(session_data)
     day_date = session_data(i).Day;
     files=[];
     for ii=1:length(folders)
-        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        %folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'Imagined');
+        folderpath = fullfile(root_path, day_date,'HandImagined',folders{ii},'Imagined');
         if exist(folderpath)
             %cd(folderpath)
             files = [files;findfiles('',folderpath)'];
@@ -157,6 +166,7 @@ for i=1:2%length(session_data)
     %save(filename, 'condn_data', '-v7.3')
 
     % get cross-val classification accuracy
+     %[acc_imagined,train_permutations]=accuracy_imagined_data_Hand_B3(condn_data, iterations);
     [acc_imagined,train_permutations,acc_bin,bino_pdf,bino_pdf_chance]...
         = accuracy_imagined_data_9DOF(condn_data, iterations);
     acc_imagined=squeeze(nanmean(acc_imagined,1));
@@ -249,13 +259,15 @@ for i=1:2%length(session_data)
     day_date = session_data(i).Day;
     files=[];
     for ii=1:length(folders)
-        folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
+        folderpath = fullfile(root_path, day_date,'HandOnline',folders{ii},'BCI_Fixed');
+        %folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders{ii},'BCI_Fixed');
         %cd(folderpath)
         files = [files;findfiles('',folderpath)'];
     end
 
     % get the classification accuracy
-    [acc_batch,~,bino_pdf] = accuracy_online_data_9DOF(files);
+    %[acc_batch,~,bino_pdf] = accuracy_online_data_9DOF(files);
+    [acc_batch,acc_bin,trial_len] = accuracy_online_data_Hand(files,12);
     if plot_true
         figure;imagesc(acc_batch*100)
         colormap(brewermap(128,'Blues'))

@@ -87,9 +87,13 @@ for iter = 1:iterations % loop over 20 times
     end
 
     % train MLP
-    net = patternnet([120]) ;
+    net = patternnet([120 ]) ;
     net.performParam.regularization=0.2;
-    net = train(net,N,T','UseParallel','yes');
+    net.divideParam.trainRatio = 0.85;
+    net.divideParam.valRatio = 0.15;
+    net.divideParam.testRatio = 0;
+    net.trainParam.showWindow = 0;
+    net = train(net,N,T');
 
     % test it out on the held out trials using a mode filter
     acc = zeros(length(condn_data1));
@@ -99,12 +103,25 @@ for iter = 1:iterations % loop over 20 times
             out = net(features);
             out(out<0.4)=0; % thresholding
             [prob,idx] = max(out); % getting the decodes
-            decodes = mode_filter(idx,length(condn_data1)); % running it through a 5 sample mode filter
+            decodes=idx;
+            %decodes = mode_filter(idx,length(condn_data1)); % running it through a 5 sample mode filter
             decodes_sum=[];
             for ii=1:length(condn_data1)
                 decodes_sum(ii) = sum(decodes==ii);
             end
             [aa bb]=max(decodes_sum);
+
+            if sum(aa==decodes_sum)==1
+                acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+            else
+                disp(['error trial ' num2str(i)])
+                xx=mean(out,2);
+                [aa bb]=max(xx);
+                acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+            end
+
+
+
             acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1;
         end
     end
