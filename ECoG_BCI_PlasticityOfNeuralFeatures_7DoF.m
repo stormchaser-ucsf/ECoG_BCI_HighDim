@@ -873,6 +873,11 @@ for i=1:length(session_data)
     %load the data
     condn_data = load_data_for_MLP(files);
 
+    % test PCA
+    %x=(condn_data{2});
+    x=cell2mat(condn_data');
+    [c0,s0,l0]=pca(x);
+
     %     % save the data
     %     filename = ['condn_data_Imagined_Day' num2str(i)];
     %     save(filename, 'condn_data', '-v7.3')
@@ -908,6 +913,11 @@ for i=1:length(session_data)
     %load the data
     condn_data = load_data_for_MLP(files);
 
+    % test PCA
+    %x=(condn_data{2});
+    x=cell2mat(condn_data');
+    [c1,s1,l1]=pca(x);
+
     %     % save the data
     %     filename = ['condn_data_Online_Day' num2str(i)];
     %     save(filename, 'condn_data', '-v7.3')
@@ -940,6 +950,11 @@ for i=1:length(session_data)
 
     %load the data
     condn_data = load_data_for_MLP(files);
+
+    % test PCA
+    %x=(condn_data{2});
+    x=cell2mat(condn_data');
+    [c2,s2,l2]=pca(x);
 
     %     % save the data
     %     filename = ['condn_data_Batch_Day' num2str(i)];
@@ -985,6 +1000,12 @@ for i=1:length(session_data)
     %     [h p tb st]=ttest(dist_imagined,dist_online);
     %     disp([p mean([dist_imagined' dist_online'])]);
     %     res=[res;[p mean([dist_imagined' dist_online'])]];
+    len = min([length(l0),length(l1),length(l2)]);
+    figure;plot(cumsum(l0(1:len))./sum(l0(1:len)))
+    hold on
+    plot(cumsum(l1(1:len))./sum(l1(1:len)))
+    plot(cumsum(l2(1:len))./sum(l2(1:len)))
+    legend({'OL','CL1','CL2'})
 end
 
 close all

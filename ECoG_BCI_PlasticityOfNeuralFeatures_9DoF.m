@@ -64,10 +64,10 @@ session_data(5).AM_PM = {'am','am','am','am','am','am','am',...
 % HAND 
 session_data(6).Day = '20240524';
 session_data(6).folders = {'110250','110829','111740','112416','113043','113422'...
-    '122151'};
+    '121404','122151'};
 session_data(6).folder_type={'I','I','I','I','I','I',...
-    'B'};
-session_data(6).AM_PM = {'am','am','am','am','am','am','am'};
+    'B','B'};
+session_data(6).AM_PM = {'am','am','am','am','am','am','am','am'};
 
 save session_data_9DOF session_data
 
@@ -305,9 +305,21 @@ for i=1:2%length(session_data)
     binomial_res_chance(i).batch = [pval];
 end
 
+
+xticks(1:12)
+yticks(1:12)
+
 save 9DOF_2days_accuracy_results_New -v7.3
 %save hDOF_10days_accuracy_results -v7.3
 
+a=[];
+for i=1:12
+    a(i) = sum(TrialData.ClickerState==i);
+end
+a';
+b=zeros(12,1);
+b(TrialData.TargetID)=1;
+[a' b]
 
 %acc_online_days = (acc_online_days + acc_batch_days)/2;
 figure;
