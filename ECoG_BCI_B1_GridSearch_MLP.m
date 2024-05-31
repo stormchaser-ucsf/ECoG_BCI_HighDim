@@ -230,7 +230,7 @@ for i=1:length(session_data)
 end
 
 % make them all into one giant struct
-tmp=cell2mat(condn_data(i));
+tmp=cell2mat(condn_data(1));
 condn_data_overall=tmp;
 err_idx=[];
 for i=2:length(condn_data)
@@ -358,6 +358,7 @@ end
 
 % get the data in trial format
 tic
+
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
@@ -366,10 +367,28 @@ addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 load session_data
 addpath 'C:\Users\nikic\Documents\MATLAB'
 condn_data={};
-for i=1:length(session_data)
+for i=1:length(session_data)  
+
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
     folders_batch = strcmp(session_data(i).folder_type,'B');
+    if i~=6
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_imag(folders_am==0)=0;
+        folders_online(folders_am==0)=0;
+    end
+
+    if i==3 || i==6 || i==8
+        folders_pm = strcmp(session_data(i).AM_PM,'pm');
+        folders_batch(folders_pm==0)=0;
+        if i==8
+            idx = find(folders_batch==1);
+            folders_batch(idx(3:end))=0;
+        end
+    else
+        folders_am = strcmp(session_data(i).AM_PM,'am');
+        folders_batch(folders_am==0) = 0;
+    end
 
     imag_idx = find(folders_imag==1);
     online_idx = find(folders_online==1);
@@ -412,7 +431,8 @@ for i=1:length(session_data)
 end
 
 % make them all into one giant struct
-tmp=cell2mat(condn_data(i));
+clear condn_data_overall
+tmp=cell2mat(condn_data(1));
 condn_data_overall=tmp;
 err_idx=[];
 for i=2:length(condn_data)
