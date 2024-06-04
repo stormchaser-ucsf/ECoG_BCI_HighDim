@@ -4,7 +4,8 @@ num_trials = length(condn_data);
 train_permutations = zeros(num_trials,iterations)';
 acc_permutations=[];
 for iter = 1:iterations % loop over 20 times
-    train_idx = randperm(num_trials,round(0.75*num_trials));
+    % split of 70% training, 15% validation and 15% testing
+    train_idx = randperm(num_trials,round(0.70*num_trials));
     test_idx = ones(num_trials,1);
     test_idx(train_idx) = 0;
     test_idx = find(test_idx==1);
@@ -12,6 +13,7 @@ for iter = 1:iterations % loop over 20 times
 
     % build a MLP from the training data
     train_data = condn_data(train_idx);
+    %val_data = condn_data(val_idx);
     test_data = condn_data(test_idx);
     D1=[];
     D2=[];
@@ -70,6 +72,72 @@ for iter = 1:iterations % loop over 20 times
     condn_data1{11}=[D11(idx:end,:)]';
     condn_data1{12}=[D12(idx:end,:)]';
 
+    % data augmentation -> extract random 5 snippets 400 times
+    for i=1:length(condn_data1)
+        tmp = condn_data1{i};
+        len = size(tmp,1)*4;
+
+        % delta
+        tmp_delta = tmp(:,1:253);
+        %         new_tmp=[];
+        %         for j=1:len
+        %             idx= randperm(size(tmp_delta,1),5);
+        %             xx = mean(tmp_delta(idx,:),1);
+        %             new_tmp =[new_tmp;xx];
+        %         end
+        %         tmp_delta = [tmp_delta;new_tmp];
+        C = cov(tmp_delta);
+        if rank(C)<size(tmp_delta,2)
+            C = C + 1e-9*eye(size(C));
+        end
+        C12 = chol(C);
+        m = mean(tmp_delta,1);
+        x = randn(len,size(C,1));
+        new_delta = x*C12+m;
+
+        % beta
+        tmp_beta = tmp(:,254:2*253);
+        %         new_tmp=[];
+        %         for j=1:len
+        %             idx= randperm(size(tmp_beta,1),5);
+        %             xx = mean(tmp_beta(idx,:),1);
+        %             new_tmp =[new_tmp;xx];
+        %         end
+        %         tmp_beta = [tmp_beta;new_tmp];
+        C = cov(tmp_beta);
+        if rank(C)<size(tmp_beta,2)
+            C = C + 1e-9*eye(size(C));
+        end
+        C12 = chol(C);
+        m = mean(tmp_beta,1);
+        x = randn(len,size(C,1));
+        new_beta = x*C12+m;
+
+        % hg
+        tmp_hg = tmp(:,507:end);
+        %         new_tmp=[];
+        %         for j=1:len
+        %             idx= randperm(size(tmp_hg,1),5);
+        %             xx = mean(tmp_hg(idx,:),1);
+        %             new_tmp =[new_tmp;xx];
+        %         end
+        %         tmp_hg = [tmp_hg;new_tmp];
+        C = cov(tmp_hg);
+        if rank(C)<size(tmp_hg,2)
+            C = C + 1e-9*eye(size(C));
+        end
+        C12 = chol(C);
+        m = mean(tmp_hg,1);
+        x = randn(len,size(C,1));
+        new_hg = x*C12+m;
+
+        %new_data = [tmp_delta tmp_beta tmp_hg];
+        new_data = [new_delta new_beta new_hg];
+        tmp=[tmp;new_data];
+        condn_data1{i}=tmp;
+    end
+
+  
 
     N=[];
     T1=[];
@@ -89,11 +157,11 @@ for iter = 1:iterations % loop over 20 times
     % train MLP
     net = patternnet([120 ]) ;
     net.performParam.regularization=0.2;
-    net.divideParam.trainRatio = 0.85;
-    net.divideParam.valRatio = 0.15;
+    net.divideParam.trainRatio = 0.80;
+    net.divideParam.valRatio = 0.2;
     net.divideParam.testRatio = 0;
     net.trainParam.showWindow = 0;
-    net = train(net,N,T');
+    net = train(net,N,T','useGPU','yes');
 
     % test it out on the held out trials using a mode filter
     acc = zeros(length(condn_data1));

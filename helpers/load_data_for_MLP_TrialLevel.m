@@ -21,6 +21,8 @@ for ii=1:length(files)
         kinax = [find(kinax==3)];
         temp = cell2mat(features(kinax));
 
+        %temp=temp(:,1:12);
+
         if pooling
 
             % get the pooled data

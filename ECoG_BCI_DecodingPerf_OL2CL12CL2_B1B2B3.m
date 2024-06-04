@@ -14,7 +14,7 @@ session_data = session_data([1:9 11]); % removing bad days
 acc_imagined_days=[];
 acc_online_days=[];
 acc_batch_days=[];
-iterations=10;
+iterations=30;
 plot_true=false;
 num_trials_imag=[];
 num_trials_online=[];
@@ -69,7 +69,7 @@ for i=1:length(session_data)
 
     % get cross-val classification accuracy
     [acc_imagined,train_permutations,~,bino_pdf,bino_pdf_chance] =...
-        accuracy_imagined_data(condn_data, iterations);
+        accuracy_imagined_data(condn_data, iterations);%accuracy_imagined_data_crossVal
     acc_imagined=squeeze(nanmean(acc_imagined,1));
     if plot_true
         figure;imagesc(acc_imagined*100)

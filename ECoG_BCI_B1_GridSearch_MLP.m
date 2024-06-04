@@ -357,7 +357,7 @@ end
 % trying here for layer width and number of units
 
 % get the data in trial format
-tic
+
 
 clc;clear
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
@@ -367,7 +367,7 @@ addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 load session_data
 addpath 'C:\Users\nikic\Documents\MATLAB'
 condn_data={};
-for i=1:length(session_data)  
+for i=1:length(session_data)     
 
     folders_imag =  strcmp(session_data(i).folder_type,'I');
     folders_online = strcmp(session_data(i).folder_type,'O');
@@ -461,7 +461,7 @@ condn_data_overall = condn_data_overall1;
 tic
 cv_acc3={};
 cv_acc3_trialLevel={};
-for iter=5
+for iter=1:5
 
     % split into training and testing trials, 15% test, 15% val, 70% test
     xx=1;xx1=1;xx2=1;yy=0;

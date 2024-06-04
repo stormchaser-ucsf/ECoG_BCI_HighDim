@@ -16,6 +16,7 @@ for iter = 1:iterations % loop over n times
     % build a MLP from the training data
     train_data = condn_data(train_idx);
     test_data = condn_data(test_idx);
+
     D1=[];
     D2=[];
     D3=[];
@@ -49,6 +50,63 @@ for iter = 1:iterations % loop over n times
     F = D6';
     G = D7';
 
+    
+    %%%augment the training data (feature by feature)
+    D11={};
+    D11 = cat(2,D11,A,B,C,D,E,F,G);
+    for i=1:length(D11)
+        tmp = D11{i};
+        len = size(tmp,1);
+        % delta
+        tmp_delta = tmp(:,1:3:96);
+        C = cov(tmp_delta);
+        if rank(C)<32
+            C = C + 1e-9*eye(size(C));
+        end
+        C12 = chol(C);
+        m = mean(tmp_delta,1);
+        x = randn(len*4,size(C,1));
+        new_delta = x*C12+m;
+
+        % beta
+        tmp_beta = tmp(:,2:3:96);
+        C = cov(tmp_beta);
+        if rank(C)<32
+            C = C + 1e-9*eye(size(C));
+        end
+        C12 = chol(C);
+        m = mean(tmp_beta,1);
+        x = randn(len*4,size(C,1));
+        new_beta = x*C12+m;
+
+        % hg
+        tmp_hg = tmp(:,3:3:96);
+        C = cov(tmp_hg);
+        if rank(C)<32
+            C = C + 1e-9*eye(size(C));
+        end
+        C12 = chol(C);
+        m = mean(tmp_hg,1);
+        x = randn(len*4,size(C,1));
+        new_hg = x*C12+m;
+
+        % store
+        new_data=[];
+        new_data(:,1:3:96) = new_delta;
+        new_data(:,2:3:96) = new_beta;
+        new_data(:,3:3:96) = new_hg;
+        tmp = [tmp;new_data+(0.01*randn(size(new_data)))];
+        D11{i}=tmp;
+    end
+    A = D11{1};
+    B = D11{2};
+    C = D11{3};
+    D = D11{4};
+    E = D11{5};
+    F = D11{6};
+    G = D11{7};
+
+
     % organize data
     clear N
     N = [A' B' C' D' E' F' G'];
@@ -76,10 +134,10 @@ for iter = 1:iterations % loop over n times
     net.divideParam.trainRatio = 0.85;
     net.divideParam.valRatio = 0.15;
     net.divideParam.testRatio = 0;
-    net.trainParam.showWindow = 0; 
+    net.trainParam.showWindow = 0;
     net = train(net,N,T');
 
-    
+
     % test it out on the held out trials using a mode filter
     acc = zeros(7);
     acc_bin = zeros(7);
@@ -97,7 +155,7 @@ for iter = 1:iterations % loop over n times
             end
             [aa bb]=max(decodes_sum);
             if sum(aa==decodes_sum)==1
-                 acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
+                acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
             else
                 disp(['error trial ' num2str(i)])
                 xx=mean(out,2);
@@ -105,7 +163,7 @@ for iter = 1:iterations % loop over n times
                 acc(test_data(i).targetID,bb) = acc(test_data(i).targetID,bb)+1; % trial level
             end
 
-            % bin level 
+            % bin level
             for j=1:length(idx)
                 acc_bin(test_data(i).targetID,idx(j)) = ...
                     acc_bin(test_data(i).targetID,idx(j))+1;
