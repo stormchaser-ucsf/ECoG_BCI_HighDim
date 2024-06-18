@@ -3,7 +3,7 @@ function [trial_data,coeff,score,latent] = load_data_for_MLP_TrialLevel_B3(files
 %function [condn_data] = load_data_for_MLP(files)
 
 if nargin<2
-    load('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate B3\ECOG_Grid_8596_000067_B3.mat');
+    load('ECOG_Grid_8596_000067_B3.mat');
 end
 
 if nargin<3
