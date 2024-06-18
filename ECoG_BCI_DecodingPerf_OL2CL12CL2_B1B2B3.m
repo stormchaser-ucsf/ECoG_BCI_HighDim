@@ -3068,8 +3068,13 @@ OL = mean(acc_imagined_days,1);
 CL1  = mean(acc_online_days,1);
 CL2  = mean(acc_batch_days,1);
 
+
+CL2a = 100*((CL2-CL1)./CL1);
 CL1 = 100*((CL1-OL)./OL);
 CL2 = 100*((CL2-OL)./OL);
+
+figure;boxplot([CL1' CL2' CL2a'])
+
 
 [median(CL1(1:11)) median(CL2(1:11))]
 [median(CL1(12:end)) median(CL2(12:end))]
@@ -3159,29 +3164,86 @@ sum(abs(stat_boot)>abs(stat))/length(stat_boot)
 sum((stat_boot)>(stat))/length(stat_boot)
 
 %%%%% mixed effect model to just see improvement in CL1 and CL2 individuall
-%%%%% relative to OL
+%%%%% relative to OL, and CL2 relative to CL1 
 
+%%%% plotting
+% mean first
+m11 = mean(CL1);
+m22 = mean(CL2);
+m33 = mean(CL2a);
+x=1:3;
+y=[(m11) (m22) (m33)];
+% scatter B1 and B3 individually
+figure; 
+boxplot([CL1' CL2' CL2a'],'notch','on')
+hold on
+h=hline((m11),'k');
+h.LineWidth=3;
+h.XData = [0.75 1.25];
+h=hline((m22),'k');
+h.LineWidth=3;
+h.XData = [1.75 2.25];
+h=hline((m33),'k');
+h.LineWidth=3;
+h.XData = [2.75 3.25];
+% scattering each subject
+aa = find(idx==1);
+x=(1:3) + 0.1*randn(length(aa),3);
+h=scatter(x,[CL1(aa)' CL2(aa)' CL2a(aa)'],'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'b';
+    h(i).MarkerFaceAlpha = 0.3;
+end
+aa = find(idx==2);
+x=(1:3) + 0.1*randn(length(aa),3);
+h=scatter(x,[CL1(aa)' CL2(aa)' CL2a(aa)'],'filled');
+for i=1:3
+    h(i).MarkerFaceColor = 'r';
+    h(i).MarkerFaceAlpha = 0.3;
+end
+ylim([-20 60])
+yticks([-20:10:60])
+h=hline(0,'--k');
+set(h,'LineWidth',1)
+xlim([.5 3.5])
+xticks(1:3)
+xticklabels({'CL1 vs. OL','CL2 vs. OL','CL2 vs. CL1'})
+set(gcf,'Color','w')
+set(gca,'LineWidth',1)
+ylabel('% change in decoding accuracy')
+
+% getting data ready for stats
 subj=[];
 decoding_impr=[];
 mvmt_type=[];
 subj=[ones(11,1);2*ones(10,1)];
-subj=[subj;subj];
-decoding_impr = [CL1';CL2'];
-mvmt_type=[ones(21,1);2*ones(21,1)];
+subj=[subj;subj;subj];
+decoding_impr = [CL1';CL2';CL2a'];
+mvmt_type=[ones(21,1);2*ones(21,1);3*ones(21,1)];
 data = table(subj,mvmt_type,decoding_impr);
 data1 = data(1:21,:);
-data2 = data(22:end,:);
+data2 = data(22:42,:);
+data3 = data(43:end,:);
 
-% CL1
+% CL1 vs. OL
 glm = fitlme(data1,'decoding_impr ~ 1 + (1|subj)')
 stat = glm.Coefficients.tStat(1);
 stat_boot=[];
 xx = table2array(data1);
-xx(:,3) = xx(:,3)-mean(xx(:,3));
+idx1 = find(xx(:,1)==1);
+idx2 = find(xx(:,1)==2);
+xx(idx1,3) = xx(idx1,3)-mean(xx(idx1,3));
+xx(idx2,3) = xx(idx2,3)-mean(xx(idx2,3));
 parfor i=1:1000
     disp(i)
-    idx = randi(length(xx),1,length(xx));
-    xx1 = xx(idx,:);
+    %idx = randi(length(xx),1,length(xx));
+    idx11 = randi(length(idx1),1,length(idx1));
+    idx11 = idx1(idx11);
+    idx22 = randi(length(idx2),1,length(idx2));
+    idx22 = idx2(idx22);
+    xx1 = xx(idx11,:);
+    xx2 = xx(idx22,:);
+    xx1 =[xx1;xx2];
     subj_tmp = xx1(:,1);
     mvmt_tmp = xx1(:,2);
     decoding_tmp = xx1(:,3);
@@ -3193,18 +3255,27 @@ figure;
 hist(stat_boot)
 vline(stat)
 %sum(stat_boot>stat)/length(stat_boot)
-sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
+p=sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
 
-%CL2
+%CL2 vs. OL
 glm = fitlme(data2,'decoding_impr ~ 1 + (1|subj)')
 stat = glm.Coefficients.tStat(1);
 stat_boot=[];
 xx = table2array(data2);
-xx(:,3) = xx(:,3)-mean(xx(:,3));
+idx1 = find(xx(:,1)==1);
+idx2 = find(xx(:,1)==2);
+xx(idx1,3) = xx(idx1,3)-mean(xx(idx1,3));
+xx(idx2,3) = xx(idx2,3)-mean(xx(idx2,3));
 parfor i=1:1000
     disp(i)
-    idx = randi(length(xx),1,length(xx));
-    xx1 = xx(idx,:);
+    %idx = randi(length(xx),1,length(xx));
+    idx11 = randi(length(idx1),1,length(idx1));
+    idx11 = idx1(idx11);
+    idx22 = randi(length(idx2),1,length(idx2));
+    idx22 = idx2(idx22);
+    xx1 = xx(idx11,:);
+    xx2 = xx(idx22,:);
+    xx1 =[xx1;xx2];
     subj_tmp = xx1(:,1);
     mvmt_tmp = xx1(:,2);
     decoding_tmp = xx1(:,3);
@@ -3216,7 +3287,39 @@ figure;
 hist(stat_boot)
 vline(stat)
 %sum(stat_boot>stat)/length(stat_boot)
-sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
+p=sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
+
+% CL2 vs. CL1
+glm = fitlme(data3,'decoding_impr ~ 1 + (1|subj)')
+stat = glm.Coefficients.tStat(1);
+stat_boot=[];
+xx = table2array(data3);
+idx1 = find(xx(:,1)==1);
+idx2 = find(xx(:,1)==2);
+xx(idx1,3) = xx(idx1,3)-mean(xx(idx1,3));
+xx(idx2,3) = xx(idx2,3)-mean(xx(idx2,3));
+parfor i=1:1000
+    disp(i)
+    %idx = randi(length(xx),1,length(xx));
+    idx11 = randi(length(idx1),1,length(idx1));
+    idx11 = idx1(idx11);
+    idx22 = randi(length(idx2),1,length(idx2));
+    idx22 = idx2(idx22);
+    xx1 = xx(idx11,:);
+    xx2 = xx(idx22,:);
+    xx1 =[xx1;xx2];
+    subj_tmp = xx1(:,1);
+    mvmt_tmp = xx1(:,2);
+    decoding_tmp = xx1(:,3);
+    data1_tmp = table(subj_tmp,mvmt_tmp,decoding_tmp);    
+    glm_tmp = fitlme(data1_tmp,'decoding_tmp ~ 1 + (1|subj_tmp)');
+    stat_boot(i) = glm_tmp.Coefficients.tStat(1);
+end
+figure;
+hist(stat_boot)
+vline(stat)
+%sum(stat_boot>stat)/length(stat_boot)
+p=sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
 
 
 
@@ -3226,7 +3329,7 @@ sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
 decoding_acc=[];
 subj=[];
 mvmt_type=[];
-tmp=mean(acc_imagined_days,1);
+tmp=mean(acc_batch_days,1);
 tmp1=mean(acc_online_days,1);
 for i=1:length(tmp)
     if i<=11
@@ -3249,6 +3352,7 @@ end
 
 data = table(subj,mvmt_type,decoding_acc);
 glm = fitglme(data,'decoding_acc ~ 1 + mvmt_type + (1|subj)')
+%glm = fitglme(data,'decoding_acc ~ 1 + mvmt_type + (1|subj)','Distribution','Binomial')
 %glm = fitlm(data,'mahab_dist ~ 1+ day_name');
 stat = glm.Coefficients.tStat(2);
 
@@ -3272,7 +3376,7 @@ parfor i=1:2000
 
     %mvmt_type_tmp = mvmt_type(randperm(numel(mvmt_type)));
     data_tmp = table(subj,mvmt_type_tmp,decoding_acc);
-    glm_tmp = fitlme(data_tmp,'decoding_acc ~ mvmt_type_tmp + (1|subj)');
+    glm_tmp = fitglme(data_tmp,'decoding_acc ~ mvmt_type_tmp + (1|subj)');
     stat_boot(i) = glm_tmp.Coefficients.tStat(2);
 end
 

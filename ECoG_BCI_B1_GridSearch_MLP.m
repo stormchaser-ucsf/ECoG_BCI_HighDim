@@ -792,7 +792,7 @@ save B1_MLP_NN_Param_Optim_V3_Final cv_acc3 cv_acc3_trialLevel -v7.3
 clc;clear
 cd('F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker')
 %load B1_MLP_NN_Param_Optim
-load B1_MLP_NN_Param_Optim_V3_Final
+load B1_MLP_NN_Param_Optim_V5_Final
 % plotting
 acc=[];acc1=[];
 for i=1:length(cv_acc3)
@@ -992,8 +992,9 @@ cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 load session_data
 addpath 'C:\Users\nikic\Documents\MATLAB'
-load B1_MLP_NN_Param_Optim_V3_Final
-load condn_data_overall_b1
+%load B1_MLP_NN_Param_Optim_V3_Final
+load B1_MLP_NN_Param_Optim_V5_singleLayer
+load condn_data_overall_B1_All
 condn_data_overall = condn_data_overall_B1;
 
 num_units = [32 48 60:15:210];

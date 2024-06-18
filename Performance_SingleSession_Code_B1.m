@@ -8,7 +8,7 @@ addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 
-day_date= '20240529';
+day_date= '20240605';
 
 folders=dir(fullfile(root_path,day_date,'Robot3DArrow'));
 folders=folders(3:end);
@@ -17,7 +17,7 @@ folders=folders(3:end);
 %%%%%% cross_val classification accuracy for imagined data
 % get the files
 files=[];
-for ii=1:8
+for ii=1:9
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders(ii).name,'Imagined');
     if exist(folderpath)
         %cd(folderpath)
@@ -58,7 +58,7 @@ title(['Cross-val trial level OL Acc of ' num2str(100*mean(diag(acc_imagined)))]
 
 %%%% get online decoding accuracy (CL1)
 files=[];
-for ii=9:11
+for ii=15:17
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders(ii).name,'BCI_Fixed');
     if exist(folderpath)
         %cd(folderpath)
@@ -99,7 +99,7 @@ title(['CL1 Acc of ' num2str(100*mean(diag(acc_online)))])
 
 %%%% get batch update decoding accuracy (CL2)
 files=[];
-for ii=12
+for ii=15:17
     folderpath = fullfile(root_path, day_date,'Robot3DArrow',folders(ii).name,'BCI_Fixed');
     if exist(folderpath)
         %cd(folderpath)
@@ -138,20 +138,21 @@ title(['CL2 Acc of ' num2str(100*mean(diag(acc_batch)))])
 
 %% PLOTTING CENTER OUT TRAJECTORIES
 
-clc;clear
+clc;clear;close all
 root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker';
 addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
 cd(root_path)
 addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
 
-day_date= '20240529';
+day_date= '20240605';
 
 folders=dir(fullfile(root_path,day_date,'Robot3D'));
 folders=folders(3:end);
+%folders=folders(3);
 
 %get the files
 files=[];
-for ii=3%length(folders)
+for ii=1:length(folders)
     folderpath = fullfile(root_path, day_date,'Robot3D',folders(ii).name,'BCI_Fixed');
     if exist(folderpath)
         %cd(folderpath)
@@ -162,7 +163,10 @@ end
 %plot the center out traj
 figure;
 hold on
-col={'r','g','b','m','k','c'};
+%col={'r','g','b','m','k','c','y','o'};
+%col = turbo(8);
+col = turbo(4);
+col=[col;col];
 targets=[];
 for i=1:length(files)
     load(files{i})
@@ -171,11 +175,20 @@ for i=1:length(files)
     idx= find(task_state==3);
     kin = kin(1:3,idx);
     tid = TrialData.TargetID;
-    targets(i)=tid;
-    col_id = col{tid};
-    if tid<=4
-        plot(kin(1,:),kin(2,:),'LineWidth',1,'color',col_id);
+    if tid>4
+        tid=tid-2;
     end
+    targets(i)=tid;
+    %col_id = col{tid};
+    %if tid>4 && tid<9
+    if tid<=4
+        col_id = col(tid,:);
+        plot(kin(1,:),kin(2,:),'LineWidth',2,'color',col_id);
+        pos=TrialData.TargetPosition;
+        plot(pos(1),pos(2),'o','Color',col_id,'MarkerSize',75)
+    end
+    plot(0,0,'.r','MarkerSize',50)
+
 end
 xlim([-300 300])
 ylim([-300 300])
