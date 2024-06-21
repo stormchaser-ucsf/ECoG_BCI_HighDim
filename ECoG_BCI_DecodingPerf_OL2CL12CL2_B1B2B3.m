@@ -126,7 +126,7 @@ for i=1:length(session_data)
     % get the classification accuracy
     %[acc_online,~,bino_pdf] = accuracy_online_data(files);
     [acc_online,~,bino_pdf] = accuracy_online_data_5bins(files);
-    
+
     if plot_true
         figure;imagesc(acc_online*100)
         colormap(brewermap(128,'Blues'))
@@ -1121,7 +1121,7 @@ vline(ch)
 pval=sum(bp(1:bb))
 
 
-% 
+%
 % %acc_online_days = (acc_online_days + acc_batch_days)/2;
 % figure;
 % ylim([0.0 0.65])
@@ -1130,14 +1130,14 @@ pval=sum(bp(1:bb))
 % plot(nanmean(acc_imagined_days,1))
 % plot(nanmean(acc_online_days,1))
 % plot(nanmean(acc_batch_days,1),'k')
-% 
+%
 % % as regression lines
 % figure;plot(mean(acc_imagined_days,1),'.','MarkerSize',20)
-% 
+%
 % % stats
 % tmp = [median(acc_imagined_days,1)' median(acc_online_days,1)' ...
 %     median(acc_batch_days,1)'];
-% 
+%
 % figure;boxplot(acc_imagined_days)
 % ylim([0.2 1])
 % xlim([0.5 10.5])
@@ -1786,7 +1786,7 @@ for i=1:11% length(session_data) % 11 is first set of collected data
 
     % get the classification accuracy
     %[acc_online,~,bino_pdf] = accuracy_online_data(files);
-    [acc_online,~,bino_pdf] = accuracy_online_data_5bins(files);    
+    [acc_online,~,bino_pdf] = accuracy_online_data_5bins(files);
     if plot_true
         figure;imagesc(acc_online*100)
         colormap(brewermap(128,'Blues'))
@@ -3141,7 +3141,7 @@ mvmt1 = mvmt_type(idx1);
 mvmt2 = mvmt_type(idx2);
 
 parfor i=1:1000
-  
+
 
     disp(i)
     mvmt_type_tmp = mvmt_type;
@@ -3164,7 +3164,7 @@ sum(abs(stat_boot)>abs(stat))/length(stat_boot)
 sum((stat_boot)>(stat))/length(stat_boot)
 
 %%%%% mixed effect model to just see improvement in CL1 and CL2 individuall
-%%%%% relative to OL, and CL2 relative to CL1 
+%%%%% relative to OL, and CL2 relative to CL1
 
 %%%% plotting
 % mean first
@@ -3174,7 +3174,7 @@ m33 = mean(CL2a);
 x=1:3;
 y=[(m11) (m22) (m33)];
 % scatter B1 and B3 individually
-figure; 
+figure;
 boxplot([CL1' CL2' CL2a'],'notch','on')
 hold on
 h=hline((m11),'k');
@@ -3247,7 +3247,7 @@ parfor i=1:1000
     subj_tmp = xx1(:,1);
     mvmt_tmp = xx1(:,2);
     decoding_tmp = xx1(:,3);
-    data1_tmp = table(subj_tmp,mvmt_tmp,decoding_tmp);    
+    data1_tmp = table(subj_tmp,mvmt_tmp,decoding_tmp);
     glm_tmp = fitlme(data1_tmp,'decoding_tmp ~ 1 + (1|subj_tmp)');
     stat_boot(i) = glm_tmp.Coefficients.tStat(1);
 end
@@ -3279,7 +3279,7 @@ parfor i=1:1000
     subj_tmp = xx1(:,1);
     mvmt_tmp = xx1(:,2);
     decoding_tmp = xx1(:,3);
-    data1_tmp = table(subj_tmp,mvmt_tmp,decoding_tmp);    
+    data1_tmp = table(subj_tmp,mvmt_tmp,decoding_tmp);
     glm_tmp = fitlme(data1_tmp,'decoding_tmp ~ 1 + (1|subj_tmp)');
     stat_boot(i) = glm_tmp.Coefficients.tStat(1);
 end
@@ -3311,7 +3311,7 @@ parfor i=1:1000
     subj_tmp = xx1(:,1);
     mvmt_tmp = xx1(:,2);
     decoding_tmp = xx1(:,3);
-    data1_tmp = table(subj_tmp,mvmt_tmp,decoding_tmp);    
+    data1_tmp = table(subj_tmp,mvmt_tmp,decoding_tmp);
     glm_tmp = fitlme(data1_tmp,'decoding_tmp ~ 1 + (1|subj_tmp)');
     stat_boot(i) = glm_tmp.Coefficients.tStat(1);
 end
@@ -3325,7 +3325,7 @@ p=sum(abs(stat_boot)>abs(stat))/length(abs(stat_boot))
 
 %%%%% IMPORTANT %%%%%
 %%%%%%%% USING NON PARAMETRIC LINEAR MIXED EFFECT MODEL ON DECODING
-%%%%%%%% ACCURACIES DIRECTLY. 
+%%%%%%%% ACCURACIES DIRECTLY.
 decoding_acc=[];
 subj=[];
 mvmt_type=[];
@@ -3363,7 +3363,7 @@ mvmt1 = mvmt_type(idx1);
 mvmt2 = mvmt_type(idx2);
 
 parfor i=1:2000
-  
+
 
     disp(i)
     mvmt_type_tmp = mvmt_type;
@@ -3464,6 +3464,61 @@ ylabel('Decoding Accuracy')
 title('B1')
 xticks(1:10)
 xlim([0.5 10.5])
+
+%% comparing the performance of a decoder on online data samples
+
+clc;clear
+addpath(genpath('C:\Users\nikic\Documents\GitHub\ECoG_BCI_HighDim'))
+addpath('C:\Users\nikic\Documents\MATLAB\DrosteEffect-BrewerMap-5b84f95')
+addpath 'C:\Users\nikic\Documents\MATLAB'
+
+% get online performance in the task
+root_path = 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker\20240619\Robot3DArrow';
+foldernames={'112004','112256','112526','113244'};
+
+files=[];file_type=[];
+for i=1:length(foldernames)-1
+    fullpath = fullfile(root_path,foldernames{i},'BCI_Fixed');
+    tmp_files = findfiles('.mat',fullpath,1)';
+    tmp_files1=[];k=1;
+    for j=1:length(tmp_files)
+        if length(regexp(tmp_files{j},'kf_params'))==0
+            tmp_files1 = [tmp_files1;tmp_files(j)];
+        end
+    end
+    files=[files;tmp_files1];
+end
+
+% accuracy
+[acc_online,~,bino_pdf] = accuracy_online_data(files);
+figure;imagesc(acc_online*100)
+colormap(brewermap(128,'Blues'))
+clim([0 100])
+set(gcf,'color','w')
+% add text
+for j=1:size(acc_online,1)
+    for k=1:size(acc_online,2)
+        if j==k
+            text(j-0.35,k,num2str(round(100*acc_online(k,j),1)),'Color','w')
+        else
+            text(j-0.35,k,num2str(round(100*acc_online(k,j),1)),'Color','k')
+        end
+    end
+end
+box on
+xticks(1:7)
+yticks(1:7)
+xticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+yticklabels({'Rt Thumb','Leg','Lt. Thumb','Head','Tong','Lips','Both middle'})
+title(['OL Acc of ' num2str(100*mean(diag(acc_online)))])
+
+% load the data
+condn_data = load_data_for_MLP_TrialLevel_B3(files);
+
+% get performance of online data with another decoder
+load net_B1_253_TrfLearn_BatchUpdate
+[acc_online_new,~,bino_pdf] = get_accuracy_online_anotherDecoder(condn_data,net_B1_253_TrfLearn_BatchUpdate);
+
 
 
 
