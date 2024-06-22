@@ -237,7 +237,6 @@ save net_B3_PnP_trfLearn_patternet net_B3_PnP_trfLearn_patternet -v7.3
 
 %% load B1's data from daily 7DoF initialization with new 253 grid
 
-clear
 cd 'F:\DATA\ecog data\ECoG BCI\GangulyServer\Multistate clicker'
 root_path=pwd;
 foldernames={'20240614', '20240517', '20240515', '20240508','20240619'};
@@ -381,11 +380,11 @@ load net_B3_PnP_trfLearn_patternet
 
 % train 
 %net=patternnet(120);
-%net_B3_PnP_trfLearn_patternet.divideFcn = 'divideind'; % to make into training and testing indices
-net_B3_PnP_trfLearn_patternet.divideParam.trainInd=train_idx;
-net_B3_PnP_trfLearn_patternet.divideParam.valInd=val_idx;
-net_B3_PnP_trfLearn_patternet.divideParam.testInd=[];
-%net_B3_PnP_trfLearn_patternet.performParam.regularization=0.2;
+net.divideFcn = 'divideind'; % to make into training and testing indices
+net.divideParam.trainInd=train_idx;
+net.divideParam.valInd=val_idx;
+net.divideParam.testInd=[];
+%net.performParam.regularization=0.2;
 %net_B3_PnP_trfLearn_patternet = train(net,N,T','UseGPU','yes');
 net_B3B1_PnP_trfLearn_patternet = train(net_B3_PnP_trfLearn_patternet,N,T','UseGPU','yes');
 
