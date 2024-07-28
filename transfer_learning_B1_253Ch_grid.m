@@ -179,7 +179,8 @@ net_B1_253_TrfLearn = trainNetwork(XTrain,YTrain,layers,options);
 save net_B1_253_TrfLearn net_B1_253_TrfLearn -v7.3
 
 
-%% USE PATTERNET FUNCTIONS
+%% USE PATTERNET FUNCTIONS TO BUILD PNP DECODER FOR B1 WITH NEW GRID USING
+%% TRANSFER LEARNING FROM B3
 
 %%
 
